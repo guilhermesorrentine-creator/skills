@@ -1,6 +1,6 @@
 import { useCallback, useDeferredValue, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import AnatomyFigure from "./components/AnatomyFigure.jsx";
+import InteractiveSkillExplorer from "./components/explorer/InteractiveSkillExplorer.jsx";
 import ComparePanel from "./components/ComparePanel.jsx";
 import { CopyButton } from "./components/shared.jsx";
 import AuroraBackground from "./components/effects/AuroraBackground.jsx";
@@ -291,7 +291,9 @@ export default function App() {
                   <p className="muted small">A biblioteca não presume instalação nem compatibilidade; o arquivo original é a referência.</p>
                 </div>
               </div>
-              <AnatomyFigure area={{ label: areas.find((item) => item.id === controls.category)?.label || "Todas" }} areaIndex={Math.max(0, areas.findIndex((item) => item.id === controls.category))} skillCount={controls.category === "todas" ? counts.skills : countByArea[controls.category] || 0} onSelect={(category) => updateControls({ category })}/>
+            </div>
+            <div className="explorer-wrap">
+              <InteractiveSkillExplorer onFullAccess={showCatalog}/>
             </div>
           </div>
         </section>

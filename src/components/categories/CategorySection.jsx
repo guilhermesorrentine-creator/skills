@@ -1,6 +1,7 @@
 import { motion, useReducedMotion } from "motion/react";
 import { motionTokens, springs } from "../../lib/motion-tokens.js";
 import CyberpunkCharacter, { characters } from "./CyberpunkCharacter.jsx";
+import useCharacterActivation from "./useCharacterActivation.js";
 
 const blurbs = {
   software: "Código, agentes, automação, segurança e ferramentas de desenvolvimento.",
@@ -20,26 +21,28 @@ export default function CategorySection({ areas, counts, active, onSelect, onSho
         <p className="section-lead">Escolha um personagem para filtrar o catálogo e reorganizar a biblioteca 3D.</p>
       </div>
       <div className="category-grid">
-        {areas.map((area, index) => {
-          const selected = active === area.id;
-          return <motion.article key={area.id} className={`category-card ${selected ? "is-selected" : ""}`} data-category={area.id}
-            initial={reduced ? false : { opacity: 0, y: motionTokens.distance.md }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.3 }}
-            transition={{ duration: motionTokens.duration.normal, delay: index * motionTokens.stagger.normal, ease: motionTokens.easing.smooth }}>
-            <button type="button" className="category-hit" aria-pressed={selected} onClick={() => onSelect(selected ? "todas" : area.id)}>
-              <span className="category-stage" aria-hidden="true">
-                <span className="category-ring"/>
-                <CyberpunkCharacter category={area.id}/>
-              </span>
-              <span className="category-code">CATEGORY://{area.code}</span>
-              <span className="category-name">{area.label}</span>
-              <span className="category-role">{characters[area.id].title}</span>
-              <span className="category-blurb">{blurbs[area.id]}</span>
-              <span className="category-count"><b>{(counts[area.id] || 0).toLocaleString("pt-BR")}</b> skills {selected ? "· filtro ativo" : ""}</span>
-            </button>
-            {selected && <motion.button type="button" className="category-go" onClick={onShowCatalog} initial={reduced ? false : { opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={reduced ? { duration: 0 } : springs.snappy}>Ver no catálogo ↓</motion.button>}
-          </motion.article>;
-        })}
+        {areas.map((area, index) => <CategoryCard key={area.id} area={area} index={index} count={counts[area.id] || 0} selected={active === area.id} reduced={reduced} onSelect={onSelect} onShowCatalog={onShowCatalog}/>)}
       </div>
     </div>
   </section>;
+}
+
+function CategoryCard({ area, index, count, selected, reduced, onSelect, onShowCatalog }) {
+  const { active, handlers } = useCharacterActivation();
+  return <motion.article className={`category-card ${selected ? "is-selected" : ""} ${active ? "is-active" : ""}`} data-category={area.id}
+    initial={reduced ? false : { opacity: 0, y: motionTokens.distance.md }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.3 }}
+    transition={{ duration: motionTokens.duration.normal, delay: index * motionTokens.stagger.normal, ease: motionTokens.easing.smooth }}>
+    <button type="button" className="category-hit" aria-pressed={selected} onClick={() => onSelect(selected ? "todas" : area.id)} {...handlers}>
+      <span className="category-stage" aria-hidden="true">
+        <span className="category-ring"/>
+        <CyberpunkCharacter category={area.id} active={active}/>
+      </span>
+      <span className="category-code">CATEGORY://{area.code}</span>
+      <span className="category-name">{area.label}</span>
+      <span className="category-role">{characters[area.id].title}</span>
+      <span className="category-blurb">{blurbs[area.id]}</span>
+      <span className="category-count"><b>{count.toLocaleString("pt-BR")}</b> skills {selected ? "· filtro ativo" : ""}</span>
+    </button>
+    {selected && <motion.button type="button" className="category-go" onClick={onShowCatalog} initial={reduced ? false : { opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={reduced ? { duration: 0 } : springs.snappy}>Ver no catálogo ↓</motion.button>}
+  </motion.article>;
 }

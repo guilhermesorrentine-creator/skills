@@ -1,0 +1,175 @@
+{
+  "stats": {
+    "repos": 37,
+    "skills": 2281,
+    "byArea": {
+      "software": 1776,
+      "empreendedorismo": 323,
+      "conteudo": 5,
+      "ciencia": 177
+    }
+  },
+  "skills": [
+    {
+      "id": "superpowers::skills/brainstorming/SKILL.md",
+      "name": "brainstorming",
+      "description": "You MUST use this before any creative work - creating features, building components, adding functionality, modifying behavior, or planning anything new, in software or out of it (a talk, a business, a renovation).",
+      "category": "software",
+      "repoName": "superpowers"
+    },
+    {
+      "id": "security-audit-skill::skills/security-audit/SKILL.md",
+      "name": "security-audit",
+      "description": "Security guidance and vulnerability review for codebases, APIs, services, CLI tools, libraries, and daemons. Use for security questions, focused reviews, vulnerability research, security audits, or pen tests. Run the…",
+      "category": "software",
+      "repoName": "security-audit-skill"
+    },
+    {
+      "id": "android-skills::build-system/agp/agp-9-upgrade/SKILL.md",
+      "name": "agp-9-upgrade",
+      "description": "Upgrades, or migrates, an Android project to use Android Gradle Plugin",
+      "category": "software",
+      "repoName": "android-skills"
+    },
+    {
+      "id": "android-skills::camera/camerax/SKILL.md",
+      "name": "camerax",
+      "description": "Provide technical guidance for Android camera development with CameraX.",
+      "category": "software",
+      "repoName": "android-skills"
+    },
+    {
+      "id": "android-skills::cars/android-for-cars-parked-apps/SKILL.md",
+      "name": "android-for-cars-parked-apps",
+      "description": "Adapt existing Android video streaming apps, games, and web browsers",
+      "category": "software",
+      "repoName": "android-skills"
+    },
+    {
+      "id": "android-skills::device-ai/appfunctions/SKILL.md",
+      "name": "appfunctions",
+      "description": "Analyzes Android apps to identify key user workflows for AppFunctions",
+      "category": "software",
+      "repoName": "android-skills"
+    },
+    {
+      "id": "founder-skill::skills/founder-cfo/SKILL.md",
+      "name": "founder-cfo",
+      "description": "-",
+      "category": "empreendedorismo",
+      "repoName": "founder-skill"
+    },
+    {
+      "id": "instagram-agent-skill::skills/ig-carousel/SKILL.md",
+      "name": "ig-carousel",
+      "description": "-",
+      "category": "empreendedorismo",
+      "repoName": "instagram-agent-skill"
+    },
+    {
+      "id": "arena-skill::skills/arena/SKILL.md",
+      "name": "arena",
+      "description": "-",
+      "category": "empreendedorismo",
+      "repoName": "arena-skill"
+    },
+    {
+      "id": "brag::skills/brag-slim/SKILL.md",
+      "name": "brag-slim",
+      "description": "Turn a project directory or a website URL into a short, shareable launch video with music, motion, and share copy. One file, no bundled assets built entirely by the model with the tools already on the machine. Use whe…",
+      "category": "empreendedorismo",
+      "repoName": "brag"
+    },
+    {
+      "id": "brag::skills/brag/SKILL.md",
+      "name": "brag",
+      "description": "Turn the current project website into a short, polished, shareable launch video using Hyperframes. Use when someone says \"/brag\", \"let's brag about this\", \"make a launch video\", \"turn this into a video\", or wants to s…",
+      "category": "empreendedorismo",
+      "repoName": "brag"
+    },
+    {
+      "id": "claude-video::skills/watch/SKILL.md",
+      "name": "watch",
+      "description": "Watch a video (URL or local path). Downloads with yt-dlp, extracts auto-scaled frames with ffmpeg, pulls the transcript from captions (or local WhisperX / cloud Whisper fallback), and hands the result to the agent so…",
+      "category": "empreendedorismo",
+      "repoName": "claude-video"
+    },
+    {
+      "id": "anatomy::SKILL.md",
+      "name": "anatomy",
+      "description": "Build crafted, highly detailed, interactive isometric SVG figures that explain a technical idea as a real physical object (a test rig, a dial gauge, a cabinet of drawers, a plotter, a lock), with many small precise so…",
+      "category": "conteudo",
+      "repoName": "anatomy"
+    },
+    {
+      "id": "VoiceStudio::skills/voicestudio/SKILL.md",
+      "name": "voicestudio",
+      "description": "Generate local speech with saved or designed voices, transcribe audio, and automate dubbing or narration workflows through VoiceStudio's REST API or MCP server. Use when the user wants to work with VoiceStudio audio o…",
+      "category": "conteudo",
+      "repoName": "VoiceStudio"
+    },
+    {
+      "id": "VoiceStudio::.agents/skills/fastapi-python/SKILL.md",
+      "name": "fastapi-python",
+      "description": "Expert in FastAPI Python development with best practices for APIs and async operations",
+      "category": "conteudo",
+      "repoName": "VoiceStudio"
+    },
+    {
+      "id": "VoiceStudio::.agents/skills/vite/SKILL.md",
+      "name": "vite",
+      "description": "Expert guidance for Vite development with modern build tooling, HMR, framework integrations, and performance optimization",
+      "category": "conteudo",
+      "repoName": "VoiceStudio"
+    },
+    {
+      "id": "VoiceStudio::skills/voicestudio-maintainer/SKILL.md",
+      "name": "voicestudio-maintainer",
+      "description": "Triage GitHub issues, review contributor pull requests, diagnose CI, and prepare explicitly requested releases for VoiceStudio's Electron desktop app and Python backend. Use for repository maintenance work, not ordina…",
+      "category": "conteudo",
+      "repoName": "VoiceStudio"
+    },
+    {
+      "id": "scientific-agent-skills::skills/literature-review/SKILL.md",
+      "name": "literature-review",
+      "description": "Conducts systematic, scoping, and narrative literature reviews using PubMed, arXiv, bioRxiv, Semantic Scholar, and other appropriate sources. Use for research synthesis, reproducible literature searches, screening, ci…",
+      "category": "ciencia",
+      "repoName": "scientific-agent-skills"
+    },
+    {
+      "id": "scientific-agent-skills::skills/rdkit/SKILL.md",
+      "name": "rdkit",
+      "description": "Cheminformatics toolkit for fine-grained molecular control. SMILES/SDF parsing, descriptors (MW, LogP, TPSA), fingerprints, substructure search, 2D/3D generation, similarity, reactions. For standard workflows with sim…",
+      "category": "ciencia",
+      "repoName": "scientific-agent-skills"
+    },
+    {
+      "id": "scientific-agent-skills::skills/13c-metabolic-flux/SKILL.md",
+      "name": "13c-metabolic-flux",
+      "description": "Estimates intracellular metabolic fluxes from steady-state carbon-13 isotope-tracing measurements using validated atom maps, mfapy isotope simulation, constrained multistart fitting, and flux-profile diagnostics. Use…",
+      "category": "ciencia",
+      "repoName": "scientific-agent-skills"
+    },
+    {
+      "id": "scientific-agent-skills::skills/adaptyv/SKILL.md",
+      "name": "adaptyv",
+      "description": "Uses the Adaptyv Bio Foundry API and Python SDK to design protein characterization experiments, estimate costs, submit sequences, monitor laboratory progress, and retrieve results. Applies to Adaptyv Foundry, its targ…",
+      "category": "ciencia",
+      "repoName": "scientific-agent-skills"
+    },
+    {
+      "id": "scientific-agent-skills::skills/aeon/SKILL.md",
+      "name": "aeon",
+      "description": "This skill should be used for time series machine learning tasks including classification, regression, clustering, forecasting, anomaly detection, segmentation, and similarity search. Use when working with temporal da…",
+      "category": "ciencia",
+      "repoName": "scientific-agent-skills"
+    },
+    {
+      "id": "scientific-agent-skills::skills/alphagenome/SKILL.md",
+      "name": "alphagenome",
+      "description": "Looks up precomputed AlphaGenome Atlas effects for any GRCh38 single-nucleotide variant (AVI score with Phred and 18 SHAP feature attributions, plus raw and quantile scores for RNA-seq, DNase, ATAC, ChIP-TF, ChIP-hist…",
+      "category": "ciencia",
+      "repoName": "scientific-agent-skills"
+    }
+  ]
+}

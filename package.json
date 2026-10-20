@@ -4,9 +4,9 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "predev": "node scripts/sync-public-catalog.mjs",
+    "predev": "node scripts/sync-public-catalog.mjs && node scripts/build-demo-data.mjs",
     "dev": "vite --host 0.0.0.0",
-    "prebuild": "node scripts/sync-public-catalog.mjs",
+    "prebuild": "node scripts/sync-public-catalog.mjs && node scripts/build-demo-data.mjs",
     "build": "vite build",
     "preview": "vite preview --host 0.0.0.0",
     "test": "node --test",
