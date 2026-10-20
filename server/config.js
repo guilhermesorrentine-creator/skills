@@ -13,7 +13,6 @@ export function readConfig(env = process.env) {
       checkoutHost: asaasEnv === "production" ? "https://asaas.com" : "https://sandbox.asaas.com",
       checkoutMinutes: Math.min(1440, Math.max(10, Number(env.ASAAS_CHECKOUT_MINUTES) || 60)),
     },
-    cancelEnabled: env.BILLING_CANCEL_ENABLED !== "false",
     // Atalho de desenvolvimento local: só existe fora da Vercel e fora de produção.
     devBypass: env.BT_DEV_BYPASS === "1" && !env.VERCEL && env.NODE_ENV !== "production",
   };

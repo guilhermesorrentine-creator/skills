@@ -21,7 +21,7 @@ O resultado fica em `dist/`.
 
 ## Editar pelo celular
 
-O projeto completo está neste repositório. No celular, abra `guilhermesorrentine-creator/skills` pelo app ou navegador do GitHub, navegue até o arquivo, toque em editar e salve a alteração como commit. O catálogo está em `src/data/catalog.json`; a busca e ranking em `src/lib/search.js`; persistência local e URL em `src/lib/local-state.js`; os componentes ficam em `src/components/` (hero 3D, categorias, catálogo, páginas de detalhe); o design está em `DESIGN.md` e `src/styles/`; os personagens pixel-art são SVG em `src/components/categories/CyberpunkCharacter.jsx`; os destaques editoriais ficam em `src/lib/featured.js`.
+O projeto completo está neste repositório. No celular, abra `guilhermesorrentine-creator/skills` pelo app ou navegador do GitHub, navegue até o arquivo, toque em editar e salve a alteração como commit. O catálogo está em `src/data/catalog.json`; a busca e ranking em `src/lib/search.js`; persistência local e URL em `src/lib/local-state.js`; as páginas ficam em `src/pages/` (landing, sistema em `src/pages/app/`, administração); o design está em `DESIGN.md` e `src/styles/`; os personagens pixel-art são SVG em `src/components/categories/CyberpunkCharacter.jsx`; os destaques editoriais ficam em `src/lib/featured.js`.
 
 Para uma experiência melhor, conecte este repositório à Vercel uma vez. Escolha Vite, mantenha a raiz do projeto como `/`, comando de build `npm run build` e diretório de saída `dist`. Depois disso, cada commit no ramo principal atualiza a página publicada; commits em outros ramos podem gerar previews. O endereço público é criado pela Vercel na configuração da conta.
 
@@ -39,9 +39,11 @@ O importador remove o campo `local_dir`, substitui caminhos de usuário/rede e i
 
 ## Plataforma comercial (4.0)
 
-Landing pública em `/`, sistema completo em `/app` (assinantes), login com Supabase Auth e assinatura recorrente pelo Asaas (Sandbox). O backend fica em `server/` e é publicado como Vercel Functions em `api/`; o esquema do banco está em `supabase/migrations/`. Configuração, estados de assinatura, webhooks e pendências: [`docs/comercial-asaas.md`](docs/comercial-asaas.md). Variáveis: [`.env.example`](.env.example).
+Landing pública em `/` e sistema em `/app` para quem tem licença. Contas no Supabase Auth; pagamento único por edição (licença vitalícia) via Asaas Checkout avulso, Pix ou cartão, inicialmente em Sandbox. Além das Agent Skills, a plataforma suporta subagentes, workflows, ferramentas, referências e guias cadastrados em `/admin`, coleções pessoais com link de visualização, favoritos e histórico na conta.
 
-Sem Supabase, é possível ver o `/app` localmente com `BT_DEV_BYPASS=1` em `.env.development.local` (ignorado na Vercel e em produção).
+Backend em `server/`, publicado por uma única Vercel Function (`api/[...path].js`); migrações em `supabase/migrations/`. Arquitetura, modelo comercial, webhooks, administração, homologação e recuperação: [`docs/comercial-asaas.md`](docs/comercial-asaas.md). Variáveis: [`.env.example`](.env.example).
+
+Sem Supabase, é possível ver o sistema localmente com `BT_DEV_BYPASS=1` em `.env.development.local` (ignorado na Vercel e em produção).
 
 ## Fontes e direção visual
 

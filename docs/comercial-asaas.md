@@ -1,63 +1,70 @@
-# Biblioteca Total 4.0 — operação comercial
+# Biblioteca Total 4.0 — arquitetura, comércio e operação
+
+## Arquitetura
+
+- **Frontend:** React + Vite + Motion, roteamento por caminho (`src/lib/router.jsx`), SPA com fallback na Vercel.
+- **Backend:** uma Vercel Function (`api/[...path].js`) → `server/app.js` → `server/routes.js`. Regras puras em `server/licensing.js`; serviços em `commerce.js` (pedidos, Asaas, licenças), `library.js` (catálogo unificado) e `me.js` (favoritos, histórico, coleções).
+- **Dados:** Supabase Auth (contas) e Postgres (`supabase/migrations/`). RLS em todas as tabelas; o navegador nunca grava direto.
+- **Catálogo:** Agent Skills em `src/data/catalog.json` (canônico no repositório); demais tipos na tabela `resources`, cadastrados pela administração. A API une os dois e filtra pela edição do usuário.
 
 ## Rotas
 
-| Rota | Quem acessa | Conteúdo |
-|---|---|---|
-| `/` | público | Landing: hero 3D, recursos, agentes, demonstração, como funciona, planos, FAQ |
-| `/entrar`, `/cadastro`, `/recuperar-senha`, `/redefinir-senha` | público | Supabase Auth (e-mail e senha) |
-| `/planos` | público | redireciona para `/#planos` |
-| `/checkout/retorno` | logado | aguarda a confirmação do Asaas; não libera acesso pela URL |
-| `/minha-assinatura` | logado | situação, período pago, próxima cobrança, fatura, cancelamento, planos |
-| `/app` (+ `#skill/<id>`, `#repo/<nome>`) | acesso válido | sistema completo da 3.0 |
-| `/admin` | `profiles.is_admin` | usuários, assinaturas, pagamentos, webhooks, planos, acessos, auditoria |
-| `/termos`, `/privacidade`, `/assinatura-e-cancelamento` | público | estrutura dos documentos, **pendente de aprovação** |
+`/` landing · `/entrar` `/cadastro` `/recuperar-senha` `/redefinir-senha` · `/checkout/retorno` · `/acesso-pendente` · `/app` (início) · `/app/skills` `/app/subagentes` `/app/workflows` `/app/ferramentas` `/app/guias` · `/app/buscar` · `/app/recursos/:id` · `/app/colecoes` `/app/colecoes/:id` · `/app/favoritos` `/app/recentes` `/app/comparar` · `/app/minha-licenca` · `/admin` · `/c/:token` (coleção compartilhada, `noindex`) · `/termos` `/privacidade` `/compra-e-reembolso`.
 
-Links antigos `/#skill/<id>` são redirecionados para `/app#skill/<id>`; sem acesso, o usuário passa pelo login e pela assinatura.
+Links antigos: `#skill/<id>` → `/app/recursos/<id>`; `#repo/<nome>` → `/app/skills?fonte=<nome>`.
+
+## Modelo comercial
+
+- **Edição 1 — R$ 97,90**, pagamento único, licença vitalícia (sem expiração por data). Cadastrada pela migração como *fora de venda*; ative em `/admin` → Edições.
+- **Upgrade** = `max(0, preço_destino − crédito_elegível)`, em centavos. Crédito = pedidos pagos e não estornados. Ex.: 1→2 (R$ 147,90) = R$ 50,00; 1→3 (R$ 197,90) = R$ 100,00. Preços futuros são ilustrativos até aprovação.
+- **Versão técnica ≠ edição comercial:** deploys não criam edições; só a administração cria.
+- Pedidos guardam preço, crédito e valor praticados; mudar o preço não altera direitos adquiridos.
+
+## Asaas (Sandbox)
+
+- `POST /v3/checkouts` com `chargeTypes: ["DETACHED"]`, `billingTypes: ["PIX", "CREDIT_CARD"]`, `externalReference` = ID do pedido, callbacks para `/checkout/retorno`. Sem parcelamento, sem assinatura.
+- Um pedido em aberto por usuário (índice único parcial); cliques repetidos reaproveitam o link.
+- **Webhook** `POST /api/webhooks/asaas`: valida `asaas-access-token` (tempo constante); o ID do evento é chave primária (reenvio não reaplica).
+  - `CHECKOUT_PAID`: localiza o pedido pelo checkout (ou `externalReference`), confere o valor, marca pago e ativa/eleva a licença.
+  - `CHECKOUT_CANCELED/EXPIRED`: encerra o pedido pendente.
+  - `PAYMENT_CONFIRMED/RECEIVED`: registra a cobrança; ativa pedido pendente do mesmo cliente e valor (redundância).
+  - `PAYMENT_REFUNDED`: pedido estornado; licença recalculada (sem pedidos válidos → `refunded`).
+  - `PAYMENT_CHARGEBACK_*`: licença `disputed` com acesso mantido até decisão auditada em `/admin` → Licenças.
+  - Evento sem pedido/cliente conhecido fica `unlinked` e é reprocessado quando o `CHECKOUT_PAID` chega; falhas ficam `failed` para reprocessar.
+- **Conciliação:** `/admin` → Pedidos → Conciliar consulta `GET /v3/payments?customer=`.
 
 ## Proteção do conteúdo
 
-- `public/data/catalog.json` deixou de existir. O build não contém o catálogo completo (verificado com busca no `dist/`).
-- `/api/catalog` exige token do Supabase **e** acesso válido calculado no servidor (`server/access.js`), com `Cache-Control: private, no-store`.
-- A landing carrega apenas `public/data/demo.json`: contagens reais e 23 skills de amostra, sem caminhos.
-- **Limitação:** este repositório GitHub é público e contém `src/data/catalog.json`; os repositórios indexados também são públicos. O catálogo não é confidencial. O produto vendido é a plataforma de descoberta, busca, comparação e produtividade. Para dados realmente privados, mover o catálogo para um repositório ou banco privado e gerar o arquivo da função no deploy.
+- `public/` só tem `data/demo.json` (23 skills de amostra, sem caminhos). O build foi verificado sem o catálogo completo.
+- `/api/library` e `/api/resource` exigem login e licença; recursos de edição superior voltam bloqueados, sem corpo.
+- **Limitação:** o repositório GitHub e as fontes das skills são públicos; o catálogo não é secreto. O valor vendido é curadoria, organização, busca, guias próprios e ferramentas de organização. Guias próprios ficam no banco (não no repositório).
 - Antes de vender, revisar licenças e avisos de autoria dos repositórios indexados.
 
-## Estados de assinatura
+## Configuração
 
-`pending`, `active`, `past_due`, `canceled`, `expired` (derivado), `suspended`.
+1. Supabase: rodar as migrações em ordem (`20261020180000_billing.sql`, `20261021120000_v4_editions_resources.sql`). URLs de autenticação: Site URL = domínio de produção; redirects para produção, previews e `localhost:5173`.
+2. Administrador: `update public.profiles set is_admin = true where email = '<email>';`
+3. Variáveis na Vercel (ver `.env.example`): `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY` (Config); `SUPABASE_URL`, `APP_URL`, `ASAAS_ENV=sandbox`, `ASAAS_CHECKOUT_MINUTES` (Config); `SUPABASE_SERVICE_ROLE_KEY`, `ASAAS_API_KEY`, `ASAAS_WEBHOOK_TOKEN` (Secret).
+4. Asaas Sandbox: webhook para `https://<domínio>/api/webhooks/asaas` com o token, eventos de Checkout e Cobrança.
+5. Produção do Asaas só com `ASAAS_ENV=production` **e** `ASAAS_ALLOW_PRODUCTION=true`, após homologação autorizada.
 
-| Evento do Asaas | Efeito |
-|---|---|
-| `CHECKOUT_PAID` | vincula o cliente Asaas (`checkout.customer`) à conta; acesso ainda **não** liberado |
-| `PAYMENT_CONFIRMED` / `PAYMENT_RECEIVED` (de assinatura) | `active`; período pago = vencimento + 1 ciclo (monotônico) |
-| `PAYMENT_OVERDUE` | `active` → `past_due`; acesso só até o fim do período pago |
-| `PAYMENT_REFUNDED`, `PAYMENT_CHARGEBACK_*` | `suspended`, acesso encerrado |
-| `SUBSCRIPTION_CREATED/UPDATED` | vincula a assinatura, sincroniza próxima cobrança e ciclo |
-| `SUBSCRIPTION_DELETED/INACTIVATED` | `canceled`; acesso até o fim do período pago |
-| `CHECKOUT_CANCELED/EXPIRED` | atualiza a intenção de contratação |
+## Guia administrativo
 
-Regras: o ID do evento é chave primária (reenvio não reaplica); eventos mais antigos que a última mudança de status não alteram o status; um pagamento que chega antes do vínculo fica `unlinked` e é processado quando o `CHECKOUT_PAID` chega; atualizações usam concorrência otimista (`version`). A reconciliação (`/api/billing/subscription?refresh=1` e botão no admin) recalcula o estado a partir de `GET /subscriptions/{id}` e das cobranças.
+- **Recursos e guias:** id estável (minúsculas e hífen), tipo, área, resumo, conteúdo em Markdown seguro, instruções copiáveis, link HTTPS, visibilidade (pública, demonstrativa, por edição) e status (rascunho, publicado, oculto). Toda gravação é auditada.
+- **Caminhos:** objetivo, palavras-chave e passos `id | justificativa`; só aparecem publicados e com todos os passos acessíveis.
+- **Relações:** `id | related|requires|next`.
+- **Edições, pedidos, licenças, webhooks, acessos excepcionais e auditoria** na mesma tela.
 
-## Checkout
+## Homologação (Sandbox)
 
-`POST /v3/checkouts` com `billingTypes: ["CREDIT_CARD"]`, `chargeTypes: ["RECURRENT"]`, `subscription.cycle` do plano e `nextDueDate` = agora. Não enviamos `customer` nem `customerData`: o pagador informa os dados no Asaas (evita pedir CPF no cadastro). Uma única intenção aberta por usuário (índice único parcial); cliques repetidos reaproveitam o mesmo link. O link só é aceito em domínio `asaas.com`.
+1. Ativar a Edição 1 em `/admin`. 2. Criar conta, comprar com Pix de teste e com cartão de teste. 3. Conferir `/checkout/retorno` → acesso liberado após o webhook. 4. Reenviar o mesmo evento no Asaas (sem efeito duplicado). 5. Estornar e contestar uma cobrança de teste. 6. Simular upgrade criando a Edição 2 em venda. 7. Testar coleção compartilhada em janela anônima.
 
-## Configuração necessária
+## Recuperação
 
-1. Projeto Supabase: rodar `supabase/migrations/20261020180000_billing.sql`; habilitar confirmação de e-mail e URLs de redirecionamento (`/entrar`, `/redefinir-senha`).
-2. Tornar um administrador: `update public.profiles set is_admin = true where email = '<email>';`
-3. Variáveis (ver `.env.example`): `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `APP_URL`, `ASAAS_ENV=sandbox`, `ASAAS_API_KEY`, `ASAAS_WEBHOOK_TOKEN`, opcional `VITE_SUPPORT_EMAIL`.
-4. No Asaas Sandbox: criar webhook para `https://<domínio>/api/webhooks/asaas` com o token de autenticação igual a `ASAAS_WEBHOOK_TOKEN` e os eventos de Checkout, Cobrança e Assinatura listados acima.
-5. Criar o plano em `/admin` → Planos (preço em centavos, periodicidade, recursos, regras) e marcar como ativo.
-6. Produção exige `ASAAS_ENV=production` **e** `ASAAS_ALLOW_PRODUCTION=true`, somente após homologação autorizada.
+- Webhook com falha: `/admin` → Webhooks → Reprocessar. Pedido pago sem licença: Conciliar.
+- Banco: backups do Supabase (plano gratuito tem retenção limitada — avaliar plano pago antes de vender).
+- Rollback do site: promover um deploy anterior na Vercel. As migrações são aditivas.
 
-## A validar no Sandbox
+## Pendências comerciais e jurídicas
 
-- Se `CHECKOUT_PAID` traz `checkout.customer` preenchido (o vínculo depende disso; a reconciliação por cliente é o plano B).
-- Se o checkout recorrente aceita a assinatura sem `endDate`.
-- O domínio exato do link de checkout no Sandbox (usamos `link` da resposta quando presente).
-
-## Pendências comerciais
-
-Preços e planos; política de cancelamento e reembolso; textos de termos e privacidade; dados legais do fornecedor; e-mail de suporte; período de carência após atraso (hoje: nenhum).
+Nome jurídico, CNPJ e endereço; e-mail de suporte (`VITE_SUPPORT_EMAIL`); política de reembolso e cancelamento; termos de acesso vitalício e alcance de atualizações gratuitas; preços de edições futuras; decisão padrão para contestações.
