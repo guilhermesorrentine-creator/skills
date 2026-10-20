@@ -1,0 +1,72 @@
+/* Biblioteca Total 3.0 — tokens de design (cyberpunk holográfico). */
+:root {
+  color-scheme: dark;
+
+  --bg-primary: #090612;
+  --bg-secondary: #110a19;
+  --bg-tertiary: #1a1028;
+
+  --surface-primary: #1b1129;
+  --surface-elevated: #281638;
+  --surface-holographic: rgba(41, 19, 58, 0.72);
+  --surface-glass: rgba(27, 17, 41, 0.78);
+
+  --neon-purple: #d94cf5;
+  --neon-purple-light: #e88dff;
+  --neon-pink: #ff7cb9;
+  --neon-pink-strong: #ff4fa5;
+  --neon-cyan: #7ef0ff;
+
+  --text-primary: #fff0fb;
+  --text-secondary: #d1badf;
+  --text-muted: #a48eb5;
+  --text-on-neon: #1a0624;
+
+  --border-default: rgba(193, 118, 225, 0.24);
+  --border-strong: rgba(193, 118, 225, 0.42);
+  --border-active: rgba(233, 128, 255, 0.85);
+
+  --glow-purple: 0 0 28px rgba(217, 76, 245, 0.23);
+  --glow-pink: 0 0 30px rgba(255, 124, 185, 0.23);
+  --shadow-deep: 0 24px 60px rgba(4, 1, 10, 0.55);
+  --gradient-neon: linear-gradient(120deg, var(--neon-purple), var(--neon-pink));
+  --gradient-edge: linear-gradient(140deg, rgba(232, 141, 255, 0.55), rgba(255, 124, 185, 0.08) 38%, rgba(217, 76, 245, 0) 60%, rgba(255, 124, 185, 0.4));
+
+  /* Cores secundárias por categoria — sempre acompanhadas de rótulo textual. */
+  --cat-software: #b98cff;
+  --cat-empreendedorismo: #ff7cb9;
+  --cat-conteudo: #ff9de0;
+  --cat-ciencia: #7ef0ff;
+
+  --font-mono: "JetBrains Mono Variable", "JetBrains Mono", Consolas, ui-monospace, monospace;
+  --font-sans: "Inter Variable", Inter, "Segoe UI", system-ui, sans-serif;
+
+  --radius-sm: 8px;
+  --radius-md: 14px;
+  --radius-lg: 22px;
+  --radius-pill: 999px;
+
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+  --space-8: 72px;
+
+  --page-width: 1240px;
+  --gutter: clamp(16px, 4vw, 40px);
+  --nav-height: 64px;
+
+  /* Espelha `src/lib/motion-tokens.js`. */
+  --dur-fast: 180ms;
+  --dur-normal: 420ms;
+  --dur-slow: 720ms;
+  --ease-smooth: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+[data-category="software"] { --cat: var(--cat-software); }
+[data-category="empreendedorismo"] { --cat: var(--cat-empreendedorismo); }
+[data-category="conteudo"] { --cat: var(--cat-conteudo); }
+[data-category="ciencia"] { --cat: var(--cat-ciencia); }

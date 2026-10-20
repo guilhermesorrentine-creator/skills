@@ -22,7 +22,18 @@ const synonyms = {
   cientifica: ["science", "scientific", "research"],
   testes: ["test", "testing", "quality"],
   melhorar: ["improve", "optimize", "refactor"],
+  app: ["application", "mobile", "android", "ios"],
+  mobile: ["android", "ios", "app"],
+  tarefas: ["task", "tasks", "workflow", "automation"],
+  sistema: ["system", "app", "application"],
+  analisar: ["analysis", "analytics", "analyze", "data"],
+  editar: ["edit", "editing", "editor"],
+  imagem: ["image", "images", "visual"],
+  documentacao: ["docs", "documentation", "readme"],
 };
+
+// Palavras de intenção ("Quero criar um site") não descrevem o conteúdo e são ignoradas no ranking.
+const stopwords = new Set(["quero", "preciso", "gostaria", "vou", "um", "uma", "uns", "umas", "de", "do", "da", "dos", "das", "meu", "minha", "meus", "minhas", "para", "pra", "o", "a", "os", "as", "e", "em", "no", "na", "com", "por", "que", "como", "i", "want", "need", "to", "the", "an", "of", "my", "for", "and"]);
 
 export function normalize(value = "") {
   return String(value).normalize("NFD").replace(/[\u0300-\u036f]/g, "")
@@ -30,6 +41,12 @@ export function normalize(value = "") {
 }
 
 const terms = (value) => normalize(value).split(/\s+/).filter(Boolean);
+
+export function queryTerms(query = "") {
+  const all = terms(query);
+  const meaningful = all.filter((term) => !stopwords.has(term));
+  return meaningful.length ? meaningful : all;
+}
 const distanceOne = (a, b) => {
   if (Math.abs(a.length - b.length) > 1) return false;
   let i = 0, j = 0, errors = 0;
@@ -89,9 +106,9 @@ export function safeGitHubUrl(value) {
 }
 
 export function scoreText(query, fieldMap) {
-  const normalizedQuery = normalize(query);
-  if (!normalizedQuery) return 0;
-  const queryTerms = terms(normalizedQuery);
+  if (!normalize(query)) return 0;
+  const searchTerms = queryTerms(query);
+  const normalizedQuery = searchTerms.join(" ");
   const name = fieldMap.name || "";
   let score = 0;
   if (name === normalizedQuery) score += 100;
@@ -101,7 +118,7 @@ export function scoreText(query, fieldMap) {
   const allFields = Object.entries(fieldMap);
   const contentFields = allFields.filter(([field]) => field !== "repo");
   let covered = 0;
-  for (const term of queryTerms) {
+  for (const term of searchTerms) {
     let best = 0;
     for (const [field, value] of allFields) {
       const weight = weights[field] || 1;
@@ -117,8 +134,8 @@ export function scoreText(query, fieldMap) {
       score += 1.5;
     }
   }
-  if (queryTerms.length > 1) score *= covered / queryTerms.length;
-  if (covered === queryTerms.length && queryTerms.length > 1) score *= 1.2;
+  if (searchTerms.length > 1) score *= covered / searchTerms.length;
+  if (covered === searchTerms.length && searchTerms.length > 1) score *= 1.2;
   return score;
 }
 
@@ -140,7 +157,7 @@ export function searchRepos(index, query) {
 
 export function getMatchReason(skill, query) {
   if (!normalize(query)) return "Parte do catálogo";
-  const q = terms(query);
+  const q = queryTerms(query);
   const matched = [];
   if (q.some((term) => skill.fields.name.split(" ").some((word) => word.includes(term)))) matched.push("nome da skill");
   if (q.some((term) => skill.fields.description.includes(term))) matched.push("descrição original");
@@ -161,4 +178,35 @@ export function filterResults(items, { category = "todas", repo = "todos", sort 
 export function getSkillIdFromHash(hash = "") {
   if (!hash.startsWith("#skill/")) return null;
   try { return decodeURIComponent(hash.slice(7)); } catch { return null; }
+}
+
+// Sugestões da busca: só dados do catálogo e o vocabulário local de objetivos.
+export function buildSuggestions(index, query, skillMatches, { goals = [], areas = [], repoMatches } = {}) {
+  const normalizedQuery = normalize(query);
+  if (!normalizedQuery) return { skills: [], repos: [], areas: [], goals: goals.slice(0, 4) };
+  const searchTerms = queryTerms(query);
+  const related = (label) => {
+    const value = normalize(label);
+    return searchTerms.some((term) => value.includes(term) || (synonyms[term] || []).some((alias) => value.includes(alias)));
+  };
+  return {
+    skills: skillMatches.slice(0, 5),
+    repos: (repoMatches || searchRepos(index, query)).slice(0, 3),
+    areas: areas.filter((area) => related(area.label) || related(area.id)),
+    goals: goals.filter((goal) => normalize(goal).includes(normalizedQuery) && normalize(goal) !== normalizedQuery).slice(0, 3),
+  };
+}
+
+const genericNameTerms = new Set(["skill", "skills", "agent", "agents", "plugin", "create", "best", "practices", "cli", "anything"]);
+
+// Relacionadas por critérios objetivos: mesmo repositório e mesma categoria com termo em comum no nome.
+export function relatedSkills(index, skill, limit = 6) {
+  const nameTerms = new Set(skill.fields.name.split(" ").filter((term) => term.length >= 4 && !genericNameTerms.has(term)));
+  const byName = (a, b) => a.name.localeCompare(b.name) || a.id.localeCompare(b.id);
+  const unique = new Set([skill.name]);
+  const pick = (list, reason, max) => list.sort(byName).filter((item) => !unique.has(item.name) && unique.add(item.name)).slice(0, max).map((item) => ({ skill: item, reason }));
+  const sameRepo = pick(index.skills.filter((item) => item.repoName === skill.repoName && item.id !== skill.id), "Mesmo repositório", Math.ceil(limit / 2));
+  const sameTopic = pick(index.skills.filter((item) => item.repoName !== skill.repoName && item.category === skill.category
+    && item.fields.name.split(" ").some((term) => nameTerms.has(term))), "Mesma categoria e termo em comum no nome", limit - sameRepo.length);
+  return [...sameRepo, ...sameTopic];
 }

@@ -1,4 +1,4 @@
-# Biblioteca Total
+# Biblioteca Total 3.0
 
 Guia navegável para 37 repositórios e 2.281 Agent Skills em quatro áreas. A página é estática, responsiva e não usa backend. O catálogo publicado remove caminhos locais; os textos das skills são renderizados como texto simples.
 
@@ -21,7 +21,7 @@ O resultado fica em `dist/`.
 
 ## Editar pelo celular
 
-O projeto completo está neste repositório. No celular, abra `guilhermesorrentine-creator/skills` pelo app ou navegador do GitHub, navegue até o arquivo, toque em editar e salve a alteração como commit. O catálogo está em `src/data/catalog.json`; a busca e ranking em `src/lib/search.js`; persistência local e URL em `src/lib/local-state.js`; os componentes ficam em `src/components/`; o design está em `DESIGN.md` e `src/library-v2.css`; os personagens ficam em `public/assets/`.
+O projeto completo está neste repositório. No celular, abra `guilhermesorrentine-creator/skills` pelo app ou navegador do GitHub, navegue até o arquivo, toque em editar e salve a alteração como commit. O catálogo está em `src/data/catalog.json`; a busca e ranking em `src/lib/search.js`; persistência local e URL em `src/lib/local-state.js`; os componentes ficam em `src/components/` (hero 3D, categorias, catálogo, páginas de detalhe); o design está em `DESIGN.md` e `src/styles/`; os personagens pixel-art são SVG em `src/components/categories/CyberpunkCharacter.jsx`; os destaques editoriais ficam em `src/lib/featured.js`.
 
 Para uma experiência melhor, conecte este repositório à Vercel uma vez. Escolha Vite, mantenha a raiz do projeto como `/`, comando de build `npm run build` e diretório de saída `dist`. Depois disso, cada commit no ramo principal atualiza a página publicada; commits em outros ramos podem gerar previews. O endereço público é criado pela Vercel na configuração da conta.
 
