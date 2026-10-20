@@ -1,4 +1,4 @@
-# Design system — Biblioteca Total 3.0 (Cyberpunk Holographic Experience)
+# Design system — Biblioteca Total 4.0 (Cyberpunk Holographic Experience)
 
 Estrutura no formato DESIGN.md (Stitch / awesome-design-md): visão geral, cores, tipografia, layout, profundidade, formas, componentes, movimento, responsividade e regras.
 
@@ -53,6 +53,14 @@ Raios `--radius-sm 8` / `--radius-md 14` / `--radius-lg 22` / `--radius-pill`. A
 - **Página de terminal** (`details/*`): cabeçalho, descrição, finalidade (só o que o catálogo sustenta), prompt copiável, informações ausentes, origem com links validados e skills relacionadas por critérios locais declarados.
 - **Navegação** (`layout/FloatingNavbar.jsx`): barra suspensa com blur, indicador ativo animado (`layoutId`), menu compacto ≤ 960 px.
 - **Comparação**: bandeja fixa com contador; painel lado a lado no desktop, empilhado no celular.
+
+## Personagens em ação (4.0)
+
+Cada personagem tem uma ação própria por quadros (`steps()`), em grupos SVG do próprio sprite (`src/styles/characters.css`): o hacker recolhe os braços e digita (mãos em dois quadros) com um terminal holográfico de linhas digitadas; a estrategista ergue o braço em aceno e o gráfico surge com barras crescendo e gravata acesa; a criadora ergue a câmera, o REC pisca, a lente focaliza e marcadores de vídeo aparecem; a pesquisadora aponta para a projeção, a molécula gira em três quadros e partículas sobem. Ativação: mouse, foco por teclado ou toque (2,4 s) via `useCharacterActivation`; só o personagem ativo anima. Com movimento reduzido a pose de ação aparece parada.
+
+## Skill Explorer e landing (4.0)
+
+`InteractiveSkillExplorer` substitui a máquina isométrica: painel de aplicativo com categorias (personagem + contagem real), lista de amostra animada com layout e prévia da skill, marcador holográfico com `layoutId`. Na landing, as seções entram com `whileInView`, o hero 3D desloca e esmaece com a rolagem (`useScroll`, sem sequestrar a rolagem), o explorador surge com recorte de terminal e os planos com destaque. Telas de conta e administração usam os mesmos tokens com menos movimento.
 
 ## Movimento (`src/lib/motion-tokens.js`)
 

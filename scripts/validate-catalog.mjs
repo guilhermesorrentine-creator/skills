@@ -1,7 +1,8 @@
-import { mkdir, readFile, writeFile } from "node:fs/promises";
+// Valida o catálogo canônico. Ele não é publicado em `public/`: assinantes o recebem por `/api/catalog`.
+import { readFile, rm } from "node:fs/promises";
 
 const sourcePath = new URL("../src/data/catalog.json", import.meta.url);
-const outputPath = new URL("../public/data/catalog.json", import.meta.url);
+const legacyPublicCopy = new URL("../public/data/catalog.json", import.meta.url);
 const catalog = JSON.parse(await readFile(sourcePath, "utf8"));
 const categories = new Set(["software", "empreendedorismo", "conteudo", "ciencia"]);
 const repoNames = new Set();
@@ -33,6 +34,5 @@ for (const [index, repo] of catalog.entries()) {
 const serialized = `${JSON.stringify(catalog, null, 2)}\n`;
 if (secretPattern.test(serialized)) throw new Error("O catálogo contém um padrão parecido com credencial.");
 if (localPathPattern.test(serialized) || /"local_dir"\s*:/.test(serialized)) throw new Error("O catálogo contém caminho local ou local_dir.");
-await mkdir(new URL("../public/data/", import.meta.url), { recursive: true });
-await writeFile(outputPath, serialized, "utf8");
-console.log(`Catálogo publicado no diretório público: ${repoNames.size} repositórios, ${skillIds.size} skills.`);
+await rm(legacyPublicCopy, { force: true });
+console.log(`Catálogo válido (privado): ${repoNames.size} repositórios, ${skillIds.size} skills.`);

@@ -4,17 +4,18 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "predev": "node scripts/sync-public-catalog.mjs && node scripts/build-demo-data.mjs",
+    "predev": "node scripts/validate-catalog.mjs && node scripts/build-demo-data.mjs",
     "dev": "vite --host 0.0.0.0",
-    "prebuild": "node scripts/sync-public-catalog.mjs && node scripts/build-demo-data.mjs",
+    "prebuild": "node scripts/validate-catalog.mjs && node scripts/build-demo-data.mjs",
     "build": "vite build",
     "preview": "vite preview --host 0.0.0.0",
-    "test": "node --test",
-    "sync:catalog": "node scripts/sync-public-catalog.mjs"
+    "test": "node --test src/lib/*.test.js server/*.test.js",
+    "validate:catalog": "node scripts/validate-catalog.mjs"
   },
   "dependencies": {
     "@fontsource-variable/inter": "^5.3.0",
     "@fontsource-variable/jetbrains-mono": "^5.3.0",
+    "@supabase/supabase-js": "^2.118.0",
     "motion": "^12.23.24",
     "react": "^19.2.0",
     "react-dom": "^19.2.0"

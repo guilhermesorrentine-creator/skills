@@ -1,4 +1,4 @@
-# Biblioteca Total 3.0
+# Biblioteca Total 4.0
 
 Guia navegável para 37 repositórios e 2.281 Agent Skills em quatro áreas. A página é estática, responsiva e não usa backend. O catálogo publicado remove caminhos locais; os textos das skills são renderizados como texto simples.
 
@@ -27,7 +27,7 @@ Para uma experiência melhor, conecte este repositório à Vercel uma vez. Escol
 
 ## Importar uma atualização do catálogo
 
-O único catálogo fonte é `src/data/catalog.json`. `public/data/catalog.json` é uma cópia derivada, validada e gerada antes de `dev` e `build`; não a edite diretamente. Para atualizá-la à mão, use `npm run sync:catalog`.
+O único catálogo fonte é `src/data/catalog.json`. Ele é validado antes de `dev` e `build` (`npm run validate:catalog`) e **não** é publicado em `public/`: assinantes o recebem por `/api/catalog`. A landing usa `public/data/demo.json`, gerado por `scripts/build-demo-data.mjs`.
 
 Para importar uma atualização a partir de um catálogo local, use:
 
@@ -36,6 +36,12 @@ node scripts/import-catalog.mjs --input <caminho-do-catalogo.json>
 ```
 
 O importador remove o campo `local_dir`, substitui caminhos de usuário/rede e interrompe a publicação se detectar padrões de credenciais conhecidos. A sincronização também valida nomes, IDs, categorias, caminhos, links e contagens. Revise as alterações e a origem antes de fazer commit.
+
+## Plataforma comercial (4.0)
+
+Landing pública em `/`, sistema completo em `/app` (assinantes), login com Supabase Auth e assinatura recorrente pelo Asaas (Sandbox). O backend fica em `server/` e é publicado como Vercel Functions em `api/`; o esquema do banco está em `supabase/migrations/`. Configuração, estados de assinatura, webhooks e pendências: [`docs/comercial-asaas.md`](docs/comercial-asaas.md). Variáveis: [`.env.example`](.env.example).
+
+Sem Supabase, é possível ver o `/app` localmente com `BT_DEV_BYPASS=1` em `.env.development.local` (ignorado na Vercel e em produção).
 
 ## Fontes e direção visual
 
