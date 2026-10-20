@@ -10,7 +10,7 @@ Publicar um guia navegável e responsivo da biblioteca local de repositórios e 
 - Seis repositórios não tinham definições `SKILL.md` no inventário; devem aparecer como repositórios com ferramentas ou conteúdo, sem inventar skills.
 - Fonte geral: `biblioteca-total.catalog.json`, gerado a partir dos clones locais e dos seus README/arquivos `SKILL.md`.
 - Referência complementar solicitada: `ciencia/scientific-agent-skills/docs/skills.md`. Ela cataloga 177 skills científicas e serve para conferir a seção de Ciência; não descreve sozinha as outras áreas.
-- `src/data/catalog.json` é a fonte canônica. A cópia em `public/data/catalog.json` é gerada e validada antes de dev/build.
+- `src/data/catalog.json` é a fonte canônica, validada antes de dev/build e servida apenas por `/api/catalog` a quem tem acesso. A demonstração pública usa `public/data/demo.json`.
 - O JSON publicado deve excluir caminhos absolutos locais. Exibir nome, descrição, caminho relativo no repositório e link GitHub somente quando esses campos estiverem presentes e válidos.
 
 ## Estrutura e comportamento

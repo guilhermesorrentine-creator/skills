@@ -11,7 +11,7 @@ export const navLinks = [
 ];
 
 // Barra holográfica flutuante; no celular vira menu compacto com painel expansível.
-export default function FloatingNavbar({ active, onNavigate, onOpenPalette }) {
+export default function FloatingNavbar({ active, onNavigate, onOpenPalette, links = navLinks, actions, brandHref = "#topo", skipTarget = "catalogo" }) {
   const reduced = useReducedMotion();
   const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
@@ -26,23 +26,23 @@ export default function FloatingNavbar({ active, onNavigate, onOpenPalette }) {
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [open]);
-  const go = (event, id) => { setOpen(false); onNavigate(event, id); };
+  const go = (event, id, href) => { setOpen(false); onNavigate(event, id, href); };
 
   return <header className={`holo-nav ${scrolled ? "is-scrolled" : ""} ${open ? "is-open" : ""}`}>
-    <a className="skip-link" href="#catalogo" onClick={(event) => go(event, "catalogo")}>Pular para o catálogo</a>
+    <a className="skip-link" href={`#${skipTarget}`} onClick={(event) => go(event, skipTarget)}>Pular para o conteúdo</a>
     <div className="holo-nav-inner">
-      <a className="brand" href="#topo" onClick={(event) => go(event, "topo")} aria-label="Biblioteca Total, início"><span className="brand-mark" aria-hidden="true">BT</span><span className="brand-name">BIBLIOTECA<b>_TOTAL</b></span></a>
+      <a className="brand" href={brandHref} onClick={(event) => go(event, "topo")} aria-label="Biblioteca Total, início"><span className="brand-mark" aria-hidden="true">BT</span><span className="brand-name">BIBLIOTECA<b>_TOTAL</b></span></a>
       <nav aria-label="Navegação principal" id="nav-links">
-        <ul>{navLinks.map((link) => <li key={link.id}>
-          <a href={`#${link.id}`} aria-current={active === link.id ? "location" : undefined} onClick={(event) => go(event, link.id)}>
+        <ul>{links.map((link) => <li key={link.id}>
+          <a href={link.href || `#${link.id}`} aria-current={active === link.id ? "location" : undefined} onClick={(event) => go(event, link.id, link.href)}>
             {active === link.id && <motion.span layoutId="nav-active" className="nav-active" transition={reduced ? { duration: 0 } : springs.snappy} aria-hidden="true"/>}
             <span>{link.label}</span>
           </a>
         </li>)}</ul>
       </nav>
       <div className="nav-tools">
-        <button type="button" className="nav-search" onClick={onOpenPalette} aria-label="Abrir busca rápida (Ctrl K)"><span aria-hidden="true">⌕</span><span className="nav-search-label">Buscar</span><kbd aria-hidden="true">Ctrl K</kbd></button>
-        <a className="nav-github" href="https://github.com/guilhermesorrentine-creator/skills" target="_blank" rel="noopener noreferrer">GitHub <span aria-hidden="true">↗</span></a>
+        {onOpenPalette && <button type="button" className="nav-search" onClick={onOpenPalette} aria-label="Abrir busca rápida (Ctrl K)"><span aria-hidden="true">⌕</span><span className="nav-search-label">Buscar</span><kbd aria-hidden="true">Ctrl K</kbd></button>}
+        {actions}
         <button type="button" className="nav-menu" aria-expanded={open} aria-controls="nav-links" onClick={() => setOpen((value) => !value)}><span className="sr-only">{open ? "Fechar menu" : "Abrir menu"}</span><i aria-hidden="true"/><i aria-hidden="true"/></button>
       </div>
     </div>

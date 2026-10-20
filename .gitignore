@@ -4,3 +4,6 @@ dist/
 .npm-cache/
 *.log
 *.zip
+.env
+.env.local
+.env.*.local

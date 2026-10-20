@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { spawnSync } from "node:child_process";
@@ -106,15 +106,19 @@ test("comparação remove itens e nunca excede três skills", () => {
   assert.deepEqual(toggleComparison(ids, "b").ids, ["a", "c"]);
 });
 
-test("catálogo publicado deriva da fonte canônica e conserva contagens únicas", () => {
-  const result = spawnSync(process.execPath, ["scripts/sync-public-catalog.mjs"], { encoding: "utf8" });
+test("catálogo completo fica fora de public/ e a demonstração pública não expõe caminhos", () => {
+  const result = spawnSync(process.execPath, ["scripts/validate-catalog.mjs"], { encoding: "utf8" });
   assert.equal(result.status, 0, result.stderr || result.stdout);
+  assert.equal(existsSync("public/data/catalog.json"), false);
   const source = JSON.parse(readFileSync("src/data/catalog.json", "utf8"));
-  const output = JSON.parse(readFileSync("public/data/catalog.json", "utf8"));
-  assert.deepEqual(output, source);
   assert.equal(source.length, 37);
   assert.equal(source.reduce((total, repo) => total + repo.skills.length, 0), 2281);
   assert.equal(new Set(source.map((repo) => repo.name)).size, source.length);
+  spawnSync(process.execPath, ["scripts/build-demo-data.mjs"], { encoding: "utf8" });
+  const demo = JSON.parse(readFileSync("public/data/demo.json", "utf8"));
+  assert.deepEqual([demo.stats.repos, demo.stats.skills], [37, 2281]);
+  assert.ok(demo.skills.length <= 24);
+  assert.ok(demo.skills.every((skill) => !("path" in skill)));
 });
 
 test("importador normaliza categorias, remove local_dir e rejeita fonte inválida", () => {

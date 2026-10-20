@@ -1,25 +1,25 @@
 import { useCallback, useDeferredValue, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import InteractiveSkillExplorer from "./components/explorer/InteractiveSkillExplorer.jsx";
-import ComparePanel from "./components/ComparePanel.jsx";
-import { CopyButton } from "./components/shared.jsx";
-import AuroraBackground from "./components/effects/AuroraBackground.jsx";
-import FloatingNavbar from "./components/layout/FloatingNavbar.jsx";
-import SiteFooter from "./components/layout/SiteFooter.jsx";
-import CyberHero from "./components/hero/CyberHero.jsx";
-import CategorySection from "./components/categories/CategorySection.jsx";
-import FeaturedSkills from "./components/catalog/FeaturedSkills.jsx";
-import SkillMosaic from "./components/catalog/SkillMosaic.jsx";
-import SearchBox from "./components/catalog/SearchBox.jsx";
-import RepositoryIndex from "./components/catalog/RepositoryIndex.jsx";
-import CommandPalette from "./components/catalog/CommandPalette.jsx";
-import SkillDetailPage, { NotFoundPage } from "./components/details/SkillDetailPage.jsx";
-import RepoDetailPage from "./components/details/RepoDetailPage.jsx";
-import { motionTokens } from "./lib/motion-tokens.js";
-import { areas, intentions } from "./lib/areas.js";
-import { MOSAIC_PAGE, pickHeroSkills, resolveFeatured } from "./lib/featured.js";
-import { buildSearchIndex, buildSuggestions, filterResults, getSkillIdFromHash, searchRepos, searchSkills } from "./lib/search.js";
-import { clearRecent, getCatalogControls, loadFavorites, loadRecent, recordRecent, setCatalogControls, toggleComparison, toggleFavorite } from "./lib/local-state.js";
+import ComparePanel from "../components/ComparePanel.jsx";
+import { CopyButton } from "../components/shared.jsx";
+import FloatingNavbar from "../components/layout/FloatingNavbar.jsx";
+import SiteFooter from "../components/layout/SiteFooter.jsx";
+import CyberHero from "../components/hero/CyberHero.jsx";
+import CategorySection from "../components/categories/CategorySection.jsx";
+import FeaturedSkills from "../components/catalog/FeaturedSkills.jsx";
+import SkillMosaic from "../components/catalog/SkillMosaic.jsx";
+import SearchBox from "../components/catalog/SearchBox.jsx";
+import RepositoryIndex from "../components/catalog/RepositoryIndex.jsx";
+import CommandPalette from "../components/catalog/CommandPalette.jsx";
+import SkillDetailPage, { NotFoundPage } from "../components/details/SkillDetailPage.jsx";
+import RepoDetailPage from "../components/details/RepoDetailPage.jsx";
+import { motionTokens } from "../lib/motion-tokens.js";
+import { areas, intentions } from "../lib/areas.js";
+import { MOSAIC_PAGE, pickHeroSkills, resolveFeatured } from "../lib/featured.js";
+import { buildSearchIndex, buildSuggestions, filterResults, getSkillIdFromHash, searchRepos, searchSkills } from "../lib/search.js";
+import { apiFetch, authActions } from "../lib/auth.jsx";
+import { navigate as goTo } from "../lib/router.jsx";
+import { clearRecent, getCatalogControls, loadFavorites, loadRecent, recordRecent, setCatalogControls, toggleComparison, toggleFavorite } from "../lib/local-state.js";
 
 const sectionIds = ["topo", "categorias", "catalogo", "repositorios", "como-usar"];
 
@@ -28,7 +28,8 @@ function readRoute() {
   return { skillId: getSkillIdFromHash(location.hash), repoName: location.hash.startsWith("#repo/") ? decodeRoute(location.hash.slice(6)) : "" };
 }
 
-export default function App() {
+// Sistema completo para assinantes (rota /app). O catálogo vem de /api/catalog, com autorização.
+export default function LibraryApp({ account }) {
   const reduced = useReducedMotion();
   const heroInputRef = useRef(null);
   const homeScroll = useRef(0);
@@ -52,10 +53,12 @@ export default function App() {
 
   useEffect(() => {
     let active = true;
-    fetch("/data/catalog.json").then((response) => {
-      if (!response.ok) throw new Error("catalog");
-      return response.json();
-    }).then((data) => { if (active) setCatalog(data); }).catch(() => { if (active) setCatalogError(true); });
+    apiFetch("/api/catalog").then((data) => { if (active) setCatalog(data); }).catch((error) => {
+      if (!active) return;
+      if (error.status === 401) goTo(`/entrar?next=${encodeURIComponent(location.pathname + location.hash)}`, { replace: true });
+      else if (error.status === 402) goTo("/minha-assinatura?motivo=sem-acesso", { replace: true });
+      else setCatalogError(true);
+    });
     return () => { active = false; };
   }, []);
 
@@ -207,9 +210,13 @@ export default function App() {
     : catalog.length ? <NotFoundPage kind={route.repoName ? "repo" : "skill"} onBack={closeDetail}/>
     : <p className="wrap loading-line" role="status">Carregando o índice…</p>;
 
-  return <div className="site-shell">
-    <AuroraBackground/>
-    <FloatingNavbar active={onDetail ? "" : activeSection} onNavigate={navigate} onOpenPalette={() => setPaletteOpen(true)}/>
+  return <div className="library-shell">
+    <FloatingNavbar active={onDetail ? "" : activeSection} onNavigate={navigate} onOpenPalette={() => setPaletteOpen(true)} brandHref="/app"
+      actions={<>
+        {account?.isAdmin && <a className="nav-action" href="/admin" onClick={(event) => { event.preventDefault(); goTo("/admin"); }}>Admin</a>}
+        <a className="nav-action" href="/minha-assinatura" onClick={(event) => { event.preventDefault(); goTo("/minha-assinatura"); }}>Minha assinatura</a>
+        <button type="button" className="nav-action" onClick={async () => { await authActions.signOut(); goTo("/"); }}>Sair</button>
+      </>}/>
     <p className="sr-only" role="status" aria-live="polite">{notice}</p>
     <AnimatePresence mode="wait" initial={false}>
       {onDetail ? <motion.main key="detail" id="conteudo" className="view view-detail"
@@ -291,9 +298,6 @@ export default function App() {
                   <p className="muted small">A biblioteca não presume instalação nem compatibilidade; o arquivo original é a referência.</p>
                 </div>
               </div>
-            </div>
-            <div className="explorer-wrap">
-              <InteractiveSkillExplorer onFullAccess={showCatalog}/>
             </div>
           </div>
         </section>
