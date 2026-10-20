@@ -16,19 +16,10 @@ export function createAsaasClient({ baseUrl, apiKey, fetchImpl = fetch }) {
     return data;
   }
   return {
-    // Checkout recorrente: o Asaas documenta esta modalidade com cartão de crédito.
+    // Checkout avulso (chargeTypes DETACHED): Pix e cartão de crédito, pagamento único.
     createCheckout: (body) => call("POST", "/checkouts", body),
-    getSubscription: (id) => call("GET", `/subscriptions/${encodeURIComponent(id)}`),
-    listSubscriptionPayments: (id) => call("GET", `/subscriptions/${encodeURIComponent(id)}/payments?limit=100`),
-    listCustomerSubscriptions: (customer) => call("GET", `/subscriptions?customer=${encodeURIComponent(customer)}&limit=20`),
-    cancelSubscription: (id) => call("DELETE", `/subscriptions/${encodeURIComponent(id)}`),
+    listCustomerPayments: (customer) => call("GET", `/payments?customer=${encodeURIComponent(customer)}&limit=50`),
   };
-}
-
-// Data no formato aceito pelo Asaas, no fuso de Brasília.
-export function asaasDateTime(date = new Date()) {
-  const local = new Date(new Date(date).getTime() - 3 * 60 * 60 * 1000);
-  return local.toISOString().slice(0, 19).replace("T", " ");
 }
 
 export function checkoutUrl(checkout, checkoutHost) {

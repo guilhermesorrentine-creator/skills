@@ -38,7 +38,7 @@
     }
   ],
   "functions": {
-    "api/catalog.js": {
+    "api/[...path].js": {
       "includeFiles": "src/data/catalog.json"
     }
   }

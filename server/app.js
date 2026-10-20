@@ -2,33 +2,36 @@
 import { readFile } from "node:fs/promises";
 import { readConfig, assertConfigured } from "./config.js";
 import { createAsaasClient } from "./asaas.js";
-import { createBilling } from "./billing.js";
+import { createCommerce } from "./commerce.js";
+import { createLibrary } from "./library.js";
+import { createMe } from "./me.js";
 import { createApi, json } from "./routes.js";
 import { createSupabaseStore } from "./store-supabase.js";
 import { createMemoryStore } from "./store-memory.js";
 
 let handler;
 let catalogCache;
-// Fora de `public/`: o catálogo completo só sai por `/api/catalog`, com autorização.
+// Fora de `public/`: o catálogo só sai pela API, depois da autorização.
 const loadCatalog = async () => (catalogCache ||= JSON.parse(await readFile(new URL("../src/data/catalog.json", import.meta.url), "utf8")));
+
+function assemble(store, asaas, config, extra = {}) {
+  const library = createLibrary({ store, loadCatalog });
+  return createApi({ store, commerce: createCommerce({ store, asaas, config }), library, me: createMe({ store, library }), ...extra });
+}
 
 function build() {
   const config = readConfig();
   if (config.devBypass) {
     console.warn("[api] BT_DEV_BYPASS ativo: acesso local sem login (somente desenvolvimento).");
-    const store = createMemoryStore();
-    return createApi({ store, billing: createBilling({ store, asaas: null, config }), verifyToken: async () => null, loadCatalog, devUser: { id: "dev", email: "dev@localhost" } });
+    return assemble(createMemoryStore(), null, config, { verifyToken: async () => null, devUser: { id: "00000000-0000-0000-0000-000000000000", email: "dev@localhost" } });
   }
   try { assertConfigured(config, ["supabase"]); } catch (error) { return async () => json(503, { error: error.code, message: error.message }); }
   const store = createSupabaseStore({ url: config.supabaseUrl, serviceKey: config.supabaseServiceKey });
-  const asaas = config.asaas.apiKey ? createAsaasClient(config.asaas) : missingAsaas();
-  return createApi({ store, billing: createBilling({ store, asaas, config }), verifyToken: store.verifyToken, loadCatalog });
+  const asaas = config.asaas.apiKey ? createAsaasClient(config.asaas) : { createCheckout: missing, listCustomerPayments: missing };
+  return assemble(store, asaas, config, { verifyToken: store.verifyToken });
 }
 
-function missingAsaas() {
-  const fail = async () => { const config = readConfig(); assertConfigured(config, ["asaas"]); };
-  return { createCheckout: fail, getSubscription: fail, listSubscriptionPayments: fail, listCustomerSubscriptions: fail, cancelSubscription: fail };
-}
+async function missing() { assertConfigured(readConfig(), ["asaas"]); }
 
 export default function handle(request) {
   handler ||= build();
