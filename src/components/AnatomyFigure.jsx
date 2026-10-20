@@ -1,11 +1,18 @@
 import { motion, useReducedMotion } from "motion/react";
 import { motionTokens, springs, shouldAnimate } from "../lib/motion-tokens.js";
 
-const positions = [0, 24, 48, 72];
+const positions = [-42, 0, 42, 84, 126];
+const selectors = [
+  { id: "todas", label: "Todas" },
+  { id: "software", label: "Software" },
+  { id: "empreendedorismo", label: "Empreender" },
+  { id: "conteudo", label: "Conteúdo" },
+  { id: "ciencia", label: "Ciência" },
+];
 
-export default function AnatomyFigure({ area, areaIndex, skillCount }) {
+export default function AnatomyFigure({ area, areaIndex, skillCount, onSelect }) {
   const reduced = useReducedMotion();
-  const x = reduced ? 0 : positions[areaIndex] ?? 0;
+  const x = positions[areaIndex] ?? positions[0];
   const transition = shouldAnimate(reduced) ? springs.gentle : { duration: motionTokens.duration.instant };
   const ticks = Array.from({ length: 12 }, (_, index) => index);
   const bolts = [
@@ -74,12 +81,12 @@ export default function AnatomyFigure({ area, areaIndex, skillCount }) {
               const x0 = 202 + slot * 42;
               const y0 = 231 - slot * 7;
               return (
-                <g key={`slot-${slot}`}>
+                <motion.g key={`slot-${slot}`} animate={{ y: areaIndex === slot + 1 ? -10 : areaIndex === 0 ? -3 : 0 }} transition={transition} className={areaIndex === slot + 1 ? "machine-slot-active" : ""}>
                   <path d={`M${x0} ${y0}l34-5 11 7-34 6Z`} className="card-top" />
                   <path d={`m${x0 + 11} ${y0 + 7} 34-6v11l-34 6Z`} className="card-face" />
                   <path d={`m${x0 + 4} ${y0 + 2} 25-4 5 3-25 4Z`} className="card-rule" />
                   <path d={`m${x0 + 13} ${y0 + 11} 22-4`} className="card-rule" />
-                </g>
+                </motion.g>
               );
             })}
           </g>
@@ -117,11 +124,14 @@ export default function AnatomyFigure({ area, areaIndex, skillCount }) {
           </g>
         </svg>
       </div>
-      <figcaption className="anatomy-readout">
+      <figcaption className="anatomy-readout" aria-live="polite">
         <span><i className="key-swatch" /> Carrinho: <strong>{area.label}</strong></span>
         <span><strong>{skillCount.toLocaleString("pt-BR")}</strong> skills no índice</span>
       </figcaption>
-      <p className="anatomy-caption">Selecione uma área para mover o marcador pelas gavetas do catálogo.</p>
+      <div className="anatomy-controls" role="group" aria-label="Área mostrada no instrumento">
+        {selectors.map((selector, index) => <button key={selector.id} type="button" aria-pressed={areaIndex === index} onClick={() => onSelect(selector.id)}>{selector.label}</button>)}
+      </div>
+      <p className="anatomy-caption">Selecione uma área para mover o carrinho e abrir a gaveta correspondente.</p>
     </figure>
   );
 }

@@ -1,44 +1,25 @@
-# Guia visual
+# Guia visual — Biblioteca Total 2.1
 
-## Paleta
+## Composição
 
-| Uso | Cor |
-|---|---|
-| Fundo carvão | `#0B0C0F` |
-| Painel escuro | `#14161B` |
-| Painel elevado | `#191B21` |
-| Texto creme | `#EEE7D9` |
-| Texto secundário | `#AAA69D` |
-| Coral queimado | `#E7795C` |
-| Dourado | `#E7B65D` |
-| Verde de estado | `#899B63` |
-| Linha | `#383B42` |
+Base carvão azulado com superfícies de grafite e profundidade controlada. O dourado orienta a busca e os botões principais; coral, dourado, verde e azul diferenciam as quatro áreas. O hero combina texto editorial e elenco pixelado, com busca em destaque e contadores legíveis. A moldura da arte usa grid e iluminação sutis.
 
-## Tipografia e escala
+Os valores de cor, tipografia, componentes e movimento estão em [`DESIGN.md`](../DESIGN.md) e `src/premium.css`. `src/styles.css` e `src/library-v2.css` guardam os estilos anteriores; a camada premium é carregada por último para evoluir o visual sem mudar a lógica do catálogo.
 
-- Títulos, comandos e rótulos: `Consolas`, `Courier New`, monospace.
-- Leitura: `Segoe UI`, `Arial`, sans-serif.
-- Título responsivo: 2–3.5 rem; título de seção: 1.5 rem; corpo: 1 rem; rótulo: 0.75 rem.
-- Manter texto de leitura em creme e descrições em cinza claro com contraste alto.
+## Cards e controles
 
-## Espaço e componentes
+- Cards de skill: categoria, origem, título, descrição, razão de correspondência, caminho e ações em níveis separados. O acento da categoria aparece no badge e no traço superior.
+- Cards de repositório: categoria, número de ordem, contagem em destaque, resumo e guia de origem.
+- Toolbar e filtros: superfície elevada, agrupamentos visíveis, áreas de toque e foco de teclado.
+- Detalhes: diálogo com rolagem própria, foco gerenciado, contraste alto e ações de copiar e abrir a fonte.
+- Anatomy: cinco posições (`Todas` + quatro áreas), controles no cartão, gaveta ativa elevada e leitura textual da seleção.
 
-- Escala base de 4 px; intervalos comuns de 8, 12, 16, 24 e 32 px.
-- Cartões e painéis com borda de 1 px, fundo escuro e acento coral/dourado.
-- Comandos em bloco monoespaçado; botão de cópia grande o suficiente para toque.
-- Barra de progresso segmentada para indicar as quatro áreas.
-- Layout principal com coluna única em celular; sem texto sobre sprites.
+## Movimento e responsividade
 
-## Personagens
+Entradas do hero seguem uma sequência curta. Seções e resultados surgem quando entram no viewport; hover, cópia, favoritos e comparação respondem com elevação, cor ou brilho contido. Usar somente `transform` e `opacity` para deslocamentos. Em movimento reduzido, remover animação decorativa, conservar os estados e manter a navegação.
 
-- Usar personagens originais entregues como sprite PNG com transparência.
-- Aplicar `image-rendering: pixelated`; sem suavização, filtros de desfoque ou distorção.
-- Mostrar o elenco em escala consistente, com margens e fundos que não ocultem silhuetas.
-- Função e área aparecem em texto, nunca apenas pela cor ou pelo desenho.
+No celular, priorizar busca, cartões em uma coluna, filtros acessíveis, botões de 40 px ou mais e diálogo que ocupa a base da tela. Evitar rolagem horizontal e texto sobre os personagens.
 
-## Movimento
+## Fonte e confiança
 
-- Tokens centralizados em `src/lib/motion-tokens.js`.
-- Limitar animação a feedback de controles, mudança de estado e entrada curta de conteúdo.
-- Usar `transform`/`opacity`, e desligar movimento decorativo com movimento reduzido.
-- Ações continuam funcionais sem animação.
+O catálogo permanece a fonte de nomes, descrições, contagens e caminhos. Exibir textos como dados e validar links. Não inferir compatibilidade, instalação ou qualidade das skills a partir da aparência.

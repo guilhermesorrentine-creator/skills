@@ -11,9 +11,9 @@ export function Highlight({ text = "", query = "" }) {
     ? <mark key={`${index}-${part}`}>{part}</mark> : part);
 }
 
-export function SkillCard({ skill, query, favorite, compared, onOpen, onFavorite, onCompare }) {
-  return <article className="skill-result">
-    <div className="skill-result-meta"><span>{areaNames[skill.category] || skill.category}</span><span>{skill.repoName}</span></div>
+export function SkillCard({ skill, query, favorite, compared, onOpen, onFavorite, onCompare, index = 0 }) {
+  return <article className="skill-result" data-category={skill.category} data-reveal style={{ "--card-delay": `${index % 6 * 28}ms` }}>
+    <div className="skill-result-meta"><span className="category-badge">{areaNames[skill.category] || skill.category}</span><span className="origin-label">{skill.repoName}</span></div>
     <h3><button className="skill-title-button" onClick={() => onOpen(skill)}><Highlight text={skill.name} query={query}/></button></h3>
     <p><Highlight text={skill.description || "A fonte não informa uma descrição para esta skill."} query={query}/></p>
     <p className="match-reason">{getMatchReason(skill, query)}</p>
@@ -28,9 +28,10 @@ export function SkillCard({ skill, query, favorite, compared, onOpen, onFavorite
   </article>;
 }
 
-export function RepoCard({ repo, onOpen }) {
-  return <article className="repo-result">
-    <div className="skill-result-meta"><span>{areaNames[repo.category] || repo.category}</span><span>{repo.skills.length} skills no índice</span></div>
+export function RepoCard({ repo, onOpen, index = 0 }) {
+  return <article className="repo-result" data-category={repo.category} data-reveal style={{ "--card-delay": `${index % 6 * 28}ms` }}>
+    <div className="skill-result-meta"><span className="category-badge">{areaNames[repo.category] || repo.category}</span><span className="repo-serial">#{String(index + 1).padStart(2, "0")}</span></div>
+    <strong className="repo-count"><b>{repo.skills.length}</b><small>skills<br/>no índice</small></strong>
     <h3>{repo.name}</h3><p>{repo.summary || "O catálogo não informa uma descrição."}</p>
     <div className="skill-actions"><button className="button button-outline" onClick={() => onOpen(repo.name)}>Ver guia</button>{repo.repoUrl && <a className="text-link" href={repo.repoUrl} target="_blank" rel="noopener noreferrer">Abrir repositório ↗</a>}</div>
   </article>;
