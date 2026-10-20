@@ -23,11 +23,8 @@ export default function AnatomyFigure({ area, areaIndex, skillCount, onSelect })
   return (
     <figure className="anatomy-card" aria-labelledby="anatomy-title">
       <div className="anatomy-heading">
-        <div>
-          <p className="eyebrow">INSTRUMENTO · FIG 01</p>
-          <h2 id="anatomy-title">Seletor de skills</h2>
-        </div>
-        <span className="live-dot" aria-label="Ilustração interativa ativa" />
+        <span className="anatomy-fig">FIG 01</span>
+        <h3 id="anatomy-title">Seletor de skills</h3>
       </div>
       <div className="anatomy-stage">
         <svg viewBox="0 0 560 360" role="img" aria-label="Instrumento isométrico com gavetas de cartões e um carrinho que marca a área escolhida" className="anatomy-svg">
@@ -124,14 +121,13 @@ export default function AnatomyFigure({ area, areaIndex, skillCount, onSelect })
           </g>
         </svg>
       </div>
-      <figcaption className="anatomy-readout" aria-live="polite">
-        <span><i className="key-swatch" /> Carrinho: <strong>{area.label}</strong></span>
-        <span><strong>{skillCount.toLocaleString("pt-BR")}</strong> skills no índice</span>
-      </figcaption>
       <div className="anatomy-controls" role="group" aria-label="Área mostrada no instrumento">
         {selectors.map((selector, index) => <button key={selector.id} type="button" aria-pressed={areaIndex === index} onClick={() => onSelect(selector.id)}>{selector.label}</button>)}
       </div>
-      <p className="anatomy-caption">Selecione uma área para mover o carrinho e abrir a gaveta correspondente.</p>
+      <figcaption className="anatomy-foot">
+        <span className="anatomy-hint">Escolha uma área: o carrinho desliza e a gaveta sobe.</span>
+        <span className="anatomy-readout" aria-live="polite"><strong>{area.label}</strong> · {skillCount.toLocaleString("pt-BR")} skills</span>
+      </figcaption>
     </figure>
   );
 }

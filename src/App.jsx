@@ -1,51 +1,39 @@
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useDeferredValue, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import AnatomyFigure from "./components/AnatomyFigure.jsx";
 import ComparePanel from "./components/ComparePanel.jsx";
 import { CopyButton } from "./components/shared.jsx";
-import { Highlight, RepoCard, SkillCard } from "./components/SkillCatalog.jsx";
-import SkillDetail from "./components/SkillDetail.jsx";
-import { motionTokens, springs } from "./lib/motion-tokens.js";
-import { buildSearchIndex, filterResults, getSkillIdFromHash, safeGitHubUrl, searchRepos, searchSkills } from "./lib/search.js";
+import AuroraBackground from "./components/effects/AuroraBackground.jsx";
+import FloatingNavbar from "./components/layout/FloatingNavbar.jsx";
+import SiteFooter from "./components/layout/SiteFooter.jsx";
+import CyberHero from "./components/hero/CyberHero.jsx";
+import CategorySection from "./components/categories/CategorySection.jsx";
+import FeaturedSkills from "./components/catalog/FeaturedSkills.jsx";
+import SkillMosaic from "./components/catalog/SkillMosaic.jsx";
+import SearchBox from "./components/catalog/SearchBox.jsx";
+import RepositoryIndex from "./components/catalog/RepositoryIndex.jsx";
+import CommandPalette from "./components/catalog/CommandPalette.jsx";
+import SkillDetailPage, { NotFoundPage } from "./components/details/SkillDetailPage.jsx";
+import RepoDetailPage from "./components/details/RepoDetailPage.jsx";
+import { motionTokens } from "./lib/motion-tokens.js";
+import { areas, intentions } from "./lib/areas.js";
+import { MOSAIC_PAGE, pickHeroSkills, resolveFeatured } from "./lib/featured.js";
+import { buildSearchIndex, buildSuggestions, filterResults, getSkillIdFromHash, searchRepos, searchSkills } from "./lib/search.js";
 import { clearRecent, getCatalogControls, loadFavorites, loadRecent, recordRecent, setCatalogControls, toggleComparison, toggleFavorite } from "./lib/local-state.js";
 
-const areas = [
-  { id: "todas", label: "Todas" },
-  { id: "software", label: "Software" },
-  { id: "empreendedorismo", label: "Empreendedorismo" },
-  { id: "conteudo", label: "Conteúdo" },
-  { id: "ciencia", label: "Ciência" },
-];
-const intentions = ["Criar um site", "Desenvolver aplicativo", "Automatizar tarefas", "Criar vídeos", "Analisar dados", "Melhorar design", "Economizar tokens", "Pesquisa científica"];
+const sectionIds = ["topo", "categorias", "catalogo", "repositorios", "como-usar"];
 
+function decodeRoute(value) { try { return decodeURIComponent(value); } catch { return ""; } }
 function readRoute() {
   return { skillId: getSkillIdFromHash(location.hash), repoName: location.hash.startsWith("#repo/") ? decodeRoute(location.hash.slice(6)) : "" };
-}
-function decodeRoute(value) { try { return decodeURIComponent(value); } catch { return ""; } }
-
-function RepoDetail({ repo, onClose }) {
-  const reduced = useReducedMotion();
-  const prompt = `Consulte a documentação de ${repo.name}. Ajude com [objetivo], considerando [contexto]. Confirme os pré-requisitos na fonte original antes de executar etapas específicas.`;
-  const url = safeGitHubUrl(repo.url);
-  return <div className="detail-overlay" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}><motion.section className="detail-dialog" role="dialog" aria-modal="true" aria-labelledby="repo-detail-title" tabIndex={-1} initial={reduced ? false : { opacity: 0, y: 24, scale: 0.985 }} animate={{ opacity: 1, y: 0, scale: 1 }} transition={{ duration: reduced ? 0 : motionTokens.duration.normal, ease: motionTokens.easing.smooth }} onKeyDown={(event) => {
-    if (event.key !== "Tab") return;
-    const nodes = [...event.currentTarget.querySelectorAll("a[href],button:not([disabled]),[tabindex]:not([tabindex='-1'])")];
-    if (!nodes.length) return;
-    if (event.shiftKey && document.activeElement === nodes[0]) { event.preventDefault(); nodes.at(-1).focus(); }
-    else if (!event.shiftKey && document.activeElement === nodes.at(-1)) { event.preventDefault(); nodes[0].focus(); }
-  }}>
-    <button className="dialog-close" aria-label="Fechar guia" onClick={onClose}>×</button><p className="eyebrow">GUIA DE REPOSITÓRIO · {repo.category}</p><h2 id="repo-detail-title">{repo.name}</h2><p>{repo.summary || "O catálogo não informa uma descrição."}</p>
-    <dl className="repo-detail-fields"><dt>Skills no índice</dt><dd>{repo.skills.length}</dd><dt>README</dt><dd>{repo.readme || "Não informado."}</dd><dt>Conteúdo detalhado</dt><dd>Consulte os arquivos diretamente na fonte do repositório.</dd></dl>
-    <div className="detail-prompt"><h3>Prompt de exemplo</h3><pre>{prompt}</pre><CopyButton value={prompt}>Copiar prompt</CopyButton></div>
-    {url && <a className="button button-primary" href={url} target="_blank" rel="noopener noreferrer">Abrir repositório ↗</a>}
-    <div className="repo-skill-links">{repo.skills.slice(0, 18).map((skill) => <div key={`${repo.name}:${skill.path || skill.name}`}><b>{skill.name}</b><span>{skill.description || "Descrição não informada."}</span>{skill.path && <code>{skill.path}</code>}</div>)}{repo.skills.length > 18 && <p>Exibindo 18 de {repo.skills.length} skills; use a busca no catálogo para encontrar as demais.</p>}</div>
-  </motion.section></div>;
 }
 
 export default function App() {
   const reduced = useReducedMotion();
-  const inputRef = useRef(null);
-  const lastFocus = useRef(null);
+  const heroInputRef = useRef(null);
+  const homeScroll = useRef(0);
+  const pendingScroll = useRef(null);
+  const lastOpened = useRef(null);
   const [catalog, setCatalog] = useState([]);
   const [catalogError, setCatalogError] = useState(false);
   const [controls, setControls] = useState(() => getCatalogControls(location.search));
@@ -53,11 +41,14 @@ export default function App() {
   const [favorites, setFavorites] = useState(loadFavorites);
   const [recent, setRecent] = useState(loadRecent);
   const [compareIds, setCompareIds] = useState([]);
-  const [visibleLimit, setVisibleLimit] = useState(72);
+  const [visibleLimit, setVisibleLimit] = useState(MOSAIC_PAGE);
   const [sort, setSort] = useState("relevance");
   const [notice, setNotice] = useState("");
+  const [storageError, setStorageError] = useState(false);
   const [showCompare, setShowCompare] = useState(false);
-  const [scopeError, setScopeError] = useState(false);
+  const [paletteOpen, setPaletteOpen] = useState(false);
+  const [activeSection, setActiveSection] = useState("topo");
+  const onDetail = Boolean(route.skillId || route.repoName);
 
   useEffect(() => {
     let active = true;
@@ -67,127 +58,252 @@ export default function App() {
     }).then((data) => { if (active) setCatalog(data); }).catch(() => { if (active) setCatalogError(true); });
     return () => { active = false; };
   }, []);
+
+  // Voltar/avançar do navegador: retornar de uma ficha restaura a rolagem da home.
   useEffect(() => {
-    const sync = () => { setRoute(readRoute()); setControls(getCatalogControls(location.search)); };
-    window.addEventListener("hashchange", sync); window.addEventListener("popstate", sync);
-    return () => { window.removeEventListener("hashchange", sync); window.removeEventListener("popstate", sync); };
+    const sync = () => {
+      const next = readRoute();
+      setRoute((previous) => {
+        if ((previous.skillId || previous.repoName) && !next.skillId && !next.repoName) pendingScroll.current = { type: "restore" };
+        return next;
+      });
+      setControls(getCatalogControls(location.search));
+    };
+    window.addEventListener("popstate", sync); window.addEventListener("hashchange", sync);
+    return () => { window.removeEventListener("popstate", sync); window.removeEventListener("hashchange", sync); };
   }, []);
+
+  const index = useMemo(() => buildSearchIndex(catalog), [catalog]);
+  const query = useDeferredValue(controls.query);
+  const skillMatches = useMemo(() => searchSkills(index, query), [index, query]);
+  const repoMatches = useMemo(() => searchRepos(index, query), [index, query]);
+  const repoOptions = useMemo(() => index.repos.map((repo) => repo.name).sort((a, b) => a.localeCompare(b)), [index]);
+  const baseSkills = useMemo(() => controls.view === "favoritos" ? skillMatches.filter((skill) => favorites.includes(skill.id))
+    : controls.view === "recentes" ? skillMatches.filter((skill) => recent.some((item) => item.id === skill.id)) : skillMatches, [skillMatches, controls.view, favorites, recent]);
+  const visibleSkills = useMemo(() => filterResults(baseSkills, { category: controls.category, repo: controls.repo, sort, query }), [baseSkills, controls.category, controls.repo, sort, query]);
+  const visibleRepos = useMemo(() => filterResults(repoMatches, { category: controls.category, repo: controls.repo, sort, query }), [repoMatches, controls.category, controls.repo, sort, query]);
+  const countByArea = useMemo(() => Object.fromEntries(areas.slice(1).map((area) => [area.id, index.skills.filter((skill) => skill.category === area.id).length])), [index]);
+  const counts = { repos: catalog.length, skills: index.skills.length };
+  const featured = useMemo(() => query ? visibleSkills.slice(0, 5) : resolveFeatured(index.skills, { category: controls.category, count: 5 }), [query, visibleSkills, index, controls.category]);
+  const heroSkills = useMemo(() => pickHeroSkills(index.skills, { matches: skillMatches, query, count: 12 }), [index, skillMatches, query]);
+  const emphasisIds = useMemo(() => new Set(query ? skillMatches.slice(0, 4).map((skill) => skill.id) : []), [query, skillMatches]);
+  const suggestions = useMemo(() => buildSuggestions(index, query, skillMatches, { goals: intentions, areas: areas.slice(1), repoMatches }), [index, query, skillMatches, repoMatches]);
+  const comparison = compareIds.map((id) => index.skills.find((skill) => skill.id === id)).filter(Boolean);
+  const selectedSkill = route.skillId ? index.skills.find((skill) => skill.id === route.skillId) : null;
+  const selectedRepo = route.repoName ? index.repos.find((repo) => repo.name === route.repoName) : null;
+
+  useEffect(() => setVisibleLimit(MOSAIC_PAGE), [controls.query, controls.category, controls.repo, controls.view, controls.kind, sort]);
+
+  // Rolagem após trocar de vista: restaura a home, vai a uma âncora ou abre a ficha no topo.
+  useLayoutEffect(() => {
+    if (onDetail) { window.scrollTo({ top: 0, behavior: "instant" }); return; }
+    const pending = pendingScroll.current;
+    pendingScroll.current = null;
+    if (pending?.type === "restore") {
+      window.scrollTo({ top: homeScroll.current, behavior: "instant" });
+      requestAnimationFrame(() => document.querySelector(`[data-focus-id="${CSS.escape(lastOpened.current || "")}"]`)?.focus({ preventScroll: true }));
+    } else if (pending?.type === "anchor") {
+      requestAnimationFrame(() => document.getElementById(pending.id)?.scrollIntoView({ behavior: reduced ? "instant" : "smooth" }));
+    }
+  }, [onDetail, route.skillId, route.repoName, reduced]);
+
+  // Seção ativa da navegação.
+  useEffect(() => {
+    if (onDetail || !window.IntersectionObserver) return;
+    const observer = new IntersectionObserver((entries) => {
+      const visible = entries.filter((entry) => entry.isIntersecting).sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
+      if (visible) setActiveSection(visible.target.id);
+    }, { rootMargin: "-35% 0px -55% 0px", threshold: [0, 0.2, 0.6] });
+    sectionIds.forEach((id) => { const node = document.getElementById(id); if (node) observer.observe(node); });
+    return () => observer.disconnect();
+  }, [onDetail, catalog.length]);
+
+  const updateControls = useCallback((patch) => {
+    setControls((current) => {
+      const next = { ...current, ...patch };
+      history.replaceState(history.state, "", setCatalogControls(location.href, next));
+      return next;
+    });
+  }, []);
+
+  const openSkill = useCallback((skill) => {
+    if (!readRoute().skillId && !readRoute().repoName) homeScroll.current = window.scrollY;
+    lastOpened.current = skill.id;
+    history.pushState({ bt: "detail" }, "", `${location.pathname}${location.search}#skill/${encodeURIComponent(skill.id)}`);
+    setRoute({ skillId: skill.id, repoName: "" });
+    setPaletteOpen(false);
+    setRecent((items) => {
+      const next = recordRecent(items, skill.id);
+      if (next === items) { setStorageError(true); setNotice("O histórico local não pôde ser salvo neste navegador."); }
+      return next;
+    });
+  }, []);
+  const openRepo = useCallback((repoName) => {
+    if (!readRoute().skillId && !readRoute().repoName) homeScroll.current = window.scrollY;
+    lastOpened.current = `repo:${repoName}`;
+    history.pushState({ bt: "detail" }, "", `${location.pathname}${location.search}#repo/${encodeURIComponent(repoName)}`);
+    setRoute({ skillId: null, repoName });
+    setPaletteOpen(false);
+  }, []);
+  const closeDetail = useCallback(() => {
+    if (history.state?.bt === "detail") { history.back(); return; }
+    pendingScroll.current = { type: "anchor", id: "catalogo" };
+    history.replaceState(null, "", `${location.pathname}${location.search}#catalogo`);
+    setRoute({ skillId: null, repoName: "" });
+  }, []);
+  const navigate = useCallback((event, id) => {
+    if (!readRoute().skillId && !readRoute().repoName) {
+      event?.preventDefault();
+      history.replaceState(history.state, "", `${location.pathname}${location.search}#${id}`);
+      document.getElementById(id)?.scrollIntoView({ behavior: reduced ? "instant" : "smooth" });
+      return;
+    }
+    event?.preventDefault();
+    pendingScroll.current = { type: "anchor", id };
+    history.pushState(null, "", `${location.pathname}${location.search}#${id}`);
+    setRoute({ skillId: null, repoName: "" });
+  }, [reduced]);
+
   useEffect(() => {
     const onKeyDown = (event) => {
-      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
-        if (event.target?.matches?.("input, textarea, select, [contenteditable='true']")) return;
-        event.preventDefault(); inputRef.current?.focus();
-      }
-      if (event.key === "Escape" && (route.skillId || route.repoName)) closeDetail();
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") { event.preventDefault(); setPaletteOpen((open) => !open); return; }
+      if (event.key === "Escape" && !paletteOpen && onDetail && !event.defaultPrevented) closeDetail();
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [route]);
-  useEffect(() => {
-    if (route.skillId || route.repoName) {
-      lastFocus.current = document.activeElement;
-      requestAnimationFrame(() => document.querySelector(".detail-dialog")?.focus());
-      return () => { if (lastFocus.current?.isConnected) lastFocus.current.focus(); };
-    }
-  }, [route.skillId, route.repoName]);
-  useEffect(() => setVisibleLimit(72), [controls.query, controls.category, controls.repo, controls.view, controls.kind, sort]);
-  useLayoutEffect(() => {
-    const targets = document.querySelectorAll(".catalog-heading, .skill-result, .repo-result, .commands-intro, .commands-board, .how-copy, .anatomy-card, .cloud-inner > div");
-    if (reduced || !window.IntersectionObserver) return;
-    const observer = new IntersectionObserver((entries) => {
-      for (const entry of entries) if (entry.isIntersecting) {
-        entry.target.classList.add("is-visible");
-        observer.unobserve(entry.target);
-      }
-    }, { threshold: 0.08, rootMargin: "0px 0px 40px 0px" });
-    targets.forEach((target) => {
-      if (!target.classList.contains("is-visible")) {
-        target.classList.add("will-reveal");
-        observer.observe(target);
-      }
+  }, [paletteOpen, onDetail, closeDetail]);
+
+  const toggleSaved = useCallback((id) => {
+    setFavorites((current) => {
+      const next = toggleFavorite(current, id);
+      if (next === current) { setStorageError(true); setNotice("O armazenamento local está indisponível; o favorito não foi salvo."); return current; }
+      setStorageError(false); setNotice(next.includes(id) ? "Skill salva nos favoritos locais." : "Skill removida dos favoritos.");
+      return next;
     });
-    return () => observer.disconnect();
-  }, [catalog.length, controls.query, controls.kind, controls.category, controls.repo, controls.view, visibleLimit, reduced]);
-
-  const index = useMemo(() => buildSearchIndex(catalog), [catalog]);
-  const skillMatches = useMemo(() => searchSkills(index, controls.query), [index, controls.query]);
-  const repoMatches = useMemo(() => searchRepos(index, controls.query), [index, controls.query]);
-  const repoOptions = useMemo(() => [...new Set(index.repos.map((repo) => repo.name))].sort((a, b) => a.localeCompare(b)), [index]);
-  const baseSkills = controls.view === "favoritos" ? skillMatches.filter((skill) => favorites.includes(skill.id))
-    : controls.view === "recentes" ? skillMatches.filter((skill) => recent.some((item) => item.id === skill.id)) : skillMatches;
-  const visibleSkills = useMemo(() => filterResults(baseSkills, { category: controls.category, repo: controls.repo, sort, query: controls.query }), [baseSkills, controls, sort]);
-  const visibleRepos = useMemo(() => filterResults(repoMatches, { category: controls.category, repo: controls.repo, sort, query: controls.query }), [repoMatches, controls.category, controls.repo, sort]);
-  const selectedSkill = route.skillId ? index.skills.find((skill) => skill.id === route.skillId) : null;
-  const selectedRepo = route.repoName ? catalog.find((repo) => repo.name === route.repoName) : null;
-  const totalSkills = index.skills.length;
-  const countByArea = useMemo(() => Object.fromEntries(areas.slice(1).map((area) => [area.id, index.skills.filter((skill) => skill.category === area.id).length])), [index]);
-  const comparison = compareIds.map((id) => index.skills.find((skill) => skill.id === id)).filter(Boolean);
-
-  const updateControls = (patch) => {
-    const next = { ...controls, ...patch };
-    setControls(next);
-    history.replaceState(null, "", setCatalogControls(location.href, next));
-  };
-  const openSkill = (skill) => {
-    setRoute({ skillId: skill.id, repoName: "" });
-    history.pushState(null, "", `${location.pathname}${location.search}#skill/${encodeURIComponent(skill.id)}`);
-    const next = recordRecent(recent, skill.id);
-    if (next === recent) { setScopeError(true); setNotice("O histórico local não pôde ser salvo neste navegador."); }
-    else setRecent(next);
-  };
-  const openRepo = (repoName) => {
-    setRoute({ skillId: null, repoName });
-    history.pushState(null, "", `${location.pathname}${location.search}#repo/${encodeURIComponent(repoName)}`);
-  };
-  function closeDetail() {
-    setRoute({ skillId: null, repoName: "" });
-    history.replaceState(null, "", `${location.pathname}${location.search}#catalogo`);
-  }
-  const toggleSaved = (id) => {
-    const next = toggleFavorite(favorites, id);
-    if (next === favorites) { setScopeError(true); setNotice("O armazenamento local está indisponível; o favorito não foi salvo."); return; }
-    setFavorites(next); setScopeError(false); setNotice(next.includes(id) ? "Skill salva nos favoritos locais." : "Skill removida dos favoritos.");
-  };
-  const toggleCompared = (id) => {
-    const result = toggleComparison(compareIds, id);
-    if (result.limited) { setNotice("A comparação aceita até 3 skills."); return; }
-    setCompareIds(result.ids);
-  };
+  }, []);
+  const toggleCompared = useCallback((id) => {
+    setCompareIds((current) => {
+      const result = toggleComparison(current, id);
+      setNotice(result.limited ? "A comparação aceita até 3 skills." : result.ids.includes(id) ? "Skill adicionada à comparação." : "Skill removida da comparação.");
+      return result.ids;
+    });
+  }, []);
   const clearFilters = () => updateControls({ query: "", category: "todas", repo: "todos", view: "todos" });
+  const showCatalog = () => document.getElementById("catalogo")?.scrollIntoView({ behavior: reduced ? "instant" : "smooth" });
+  const pickSuggestion = useCallback((option) => {
+    if (option.type === "skill") openSkill(option.value);
+    else if (option.type === "repo") openRepo(option.value);
+    else if (option.type === "area") { updateControls({ category: option.value, query: "" }); showCatalog(); }
+    else if (option.type === "goal") updateControls({ query: option.value });
+    else if (option.type === "submit") showCatalog();
+  }, [openSkill, openRepo, updateControls]);
+
+  const search = { inputRef: heroInputRef, value: controls.query, onChange: (value) => updateControls({ query: value }), suggestions, onPick: pickSuggestion };
+  const resultCount = controls.kind === "skills" ? visibleSkills.length : visibleRepos.length;
+  const items = controls.kind === "skills" ? visibleSkills : visibleRepos;
+
+  const detail = selectedSkill ? <SkillDetailPage key={selectedSkill.id} skill={selectedSkill} index={index} favorite={favorites.includes(selectedSkill.id)} compared={compareIds.includes(selectedSkill.id)} onFavorite={toggleSaved} onCompare={toggleCompared} onBack={closeDetail} onOpenSkill={openSkill} onOpenRepo={openRepo}/>
+    : selectedRepo ? <RepoDetailPage key={selectedRepo.name} repo={selectedRepo} onBack={closeDetail} onOpenSkill={openSkill}/>
+    : catalog.length ? <NotFoundPage kind={route.repoName ? "repo" : "skill"} onBack={closeDetail}/>
+    : <p className="wrap loading-line" role="status">Carregando o índice…</p>;
 
   return <div className="site-shell">
-    <header className="topbar"><a className="brand" href="#topo" aria-label="Biblioteca Total, início"><span className="brand-mark">BT</span><span>Biblioteca <b>Total</b></span></a><nav aria-label="Navegação principal"><a href="#catalogo">Biblioteca</a><a href="#comandos">Comandos</a><a href="#como-usar">Como usar</a></nav><a className="top-cta" href="https://github.com/guilhermesorrentine-creator/skills" target="_blank" rel="noreferrer">Projeto aberto ↗</a></header>
-    <main id="topo">
-      <section className="hero wrap"><div className="hero-copy"><p className="eyebrow"><span className="status-dot"/> ÍNDICE DE AGENT SKILLS · EDIÇÃO 2026</p><h1>Uma biblioteca.<br/><em>Mil maneiras</em> de criar.</h1><p className="hero-lead">Encontre a instrução certa, entenda de onde ela vem e leve o próximo passo para o seu agente.</p><div className="search-row hero-search"><label className="search-box"><span aria-hidden="true">⌕</span><input ref={inputRef} value={controls.query} onChange={(event) => updateControls({ query: event.target.value })} placeholder="Buscar skills por nome, tecnologia ou objetivo…" aria-label="Buscar skills e repositórios"/><kbd>Ctrl K</kbd></label></div><div className="hero-actions"><a className="button button-primary" href="#catalogo">Ver resultados <span>↓</span></a><a className="text-link" href="#como-usar">Como funciona <span>↗</span></a></div><div className="hero-counts"><div><strong>{catalog.length.toString().padStart(2, "0")}</strong><span>repositórios</span></div><div><strong>{totalSkills.toLocaleString("pt-BR")}</strong><span>skills indexadas</span></div><div><strong>04</strong><span>áreas de conhecimento</span></div></div></div><div className="hero-art"><img src="/assets/personagens-pixel-art.png" alt="Quatro personagens originais em pixel art representando a equipe da biblioteca"/><div className="art-caption"><span className="status-dot"/> equipe pronta para ajudar <span className="caption-line"/></div><div className="art-sticker">SKILLS<br/><b>LOADED!</b></div></div></section>
-      <section className="areas-strip" aria-label="Áreas da biblioteca"><div className="wrap area-grid">{areas.slice(1).map((area, i) => <button key={area.id} className={`area-tile area-${area.id} ${controls.category === area.id ? "is-active" : ""}`} onClick={() => { updateControls({ category: controls.category === area.id ? "todas" : area.id }); location.hash = "catalogo"; }}><span className="area-index">0{i + 1} / 04</span><strong>{area.label}</strong><span>{countByArea[area.id] || 0} skills <b>↗</b></span></button>)}</div></section>
-      <section className="catalog-section wrap" id="catalogo">
-        <div className="section-heading catalog-heading"><div><p className="eyebrow">O ACERVO</p><h2>O que você quer criar?</h2><p className="muted">Pesquise diretamente nas skills e veja as evidências para cada resultado.</p></div><div className="collection-stamp"><span>{catalog.length}</span><small>REPOS<br/>INDEXADOS</small></div></div>
-        <div className="intent-row" aria-label="Buscar por objetivo">{intentions.map((item) => <button key={item} className="intent-chip" onClick={() => updateControls({ query: item })}>{item}</button>)}</div>
-        <div className="library-toolbar">
-          <div className="result-tabs" role="tablist" aria-label="Tipo de resultado"><button role="tab" aria-selected={controls.kind === "skills"} onClick={() => updateControls({ kind: "skills" })}>Skills <span>{visibleSkills.length.toLocaleString("pt-BR")}</span></button><button role="tab" aria-selected={controls.kind === "repositorios"} onClick={() => updateControls({ kind: "repositorios" })}>Repositórios <span>{visibleRepos.length}</span></button></div>
-          <label className="select-wrap">Categoria<select value={controls.category} onChange={(event) => updateControls({ category: event.target.value })}>{areas.map((area) => <option key={area.id} value={area.id}>{area.label}</option>)}</select></label>
-          <label className="select-wrap">Repositório<select value={controls.repo} onChange={(event) => updateControls({ repo: event.target.value })}><option value="todos">Todos os repositórios</option>{repoOptions.map((name) => <option value={name} key={name}>{name}</option>)}</select></label>
-          <label className="select-wrap">Ordenar<select value={sort} onChange={(event) => setSort(event.target.value)}><option value="relevance">Relevância</option><option value="name">Nome</option></select></label>
-          <button className="text-link clear-filters" onClick={clearFilters}>Limpar filtros</button>
-        </div>
-        <div className="personal-tabs"><button aria-pressed={controls.view === "todos"} onClick={() => updateControls({ view: "todos" })}>Todas</button><button aria-pressed={controls.view === "favoritos"} onClick={() => updateControls({ view: controls.view === "favoritos" ? "todos" : "favoritos", kind: "skills" })}>Favoritos ({favorites.length})</button><button aria-pressed={controls.view === "recentes"} onClick={() => updateControls({ view: controls.view === "recentes" ? "todos" : "recentes", kind: "skills" })}>Recentes ({recent.length})</button>{controls.view === "recentes" && <button onClick={() => { if (!clearRecent()) { setScopeError(true); setNotice("O histórico não pôde ser limpo neste navegador."); return; } setRecent([]); setScopeError(false); setNotice("Histórico local limpo."); }}>Limpar histórico</button>}</div>
-        <p className="result-summary" aria-live="polite">{controls.kind === "skills" ? `${visibleSkills.length.toLocaleString("pt-BR")} skills` : `${visibleRepos.length} repositórios`} encontrados{controls.query ? ` para “${controls.query}”` : ""}.{scopeError ? " O armazenamento local está indisponível." : ""}</p>
-        {notice && <p className="sr-only" role="status">{notice}</p>}
-        {catalogError && <div className="empty-note" role="alert">Não foi possível carregar o catálogo. Atualize a página para tentar novamente.</div>}
-        {!catalog.length && !catalogError && <div className="empty-note" role="status">Carregando o índice…</div>}
-        {catalog.length > 0 && controls.kind === "skills" && <div className="skill-results">{visibleSkills.slice(0, visibleLimit).map((skill, index) => <SkillCard key={skill.id} skill={skill} index={index} query={controls.query} favorite={favorites.includes(skill.id)} compared={compareIds.includes(skill.id)} onOpen={openSkill} onFavorite={toggleSaved} onCompare={toggleCompared}/>)}</div>}
-        {catalog.length > 0 && controls.kind === "repositorios" && <div className="repo-grid">{visibleRepos.slice(0, visibleLimit).map((repo, index) => <RepoCard key={repo.name} repo={repo} index={index} onOpen={openRepo}/>)}</div>}
-        {catalog.length > 0 && !(controls.kind === "skills" ? visibleSkills.length : visibleRepos.length) && <div className="empty-note"><strong>Nenhum resultado.</strong> Tente termos mais curtos, remova filtros ou explore as sugestões acima.<button className="button button-outline" onClick={clearFilters}>Limpar busca e filtros</button></div>}
-        {(controls.kind === "skills" ? visibleSkills.length : visibleRepos.length) > visibleLimit && <div className="load-more"><p className="more-results">Mostrando {visibleLimit} de {controls.kind === "skills" ? visibleSkills.length.toLocaleString("pt-BR") : visibleRepos.length} resultados.</p><button className="button button-outline" onClick={() => setVisibleLimit((limit) => limit + 72)}>Carregar mais {controls.kind === "skills" ? "skills" : "repositórios"}</button></div>}
-        <div className="compare-entry"><button className="button button-outline" onClick={() => setShowCompare((open) => !open)}>Comparar selecionadas ({comparison.length}/3)</button></div>
-        {showCompare && <ComparePanel skills={comparison} onRemove={toggleCompared} onClear={() => setCompareIds([])}/>}
-      </section>
-      <section className="commands-section" id="comandos"><div className="wrap commands-layout"><div className="commands-intro"><p className="eyebrow">PAINEL DE COMANDOS · 01</p><h2>Comece pela<br/><em>instrução certa.</em></h2><p>Use uma skill de forma explícita e dê contexto ao agente. Nomes e caminhos vêm do catálogo; confira sempre os requisitos no arquivo original.</p><a className="text-link" href="#como-usar">Ver guia de ativação ↗</a></div><div className="commands-board"><div className="board-top"><span>EXEMPLO / POWERSHELL</span><span className="board-leds"><i/><i/><i/><i/><i/></span></div><div className="command-title"><span>01</span><strong>LOCALIZAR NO CATÁLOGO</strong></div><div className="command-row"><code>Pesquise pelo nome, descrição, tecnologia ou objetivo.</code><span>Resultados de skills e repositórios são separados.</span></div><div className="command-title"><span>02</span><strong>ABRIR A FONTE</strong></div><div className="command-row"><code>Confira o arquivo SKILL.md e os pré-requisitos no GitHub.</code><span>A biblioteca não presume instalação nem compatibilidade.</span></div><div className="command-title"><span>03</span><strong>ADAPTAR O PEDIDO</strong></div><div className="prompt-line"><p>“Use as instruções de <b>[skill]</b> para <b>[objetivo]</b>. Contexto: <b>[contexto]</b>. Entregue: <b>[formato]</b>.”</p><CopyButton value="Use as instruções de [skill] para [objetivo]. Contexto: [contexto]. Entregue: [formato]."/></div><div className="board-footer"><span>FONTE: SKILL.MD</span><span>GUIA 01 / 04</span></div></div></div></section>
-      <section className="how-section wrap" id="como-usar"><div className="how-copy"><p className="eyebrow">DO CATÁLOGO AO RESULTADO</p><h2>Um guia para<br/>cada skill.</h2><p className="muted">Confira descrição, origem e caminho. Abra o conteúdo original para confirmar instruções completas e requisitos.</p><div className="steps"><article><span>01</span><div><b>Encontre</b><p>Pesquise pelo objetivo ou escolha uma área.</p></div></article><article><span>02</span><div><b>Entenda</b><p>Confira a correspondência e a origem da skill.</p></div></article><article><span>03</span><div><b>Adapte</b><p>Abra o arquivo original e personalize um prompt de exemplo.</p></div></article></div></div><AnatomyFigure area={{label: areas.find((item) => item.id === controls.category)?.label || "Todas"}} areaIndex={Math.max(0, areas.findIndex((item) => item.id === controls.category))} skillCount={controls.category === "todas" ? totalSkills : countByArea[controls.category] || 0} onSelect={(category) => updateControls({ category })}/></section>
-      <section className="mobile-cloud"><div className="wrap cloud-inner"><div><p className="eyebrow">EDITÁVEL DE QUALQUER LUGAR</p><h2>A biblioteca no seu bolso.</h2><p>O catálogo é estático; favoritos e histórico ficam apenas neste navegador e não são enviados a serviços externos.</p></div><div className="cloud-steps"><div><span>01</span><p><b>Abra a fonte</b><small>Confira a documentação original no GitHub.</small></p></div><div><span>02</span><p><b>Salve preferências</b><small>Favoritos e histórico permanecem no dispositivo.</small></p></div><div><span>03</span><p><b>Compartilhe uma ficha</b><small>Copie a URL da skill e abra-a em outra sessão.</small></p></div></div></div></section>
-      <footer className="footer wrap"><a className="brand" href="#topo"><span className="brand-mark">BT</span><span>Biblioteca <b>Total</b></span></a><span>Índice de Agent Skills · 2026</span><a href="https://github.com/guilhermesorrentine-creator/skills" target="_blank" rel="noreferrer">Código aberto ↗</a></footer>
-      <AnimatePresence>{selectedSkill && <motion.div key={selectedSkill.id} initial={reduced ? false : { opacity: 0 }} animate={{ opacity: 1 }} exit={reduced ? undefined : { opacity: 0 }} transition={{ duration: reduced ? 0 : motionTokens.duration.fast }}><SkillDetail skill={selectedSkill} onClose={closeDetail}/></motion.div>}</AnimatePresence>
-      <AnimatePresence>{selectedRepo && <motion.div key={selectedRepo.name} initial={reduced ? false : { opacity: 0 }} animate={{ opacity: 1 }} exit={reduced ? undefined : { opacity: 0 }} transition={{ duration: reduced ? 0 : motionTokens.duration.fast }}><RepoDetail repo={selectedRepo} onClose={closeDetail}/></motion.div>}</AnimatePresence>
-    </main>
+    <AuroraBackground/>
+    <FloatingNavbar active={onDetail ? "" : activeSection} onNavigate={navigate} onOpenPalette={() => setPaletteOpen(true)}/>
+    <p className="sr-only" role="status" aria-live="polite">{notice}</p>
+    <AnimatePresence mode="wait" initial={false}>
+      {onDetail ? <motion.main key="detail" id="conteudo" className="view view-detail"
+        initial={reduced ? false : { opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} exit={reduced ? undefined : { opacity: 0, y: -10 }}
+        transition={{ duration: motionTokens.duration.fast, ease: motionTokens.easing.smooth }}>{detail}</motion.main>
+      : <motion.main key="home" id="conteudo" className="view view-home"
+        initial={reduced ? false : { opacity: 0 }} animate={{ opacity: 1 }} exit={reduced ? undefined : { opacity: 0 }}
+        transition={{ duration: motionTokens.duration.fast }}>
+        <CyberHero search={search} counts={counts} heroSkills={heroSkills} category={controls.category} emphasisIds={emphasisIds} onOpenSkill={openSkill} onExplore={showCatalog}/>
+        <CategorySection areas={areas.slice(1)} counts={countByArea} active={controls.category} onSelect={(category) => updateControls({ category })} onShowCatalog={showCatalog}/>
+
+        <section className="catalog-section" id="catalogo" aria-labelledby="catalogo-title">
+          <div className="wrap">
+            <div className="section-head">
+              <p className="sys-tag">SEARCH_PROTOCOL://CATALOGO</p>
+              <h2 id="catalogo-title">Explorar o acervo</h2>
+              <p className="section-lead">Ranking local: nome, descrição e caminho de cada skill, com sinônimos em português e inglês. Nada é enviado a serviços externos.</p>
+            </div>
+            <FeaturedSkills skills={featured} query={query} category={controls.category} onOpen={openSkill}/>
+            <div className="catalog-console">
+              <SearchBox inputRef={null} value={controls.query} onChange={(value) => updateControls({ query: value })} suggestions={suggestions} onPick={pickSuggestion} showShortcut={false} label="Buscar no catálogo"/>
+              <div className="chip-row intent-row" role="group" aria-label="Buscar por objetivo">{intentions.slice(0, 7).map((item) => <button key={item} type="button" className="chip" aria-pressed={controls.query === item} onClick={() => updateControls({ query: controls.query === item ? "" : item })}>{item}</button>)}</div>
+              <div className="toolbar">
+                <div className="segmented" role="group" aria-label="Tipo de resultado">
+                  <button type="button" aria-pressed={controls.kind === "skills"} onClick={() => updateControls({ kind: "skills" })}>Skills <span>{visibleSkills.length.toLocaleString("pt-BR")}</span></button>
+                  <button type="button" aria-pressed={controls.kind === "repositorios"} onClick={() => updateControls({ kind: "repositorios", view: "todos" })}>Repositórios <span>{visibleRepos.length}</span></button>
+                </div>
+                <label className="field">Categoria<select value={controls.category} onChange={(event) => updateControls({ category: event.target.value })}>{areas.map((area) => <option key={area.id} value={area.id}>{area.label}</option>)}</select></label>
+                <label className="field">Repositório<select value={controls.repo} onChange={(event) => updateControls({ repo: event.target.value })}><option value="todos">Todos</option>{repoOptions.map((name) => <option value={name} key={name}>{name}</option>)}</select></label>
+                <label className="field">Ordenar<select value={sort} onChange={(event) => setSort(event.target.value)}><option value="relevance">Relevância</option><option value="name">Nome (A–Z)</option></select></label>
+              </div>
+              <div className="toolbar toolbar-secondary">
+                <div className="segmented" role="group" aria-label="Coleção pessoal">
+                  <button type="button" aria-pressed={controls.view === "todos"} onClick={() => updateControls({ view: "todos" })}>Todas</button>
+                  <button type="button" aria-pressed={controls.view === "favoritos"} onClick={() => updateControls({ view: controls.view === "favoritos" ? "todos" : "favoritos", kind: "skills" })}>★ Favoritos <span>{favorites.length}</span></button>
+                  <button type="button" aria-pressed={controls.view === "recentes"} onClick={() => updateControls({ view: controls.view === "recentes" ? "todos" : "recentes", kind: "skills" })}>Recentes <span>{recent.length}</span></button>
+                </div>
+                {controls.view === "recentes" && recent.length > 0 && <button type="button" className="button button-ghost" onClick={() => { if (!clearRecent()) { setStorageError(true); setNotice("O histórico não pôde ser limpo neste navegador."); return; } setRecent([]); setNotice("Histórico local limpo."); }}>Limpar histórico</button>}
+                <button type="button" className="button button-ghost" onClick={clearFilters}>Limpar filtros</button>
+              </div>
+            </div>
+
+            <p className="result-summary"><span className="prompt-caret" aria-hidden="true">&gt;</span> {controls.kind === "skills" ? `${resultCount.toLocaleString("pt-BR")} skills` : `${resultCount} repositórios`} {controls.query ? `para “${controls.query}”` : "no índice"}{storageError ? " · armazenamento local indisponível" : ""}</p>
+            {catalogError && <div className="empty-state" role="alert"><p className="sys-tag">ERR://CATALOG_UNAVAILABLE</p><p>Não foi possível carregar o catálogo. Atualize a página para tentar novamente.</p></div>}
+            {!catalog.length && !catalogError && <div className="mosaic mosaic-loading" aria-hidden="true">{Array.from({ length: 8 }, (_, i) => <div key={i} className={`tile tile-${i === 0 ? "L" : "S"} tile-skeleton`}/>)}</div>}
+            {catalog.length > 0 && resultCount > 0 && <SkillMosaic kind={controls.kind} items={items.slice(0, visibleLimit)} query={query} favorites={favorites} compareIds={compareIds} onOpen={openSkill} onOpenRepo={openRepo} onFavorite={toggleSaved} onCompare={toggleCompared}/>}
+            {catalog.length > 0 && !resultCount && <div className="empty-state">
+              <p className="sys-tag">QUERY://SEM_RESULTADOS</p>
+              <h3>Nenhuma skill corresponde a esta combinação.</h3>
+              <p>{controls.view === "favoritos" ? "Você ainda não favoritou skills com estes filtros. Use ☆ nos cartões para salvar." : controls.view === "recentes" ? "Nenhuma skill visitada corresponde a estes filtros." : "Tente termos mais curtos, em inglês, ou remova a categoria e o repositório selecionados."}</p>
+              <div className="chip-row">{intentions.slice(0, 4).map((item) => <button key={item} type="button" className="chip" onClick={() => updateControls({ query: item, category: "todas", repo: "todos", view: "todos" })}>{item}</button>)}</div>
+              <button type="button" className="button button-primary" onClick={clearFilters}>Limpar busca e filtros</button>
+            </div>}
+            {resultCount > visibleLimit && <div className="load-more"><p>Mostrando {visibleLimit.toLocaleString("pt-BR")} de {resultCount.toLocaleString("pt-BR")}</p><button type="button" className="button button-ghost" onClick={() => setVisibleLimit((limit) => limit + MOSAIC_PAGE)}>Carregar mais</button></div>}
+            {showCompare && <ComparePanel skills={comparison} onRemove={toggleCompared} onClear={() => setCompareIds([])} onOpen={openSkill}/>}
+          </div>
+        </section>
+
+        <RepositoryIndex repos={index.repos} onOpenRepo={openRepo}/>
+
+        <section className="resources-section" id="como-usar" aria-labelledby="como-usar-title">
+          <div className="wrap">
+            <div className="section-head">
+              <p className="sys-tag">MANUAL://COMO_USAR</p>
+              <h2 id="como-usar-title">Do catálogo ao agente</h2>
+              <p className="section-lead">Três passos em ordem. Nomes e caminhos vêm do catálogo; requisitos sempre se confirmam no arquivo original.</p>
+            </div>
+            <div className="resources-grid">
+              <ol className="steps-terminal">
+                <li><span className="step-n" aria-hidden="true">01</span><div><b>Encontre</b><p>Pesquise pelo nome ou pelo objetivo, ou escolha uma das quatro áreas.</p></div></li>
+                <li><span className="step-n" aria-hidden="true">02</span><div><b>Confira a origem</b><p>Abra a ficha, veja o repositório e o caminho e leia o SKILL.md no GitHub.</p></div></li>
+                <li><span className="step-n" aria-hidden="true">03</span><div><b>Adapte o pedido</b><p>Copie o prompt genérico e preencha objetivo, contexto e formato.</p></div></li>
+              </ol>
+              <div className="term-panel command-board">
+                <header className="term-head"><span className="term-dots" aria-hidden="true"><i/><i/><i/></span><h3>Prompt genérico</h3><span className="term-code" aria-hidden="true">prompt --template</span></header>
+                <div className="term-body">
+                  <pre>{"Use as instruções de [skill] para [objetivo].\nContexto: [contexto].\nEntregue: [formato]."}</pre>
+                  <CopyButton value={"Use as instruções de [skill] para [objetivo]. Contexto: [contexto]. Entregue: [formato]."}>Copiar prompt</CopyButton>
+                  <p className="muted small">A biblioteca não presume instalação nem compatibilidade; o arquivo original é a referência.</p>
+                </div>
+              </div>
+              <AnatomyFigure area={{ label: areas.find((item) => item.id === controls.category)?.label || "Todas" }} areaIndex={Math.max(0, areas.findIndex((item) => item.id === controls.category))} skillCount={controls.category === "todas" ? counts.skills : countByArea[controls.category] || 0} onSelect={(category) => updateControls({ category })}/>
+            </div>
+          </div>
+        </section>
+        <SiteFooter counts={counts}/>
+      </motion.main>}
+    </AnimatePresence>
+    {onDetail && <SiteFooter counts={counts}/>}
+
+    {!onDetail && <motion.div className={`compare-tray ${comparison.length ? "is-visible" : ""}`} aria-hidden={!comparison.length} initial={false} animate={{ y: comparison.length ? 0 : 120, opacity: comparison.length ? 1 : 0 }} transition={reduced ? { duration: 0 } : { duration: motionTokens.duration.normal, ease: motionTokens.easing.smooth }}>
+      <span className="compare-tray-count">◆ {comparison.length}/3 na comparação</span>
+      <button type="button" className="button button-primary" tabIndex={comparison.length ? 0 : -1} onClick={() => { setShowCompare(true); requestAnimationFrame(() => document.getElementById("comparacao")?.scrollIntoView({ behavior: reduced ? "instant" : "smooth" })); }}>Comparar</button>
+    </motion.div>}
+    <AnimatePresence>{paletteOpen && <CommandPalette index={index} onClose={() => setPaletteOpen(false)} onOpenSkill={openSkill} onOpenRepo={openRepo} onNavigate={navigate}/>}</AnimatePresence>
   </div>;
 }
