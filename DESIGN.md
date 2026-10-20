@@ -1,33 +1,37 @@
-# Design system — Biblioteca Total
+# Design system — Biblioteca Total 2.1
 
 ## Direção
 
-Biblioteca técnica com linguagem de instrumento de bancada e arcade discreto. O catálogo e a busca são o foco; pixel art e Anatomy explicam a identidade sem competir com as tarefas.
+Um acervo técnico com atmosfera de instrumento luminoso: tipografia editorial, superfícies de grafite azulado, iluminação quente e detalhes de pixel art. A busca permanece a ação principal. A ilustração Anatomy funciona como seletor de áreas; os personagens dão identidade ao hero sem substituir a informação.
 
-## Tokens
+## Cor
 
-- Fundo: `#0B0C0F`; superfície: `#14161B`; superfície elevada: `#191B21`.
-- Texto principal: `#EEE7D9`; texto secundário: `#AAA69D`.
-- Acentos: coral `#E7795C`, dourado `#E7B65D`, verde `#899B63`, azul `#8AACC3`.
-- Borda: `#383B42`; escala espacial baseada em 4 px.
-- Leitura em sans-serif do sistema; rótulos, caminhos e comandos em `Consolas`/monospace.
+| Papel | Token | Valor |
+|---|---|---|
+| Fundo profundo | `--bg` | `#090D14` |
+| Superfície | `--surface` | `#111923` |
+| Superfície elevada | `--surface-raised` | `#192431` |
+| Texto | `--paper` | `#F6F2E9` |
+| Texto secundário | `--muted` | `#B7C0C9` |
+| Dourado de ação | `--gold` | `#EFBD79` |
+| Coral de Software | `--coral` | `#F18B72` |
+| Verde de Conteúdo/estado | `--green` | `#95D0AF` |
+| Azul de Ciência | `--blue` | `#87BFDF` |
+| Linha | `--line` | `#354354` |
 
-## Componentes e uso
+Empreendedorismo usa dourado. Categoria usa um acento consistente no tile, badge e card; o texto da categoria acompanha a cor, portanto a informação não depende só dela. Gradientes são discretos e reforçam a hierarquia, sem alterar a legibilidade do catálogo.
 
-- Busca destacada no hero, com largura confortável e foco visível.
-- Chips de intenção e categoria; filtros combináveis por categoria e repositório.
-- Fichas de skill mostram origem, caminho, razão de correspondência e ações.
-- Coral marca ação e seleção; dourado indica referência ou estado, nunca o único sinal.
-- Personagens originais mantêm pixels nítidos e acompanham conteúdo explicativo.
-- Painéis de detalhe usam diálogo semântico, Escape, foco gerenciado e layout adaptável.
+## Hierarquia e componentes
 
-## Movimento e acessibilidade
+- Títulos em fonte de sistema com peso alto, entrelinha compacta e tracking negativo. Leitura em fonte de sistema; caminhos, comandos e pequenos rótulos em monoespaçada.
+- Hero com título, busca iluminada, três contadores em superfícies próprias e personagens originais em moldura com grid leve. Sprites mantêm pixels nítidos.
+- Toolbar em painel elevado; controles com agrupamento, tamanho de toque e foco visível.
+- Cards com borda colorida por categoria, brilho limitado ao canto, descrição legível, caminho em superfície interna e ações separadas por linha. Repositórios apresentam contagem como elemento editorial.
+- Detalhes e comparação em painéis elevados com origens e campos documentados. Nenhum metadado é inventado.
+- Layout mobile tem uma coluna de cards, busca larga, filtros em duas colunas quando cabem e diálogo em formato de folha a partir da base.
 
-- Preferir `transform` e `opacity`, com duração curta para feedback.
-- Respeitar `prefers-reduced-motion`; toda ação permanece utilizável sem animação.
-- Alvos de toque têm ao menos 40 px, controles possuem rótulos e `:focus-visible` é visível.
-- Em celular, usar uma coluna e filtros que possam quebrar linha sem rolagem horizontal.
+## Movimento
 
-## Conteúdo e confiança
+Tokens de duração e easing ficam em `src/lib/motion-tokens.js`; regras visuais em `src/premium.css`. Título, subtítulo, busca, contadores e arte entram em sequência. Um `IntersectionObserver` revela seções e cards ao aparecerem na tela. Hover eleva cards e botões; seleção, cópia e comparação têm feedback curto. O diálogo abre com opacidade e leve deslocamento; o overlay suaviza o fechamento. No Anatomy, cinco posições distintas e as gavetas respondem aos controles do próprio instrumento.
 
-Metadados vêm do catálogo. Não inferir instalação, suporte de agente, qualidade, requisitos ou limitações. Descrições são texto simples. O conteúdo integral é aberto na origem quando não está disponível localmente.
+Animações usam `transform` e `opacity`. `prefers-reduced-motion` remove entradas e deslocamentos decorativos, preservando estados e posições corretos. Pesquisa e filtros não dependem de animação para responder.

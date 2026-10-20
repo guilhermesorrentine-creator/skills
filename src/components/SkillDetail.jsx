@@ -1,12 +1,15 @@
+import { motion, useReducedMotion } from "motion/react";
+import { motionTokens } from "../lib/motion-tokens.js";
 import { CopyButton } from "./shared.jsx";
 
 const categoryNames = { software: "Software", empreendedorismo: "Empreendedorismo", conteudo: "Conteúdo", ciencia: "Ciência" };
 
 export default function SkillDetail({ skill, onClose }) {
+  const reduced = useReducedMotion();
   const prompt = `Use as instruções da skill ${skill.name} para [objetivo].\nContexto: [contexto do projeto]\nResultado esperado: [formato]\nConsidere somente os requisitos confirmados no conteúdo original.`;
   const shareUrl = `${location.origin}${location.pathname}${location.search}#skill/${encodeURIComponent(skill.id)}`;
   return <div className="detail-overlay" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>
-    <section className="detail-dialog" role="dialog" aria-modal="true" aria-labelledby="detail-title" tabIndex={-1} onKeyDown={(event) => {
+    <motion.section className="detail-dialog" role="dialog" aria-modal="true" aria-labelledby="detail-title" tabIndex={-1} initial={reduced ? false : { opacity: 0, y: 24, scale: 0.985 }} animate={{ opacity: 1, y: 0, scale: 1 }} transition={{ duration: reduced ? 0 : motionTokens.duration.normal, ease: motionTokens.easing.smooth }} onKeyDown={(event) => {
       if (event.key !== "Tab") return;
       const nodes = [...event.currentTarget.querySelectorAll("a[href],button:not([disabled]),[tabindex]:not([tabindex='-1'])")];
       if (!nodes.length) return;
@@ -23,6 +26,6 @@ export default function SkillDetail({ skill, onClose }) {
       <section className="detail-source"><h3>Conteúdo integral</h3><p>O texto completo não está armazenado nesta biblioteca. Consulte o arquivo original no GitHub.</p><div className="skill-actions">{skill.skillUrl && <a className="button button-primary" href={skill.skillUrl} target="_blank" rel="noopener noreferrer">Abrir SKILL.md ↗</a>}{skill.repoUrl && <a className="button button-outline" href={skill.repoUrl} target="_blank" rel="noopener noreferrer">Abrir repositório ↗</a>}{skill.path && <CopyButton value={skill.path}>Copiar caminho</CopyButton>}</div></section>
       <section className="detail-prompt"><h3>Prompt de exemplo</h3><pre>{prompt}</pre><CopyButton value={prompt}>Copiar prompt</CopyButton></section>
       <div className="detail-footer"><span>Origem: catálogo de repositórios da Biblioteca Total.</span><CopyButton value={shareUrl}>Copiar link desta skill</CopyButton><button className="text-link" onClick={onClose}>Fechar</button></div>
-    </section>
+    </motion.section>
   </div>;
 }

@@ -17,5 +17,5 @@ export function CopyButton({ value, children = "Copiar" }) {
       setCopied(true); window.setTimeout(() => setCopied(false), 1600);
     }
   };
-  return <button className="copy-button" onClick={onCopy}>{copied ? "Copiado ✓" : children}<span className="sr-only" role="status">{copied ? "Copiado para a área de transferência" : ""}</span></button>;
+  return <button className={`copy-button ${copied ? "is-copied" : ""}`} onClick={onCopy}>{copied ? "Copiado ✓" : children}<span className="sr-only" role="status">{copied ? "Copiado para a área de transferência" : ""}</span></button>;
 }
