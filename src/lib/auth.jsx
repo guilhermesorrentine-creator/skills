@@ -65,10 +65,10 @@ export function useAccount() {
   const { user, loading: authLoading } = useAuth();
   const [state, setState] = useState({ loading: true, account: null, error: null });
   const signedIn = Boolean(user) || devMode;
-  const reload = useCallback(async (refresh = false) => {
+  const reload = useCallback(async () => {
     if (!signedIn) { setState({ loading: false, account: null, error: null }); return null; }
     try {
-      const account = await apiFetch(`/api/billing/subscription${refresh ? "?refresh=1" : ""}`);
+      const account = await apiFetch("/api/account");
       setState({ loading: false, account, error: null });
       return account;
     } catch (error) { setState({ loading: false, account: null, error }); return null; }

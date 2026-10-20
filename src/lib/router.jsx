@@ -33,3 +33,12 @@ export function Link({ to, children, ...props }) {
     event.preventDefault(); navigate(to);
   }}>{children}</a>;
 }
+
+// "/app/recursos/:id" → { id } quando o caminho corresponde.
+export function matchPath(pattern, path) {
+  const keys = [];
+  const source = pattern.replace(/:[a-z]+/gi, (key) => { keys.push(key.slice(1)); return "([^/]+)"; });
+  const match = path.match(new RegExp(`^${source}/?$`));
+  if (!match) return null;
+  return Object.fromEntries(keys.map((key, index) => { try { return [key, decodeURIComponent(match[index + 1])]; } catch { return [key, match[index + 1]]; } }));
+}

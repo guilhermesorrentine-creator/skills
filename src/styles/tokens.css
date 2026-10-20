@@ -1,49 +1,43 @@
-/* Biblioteca Total 3.0 — tokens de design (cyberpunk holográfico). */
+/* Biblioteca Total 4.0 — tokens de design (minimalista claro). */
 :root {
-  color-scheme: dark;
+  color-scheme: light;
 
-  --bg-primary: #090612;
-  --bg-secondary: #110a19;
-  --bg-tertiary: #1a1028;
+  --bg: #f7f6f2;
+  --bg-soft: #ece5fa;
+  --surface: #ffffff;
+  --surface-muted: #faf9f6;
+  --primary: #7445c7;
+  --primary-hover: #6136ae;
+  --primary-soft: #efe8fb;
+  --text: #23212b;
+  --text-2: #55525f;
+  --text-3: #6e6a78;
+  --line: #e4e0d8;
+  --line-strong: #d2ccc2;
+  --focus: #7445c7;
 
-  --surface-primary: #1b1129;
-  --surface-elevated: #281638;
-  --surface-holographic: rgba(41, 19, 58, 0.72);
-  --surface-glass: rgba(27, 17, 41, 0.78);
+  /* Cores auxiliares por área/tipo: suaves, sempre com rótulo textual. */
+  --tint-software: #ece5fa;
+  --tint-empreendedorismo: #fdebd8;
+  --tint-conteudo: #fbe4ee;
+  --tint-ciencia: #dff3ea;
+  --ink-software: #5b33a3;
+  --ink-empreendedorismo: #8a4b12;
+  --ink-conteudo: #9c2f5e;
+  --ink-ciencia: #1f6b4a;
 
-  --neon-purple: #d94cf5;
-  --neon-purple-light: #e88dff;
-  --neon-pink: #ff7cb9;
-  --neon-pink-strong: #ff4fa5;
-  --neon-cyan: #7ef0ff;
+  --ok: #1f6b4a;
+  --warn: #8a4b12;
+  --danger: #b4233c;
 
-  --text-primary: #fff0fb;
-  --text-secondary: #d1badf;
-  --text-muted: #a48eb5;
-  --text-on-neon: #1a0624;
-
-  --border-default: rgba(193, 118, 225, 0.24);
-  --border-strong: rgba(193, 118, 225, 0.42);
-  --border-active: rgba(233, 128, 255, 0.85);
-
-  --glow-purple: 0 0 28px rgba(217, 76, 245, 0.23);
-  --glow-pink: 0 0 30px rgba(255, 124, 185, 0.23);
-  --shadow-deep: 0 24px 60px rgba(4, 1, 10, 0.55);
-  --gradient-neon: linear-gradient(120deg, var(--neon-purple), var(--neon-pink));
-  --gradient-edge: linear-gradient(140deg, rgba(232, 141, 255, 0.55), rgba(255, 124, 185, 0.08) 38%, rgba(217, 76, 245, 0) 60%, rgba(255, 124, 185, 0.4));
-
-  /* Cores secundárias por categoria — sempre acompanhadas de rótulo textual. */
-  --cat-software: #b98cff;
-  --cat-empreendedorismo: #ff7cb9;
-  --cat-conteudo: #ff9de0;
-  --cat-ciencia: #7ef0ff;
-
-  --font-mono: "JetBrains Mono Variable", "JetBrains Mono", Consolas, ui-monospace, monospace;
+  --font-display: "Plus Jakarta Sans Variable", "Plus Jakarta Sans", "Segoe UI", system-ui, sans-serif;
   --font-sans: "Inter Variable", Inter, "Segoe UI", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono Variable", "JetBrains Mono", Consolas, ui-monospace, monospace;
 
   --radius-sm: 8px;
   --radius-md: 14px;
   --radius-lg: 22px;
+  --radius-xl: 32px;
   --radius-pill: 999px;
 
   --space-1: 4px;
@@ -54,19 +48,23 @@
   --space-6: 32px;
   --space-7: 48px;
   --space-8: 72px;
+  --space-9: 112px;
 
-  --page-width: 1240px;
+  --shadow-1: 0 1px 2px rgba(35, 33, 43, 0.06), 0 1px 1px rgba(35, 33, 43, 0.04);
+  --shadow-2: 0 10px 30px -12px rgba(35, 33, 43, 0.18), 0 2px 6px rgba(35, 33, 43, 0.05);
+  --shadow-3: 0 30px 60px -24px rgba(65, 40, 110, 0.28), 0 8px 18px -10px rgba(35, 33, 43, 0.12);
+
+  --page-width: 1200px;
   --gutter: clamp(16px, 4vw, 40px);
-  --nav-height: 64px;
+  --nav-height: 60px;
 
   /* Espelha `src/lib/motion-tokens.js`. */
-  --dur-fast: 180ms;
-  --dur-normal: 420ms;
-  --dur-slow: 720ms;
+  --dur-fast: 160ms;
+  --dur-normal: 360ms;
   --ease-smooth: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-[data-category="software"] { --cat: var(--cat-software); }
-[data-category="empreendedorismo"] { --cat: var(--cat-empreendedorismo); }
-[data-category="conteudo"] { --cat: var(--cat-conteudo); }
-[data-category="ciencia"] { --cat: var(--cat-ciencia); }
+[data-category="software"] { --tint: var(--tint-software); --ink: var(--ink-software); }
+[data-category="empreendedorismo"] { --tint: var(--tint-empreendedorismo); --ink: var(--ink-empreendedorismo); }
+[data-category="conteudo"] { --tint: var(--tint-conteudo); --ink: var(--ink-conteudo); }
+[data-category="ciencia"] { --tint: var(--tint-ciencia); --ink: var(--ink-ciencia); }

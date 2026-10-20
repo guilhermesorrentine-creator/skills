@@ -2,7 +2,8 @@ import { useEffect, useState } from "react";
 import { motion, useReducedMotion } from "motion/react";
 import { authActions, authConfigured, useAuth } from "../lib/auth.jsx";
 import { Link, navigate, safeNext } from "../lib/router.jsx";
-import { subscribe } from "../lib/billing-client.js";
+import { purchase } from "../lib/billing-client.js";
+import { Brand } from "../components/site/SiteNav.jsx";
 import { motionTokens } from "../lib/motion-tokens.js";
 
 const copy = {
@@ -18,7 +19,7 @@ export default function AuthPage({ mode, account, onAuthenticated }) {
   const { user } = useAuth();
   const params = new URLSearchParams(location.search);
   const next = safeNext(params.get("next"));
-  const plan = params.get("plano");
+  const plan = params.get("edicao");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
@@ -30,7 +31,7 @@ export default function AuthPage({ mode, account, onAuthenticated }) {
   // Já autenticado: segue para o plano escolhido ou para o destino pedido.
   useEffect(() => {
     if (!user || mode === "reset" || !account) return;
-    if (plan && !account.access) subscribe(plan, { signedIn: true }).catch((cause) => setError(cause.message));
+    if (plan && !account.access) purchase(plan, { signedIn: true }).catch((cause) => setError(cause.message));
     else onAuthenticated(next);
   }, [user, account, mode]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -52,19 +53,18 @@ export default function AuthPage({ mode, account, onAuthenticated }) {
     finally { setBusy(false); }
   };
 
-  return <main id="conteudo" className="view auth-view">
+  return <main id="conteudo" className="auth-view">
     <motion.div className="auth-card" initial={reduced ? false : { opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: motionTokens.duration.normal, ease: motionTokens.easing.smooth }}>
-      <Link className="brand" to="/"><span className="brand-mark" aria-hidden="true">BT</span><span className="brand-name">BIBLIOTECA<b>_TOTAL</b></span></Link>
-      <p className="sys-tag"><span className="status-dot"/> AUTH://{mode.toUpperCase()}</p>
-      <h1>{text.title}</h1>
-      <p className="auth-lead">{plan && mode !== "recover" ? "Entre ou crie sua conta para continuar a contratação do plano escolhido." : text.lead}</p>
+      <Brand/>
+            <h1>{text.title}</h1>
+      <p className="auth-lead">{plan && mode !== "recover" ? "Entre ou crie sua conta para continuar a compra." : text.lead}</p>
       {!authConfigured && <p className="form-error" role="alert">Login indisponível neste ambiente: o Supabase ainda não foi configurado (VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY).</p>}
       <form onSubmit={onSubmit} className="auth-form" noValidate>
         {mode !== "reset" && <label className="auth-field">E-mail<input type="email" autoComplete="email" required value={email} onChange={(event) => setEmail(event.target.value)}/></label>}
         {mode !== "recover" && <label className="auth-field">{mode === "reset" ? "Nova senha" : "Senha"}<input type="password" autoComplete={mode === "login" ? "current-password" : "new-password"} required minLength={8} value={password} onChange={(event) => setPassword(event.target.value)}/></label>}
         {error && <p className="form-error" role="alert">{error}</p>}
         {done && <p className="form-ok" role="status">{done}</p>}
-        <button type="submit" className="button button-primary auth-submit" disabled={busy || !authConfigured} aria-busy={busy}>{busy ? "Aguarde…" : text.submit}</button>
+        <button type="submit" className="btn btn-primary auth-submit" disabled={busy || !authConfigured} aria-busy={busy}>{busy ? "Aguarde…" : text.submit}</button>
       </form>
       <div className="auth-links">
         {mode === "login" && <><Link to={`/cadastro${query}`}>Criar conta</Link><Link to={`/recuperar-senha${query}`}>Esqueci a senha</Link></>}

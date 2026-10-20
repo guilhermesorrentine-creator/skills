@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+Disallow: /app
+Disallow: /admin
+Disallow: /c/
+Disallow: /api/
+Sitemap: https://skills-five-snowy.vercel.app/sitemap.xml

@@ -29,11 +29,20 @@
           "value": "private, no-store"
         }
       ]
+    },
+    {
+      "source": "/c/(.*)",
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, nofollow"
+        }
+      ]
     }
   ],
   "rewrites": [
     {
-      "source": "/((?!api/|data/|assets/).*)",
+      "source": "/((?!api/|data/|assets/|favicon.svg|robots.txt|sitemap.xml).*)",
       "destination": "/index.html"
     }
   ],

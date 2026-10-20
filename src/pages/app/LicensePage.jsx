@@ -1,0 +1,50 @@
+import { useState } from "react";
+import { formatPrice, purchase } from "../../lib/billing-client.js";
+
+const when = (value) => (value ? new Date(value).toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" }) : "—");
+const kinds = { activated: "Licença ativada", upgraded: "Upgrade", refunded: "Estorno", disputed: "Contestação de pagamento", reconciled: "Confirmada por conciliação", admin_active: "Restaurada pela administração", admin_revoked: "Revogada pela administração", upgrade_without_charge: "Upgrade sem cobrança" };
+const orderStatus = { pending: "Aguardando pagamento", paid: "Pago", canceled: "Cancelado", expired: "Expirado", failed: "Falhou", refunded: "Estornado" };
+
+// Minha licença: edição adquirida, histórico e upgrade opcional (pagando a diferença).
+export default function LicensePage({ account }) {
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  if (!account) return <div className="page"><p className="muted">Carregando…</p></div>;
+  const paid = account.orders.filter((order) => order.status === "paid");
+  const upgrade = async () => {
+    setBusy(true); setError("");
+    try { await purchase(account.upgrade.edition.code, { signedIn: true }); } catch (e) { setError(e.message); setBusy(false); }
+  };
+  return <div className="page">
+    <header className="page-head"><h1>Minha licença</h1></header>
+    <section className="license-hero">
+      <p className="eyebrow">{account.edition?.name || "Sem edição"}</p>
+      <h2>{account.access ? "Seu acesso à edição adquirida é vitalício." : "Sua conta ainda não tem uma licença ativa."}</h2>
+      <p className="muted">Novas edições podem oferecer recursos extras mediante upgrade opcional.</p>
+      <dl className="license-facts">
+        <div><dt>Situação</dt><dd>{account.license?.statusLabel || (account.accessReason === "grant" ? "Acesso concedido pela administração" : account.accessReason === "dev" ? "Modo desenvolvimento" : "—")}</dd></div>
+        <div><dt>Ativação</dt><dd>{when(account.license?.activatedAt)}</dd></div>
+        <div><dt>Aquisição</dt><dd>{when(paid.at(-1)?.paidAt)}</dd></div>
+        <div><dt>Total pago</dt><dd>{formatPrice(paid.reduce((sum, order) => sum + order.amountCents, 0))}</dd></div>
+      </dl>
+    </section>
+
+    {account.edition?.features?.length > 0 && <section className="panel"><h2>Incluído na sua edição</h2><ul className="check-list">{account.edition.features.map((f) => <li key={f}>{f}</li>)}</ul></section>}
+
+    {account.upgrade && <section className="panel upgrade-panel"><h2>{account.upgrade.edition.name} disponível</h2>
+      <p>Preço da edição: {formatPrice(account.upgrade.listPrice)} · Crédito já pago: {formatPrice(account.upgrade.credit)}</p>
+      <p className="upgrade-amount">Upgrade por <b>{formatPrice(account.upgrade.amount)}</b></p>
+      <p className="small muted">Opcional. Se não atualizar, você continua com a edição atual.</p>
+      <button type="button" className="btn btn-primary" onClick={upgrade} disabled={busy}>{busy ? "Abrindo pagamento…" : "Fazer upgrade"}</button>
+      {error && <p className="form-error" role="alert">{error}</p>}
+    </section>}
+    {!account.upgrade && account.latestEdition && account.access && <p className="muted">Você já tem a edição mais recente disponível ({account.latestEdition.name}).</p>}
+    {account.pendingOrder && <p className="notice">Há um pagamento em andamento. <a className="link" href={account.pendingOrder.url}>Continuar pagamento</a></p>}
+
+    <section className="panel"><h2>Pedidos</h2>
+      {account.orders.length === 0 ? <p className="muted">Nenhum pedido.</p> : <div className="table-wrap"><table className="table"><thead><tr><th scope="col">Data</th><th scope="col">Edição</th><th scope="col">Tipo</th><th scope="col">Valor</th><th scope="col">Situação</th></tr></thead>
+        <tbody>{account.orders.map((order) => <tr key={order.id}><td>{when(order.createdAt)}</td><td>{order.edition?.name}</td><td>{order.kind === "upgrade" ? `Upgrade (crédito ${formatPrice(order.creditCents)})` : "Compra"}</td><td>{formatPrice(order.amountCents)}</td><td>{orderStatus[order.status] || order.status}</td></tr>)}</tbody></table></div>}
+    </section>
+    {account.history.length > 0 && <section className="panel"><h2>Histórico da licença</h2><ul className="timeline">{account.history.map((event, i) => <li key={i}><b>{kinds[event.kind] || event.kind}</b>{event.to && <> · {event.to}</>}<span className="muted small"> · {when(event.createdAt)}</span></li>)}</ul></section>}
+  </div>;
+}
