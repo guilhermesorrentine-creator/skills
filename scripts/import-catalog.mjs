@@ -1,4 +1,4 @@
-import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { readFile, writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
 
 function argument(name) {
@@ -33,7 +33,7 @@ const records = JSON.parse(await readFile(resolve(input), "utf8")).map(sanitize)
 for (const record of records) {
   let url;
   try { url = new URL(record.url); } catch { throw new Error(`URL inválida no registro ${record.name}.`); }
-  if (url.protocol !== "https:" || url.hostname !== "github.com") {
+  if (url.protocol !== "https:" || url.hostname !== "github.com" || url.username || url.password || url.pathname.split("/").filter(Boolean).length !== 2) {
     throw new Error(`URL fora da lista permitida no registro ${record.name}; use um link HTTPS do GitHub.`);
   }
   const normalized = record.category.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
@@ -49,6 +49,4 @@ if (/[A-Z]:\\\\Users\\\\[^\\"\s]+/i.test(serialized)) {
 }
 
 await writeFile(output, serialized, "utf8");
-await mkdir("public/data", { recursive: true });
-await writeFile("public/data/catalog.json", serialized, "utf8");
-console.log(`Catálogo salvo: ${records.length} repositórios, ${records.reduce((sum, item) => sum + (item.count || 0), 0)} skills.`);
+console.log(`Catálogo salvo: ${records.length} repositórios, ${records.reduce((sum, item) => sum + (item.skills?.length || 0), 0)} skills.`);

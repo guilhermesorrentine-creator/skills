@@ -10,16 +10,18 @@ Publicar um guia navegável e responsivo da biblioteca local de repositórios e 
 - Seis repositórios não tinham definições `SKILL.md` no inventário; devem aparecer como repositórios com ferramentas ou conteúdo, sem inventar skills.
 - Fonte geral: `biblioteca-total.catalog.json`, gerado a partir dos clones locais e dos seus README/arquivos `SKILL.md`.
 - Referência complementar solicitada: `ciencia/scientific-agent-skills/docs/skills.md`. Ela cataloga 177 skills científicas e serve para conferir a seção de Ciência; não descreve sozinha as outras áreas.
+- `src/data/catalog.json` é a fonte canônica. A cópia em `public/data/catalog.json` é gerada e validada antes de dev/build.
 - O JSON publicado deve excluir caminhos absolutos locais. Exibir nome, descrição, caminho relativo no repositório e link GitHub somente quando esses campos estiverem presentes e válidos.
 
 ## Estrutura e comportamento
 
-1. Página inicial com resumo da biblioteca, quatro áreas e acesso ao índice.
-2. Busca por repositório, skill e assunto; filtros por área.
-3. Guia por repositório com propósito, quantidade de skills, caminho para começar, limitações registradas, exemplos de prompt e link para a fonte.
-4. Catálogo em linhas inspirado na página 12 da referência enviada: nome da skill/comando, resumo, uso recomendado e botão de cópia com feedback acessível. Não apresentar nomes de skills como comandos slash.
-5. Prompts em português com placeholders. Comandos de ativação derivados de `ativar-skills.ps1`, usando placeholders para caminhos locais.
-6. HTML/CSS/JS e dados-fonte mantidos em arquivos separados para edição no GitHub pelo celular. Vercel recebe um build estático sem backend nem segredos.
+1. Página inicial com resumo da biblioteca, busca em destaque e quatro áreas.
+2. Busca nas skills e nos repositórios, em abas distintas, com ranking local, acentos normalizados, sinônimos PT/EN, erros simples de digitação e razão de correspondência.
+3. Filtros combináveis por categoria e repositório, ordenação por relevância/nome, filtros na URL, favoritos e histórico locais.
+4. Ficha individual de skill com metadados reais, prompt genérico copiável, caminho e link de origem. O catálogo não inclui o texto integral; a ficha informa essa ausência e aponta ao GitHub.
+5. Guia por repositório com quantidade e exemplos genéricos, sem inventar compatibilidade, pré-requisitos ou comandos slash.
+6. Comparação de até três skills usando os metadados disponíveis, sem notas de qualidade.
+7. Dados-fonte e interface separados para edição no GitHub pelo celular. Vercel recebe build estático sem backend nem segredos.
 
 ## Direção visual
 
@@ -27,7 +29,8 @@ Publicar um guia navegável e responsivo da biblioteca local de repositórios e 
 - Criar uma identidade própria. Não usar marca, textos ou ilustrações de Habblaud.
 - Personagens originais em sprites próprios. Preservar os pixels e transparência; não carregar sprites de terceiros.
 - Figura interativa Anatomy de tamanho **Figure**: um seletor de skills em forma de instrumento físico. A lista de peças e o comportamento ficam em `ilustracao-anatomy.md` antes da geometria.
-- Movimento segue `motion-foundations`/`motion-patterns`: tokens compartilhados, apenas transform/opacity, entrada e saída pareadas, suporte a `prefers-reduced-motion` e controles que preservam teclado e foco.
+- Tokens compartilhados ficam em `src/lib/motion-tokens.js`; transições são curtas, pareadas, usam transform/opacity e respeitam `prefers-reduced-motion`.
+- Busca e controles mantêm foco visível, nomes acessíveis e alvos de toque de pelo menos 40 px.
 
 ## Segurança e publicação
 

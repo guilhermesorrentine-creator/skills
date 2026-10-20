@@ -4,9 +4,13 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
+    "predev": "node scripts/sync-public-catalog.mjs",
     "dev": "vite --host 0.0.0.0",
+    "prebuild": "node scripts/sync-public-catalog.mjs",
     "build": "vite build",
-    "preview": "vite preview --host 0.0.0.0"
+    "preview": "vite preview --host 0.0.0.0",
+    "test": "node --test",
+    "sync:catalog": "node scripts/sync-public-catalog.mjs"
   },
   "dependencies": {
     "motion": "^12.23.24",

@@ -38,7 +38,7 @@
 
 ## Movimento
 
-- Tokens centralizados em `src/lib/motion-tokens.ts`.
+- Tokens centralizados em `src/lib/motion-tokens.js`.
 - Limitar animação a feedback de controles, mudança de estado e entrada curta de conteúdo.
 - Usar `transform`/`opacity`, e desligar movimento decorativo com movimento reduzido.
 - Ações continuam funcionais sem animação.
