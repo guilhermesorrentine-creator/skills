@@ -2,6 +2,7 @@
 // servidor de desenvolvimento e pelos testes. Autorização sempre decidida aqui, no servidor.
 import { publicEdition } from "./commerce.js";
 import { validateResource } from "./library.js";
+import { readTracking } from "./meta.js";
 
 const noStore = { "Cache-Control": "private, no-store", "Content-Type": "application/json; charset=utf-8" };
 export const json = (status, body, headers = {}) => new Response(JSON.stringify(body), { status, headers: { ...noStore, ...headers } });
@@ -51,7 +52,7 @@ export function createApi({ store, commerce, onboarding = null, library, me, ver
       if (devUser) return ok({ email: user.email, access: true, accessReason: "dev", rank: 99, isAdmin: false, edition: null, license: null, orders: [], history: [] });
       return ok(await commerce.accountState(user));
     },
-    "POST /api/checkout": async (request) => ok(await commerce.startCheckout(await requireUser(request), (await body(request)).editionCode)),
+    "POST /api/checkout": async (request) => { const input = await body(request); return ok(await commerce.startCheckout(await requireUser(request), input.editionCode, readTracking(input.tracking, request))); },
 
     // Catálogo autorizado: índice para a busca local e detalhe de um recurso
     "GET /api/library": async (request) => { const { rank } = await requireAccess(request); return ok(await library.libraryFor(rank)); },

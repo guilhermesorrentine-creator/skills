@@ -4,6 +4,7 @@ import AuthPage from "./pages/AuthPage.jsx";
 import { AccessPendingPage, CheckoutReturnPage, LegalPage, NotFound, SharedCollectionPage } from "./pages/AccountPages.jsx";
 import { AuthProvider, useAccount, useAuth } from "./lib/auth.jsx";
 import { matchPath, navigate, safeNext, usePathname } from "./lib/router.jsx";
+import ConsentBanner from "./components/site/ConsentBanner.jsx";
 
 const AppRoutes = lazy(() => import("./pages/app/AppRoutes.jsx"));
 const AdminPage = lazy(() => import("./pages/AdminPage.jsx"));
@@ -76,5 +77,5 @@ function Routes() {
 }
 
 export default function Root() {
-  return <AuthProvider><Routes/></AuthProvider>;
+  return <AuthProvider><Routes/><ConsentBanner/></AuthProvider>;
 }

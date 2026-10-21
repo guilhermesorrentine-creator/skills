@@ -130,3 +130,11 @@ O vídeo descreve 7 etapas para quem começa sem investimento. O que entra na Vo
 
 - **Você:** criar o Instagram e o Business Manager (eu não posso criar contas), cadastrar o pagamento da conta de anúncios, comprar o domínio e aprovar cada publicação e cada campanha antes de ir ao ar.
 - **Eu (Claude):** perfil, legendas, artes e vídeos dos posts; agendamento no Meta Business Suite com a sua sessão aberta no Chrome; montagem das campanhas no Gerenciador de Anúncios, deixadas em rascunho até a sua aprovação; Pixel, API de Conversões e aviso de cookies no site; relatório semanal com os números.
+
+## 8. Pixel, API de Conversões e cookies (implementado)
+
+- **Aviso de cookies** (`src/components/site/ConsentBanner.jsx`): Aceitar e Recusar com o mesmo peso. Só aparece quando o Pixel está configurado. Pode ser revisto em "Preferências de cookies", no rodapé.
+- **Pixel** (`src/lib/meta-pixel.js`): carrega só com `VITE_META_PIXEL_ID` e consentimento. Envia `PageView` (cada página), `ViewContent` (quando a oferta aparece) e `InitiateCheckout` (clique em comprar).
+- **API de Conversões** (`server/meta.js`): o `Purchase` sai do servidor, uma vez por pedido, quando o Asaas confirma o pagamento. Leva e-mail e ID do usuário em hash SHA-256, `fbp`/`fbc`, IP e navegador. Sem consentimento, nada é guardado nem enviado.
+- **Para ligar:** rodar a migração `20261021190000_meta_conversions.sql` no Supabase; na Vercel, `VITE_META_PIXEL_ID` (público) e `META_CAPI_TOKEN` (segredo); para testar, `META_TEST_EVENT_CODE` com o código da aba "Testar eventos" do Gerenciador de Eventos.
+- **Pendente:** o texto final da política de privacidade, que precisa citar o Meta e os cookies.

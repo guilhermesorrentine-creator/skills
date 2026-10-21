@@ -11,6 +11,7 @@ import { cardReveal, motionTokens, reveal } from "../lib/motion-tokens.js";
 import { CATEGORIES, categoryLabel, TYPES } from "../lib/resources.js";
 import { buildResourceIndex, searchResources } from "../lib/search.js";
 import { formatPrice, purchase } from "../lib/billing-client.js";
+import { track } from "../lib/meta-pixel.js";
 
 // Copy de venda: cada bloco responde a uma objeção de quem está começando com IA.
 // Só fatos verificáveis (números vêm do acervo); nada de depoimento ou escassez inventados.
@@ -177,7 +178,7 @@ export default function LandingPage({ account, signedIn, onEnter }) {
       </Section>
 
       <Section id="acesso" eyebrow="Acesso vitalício" title="Pague uma vez. Use para sempre.">
-        <motion.div className="l-offer" initial={reduced ? false : { opacity: 0, y: 60, scale: 1.06, filter: "blur(10px)" }} whileInView={{ opacity: 1, y: 0, scale: 1, filter: "blur(0px)" }} viewport={{ once: true, amount: 0.3 }}
+        <motion.div className="l-offer" onViewportEnter={() => edition && track("ViewContent", { currency: "BRL", value: edition.priceCents / 100, content_ids: [edition.code], content_type: "product" })} initial={reduced ? false : { opacity: 0, y: 60, scale: 1.06, filter: "blur(10px)" }} whileInView={{ opacity: 1, y: 0, scale: 1, filter: "blur(0px)" }} viewport={{ once: true, amount: 0.3 }}
           transition={{ default: { duration: 0.75, ease: motionTokens.easing.snapSettle }, opacity: { duration: 0.2 } }}>
           <div className="l-offer-main">
             <p className="eyebrow">{edition ? edition.name : "Voxelia — Edição 1"}</p>

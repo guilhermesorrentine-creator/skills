@@ -1,4 +1,5 @@
 import { Link } from "../../lib/router.jsx";
+import { setConsent } from "../../lib/consent.js";
 import { Brand } from "./SiteNav.jsx";
 
 const supportEmail = import.meta.env.VITE_SUPPORT_EMAIL;
@@ -17,7 +18,7 @@ export default function SiteFooter({ onEnter }) {
       </nav>
       <nav aria-label="Documentos">
         <h3>Documentos</h3>
-        <ul><li><Link to="/termos">Termos de uso</Link></li><li><Link to="/privacidade">Privacidade</Link></li><li><Link to="/compra-e-reembolso">Compra e reembolso</Link></li></ul>
+        <ul><li><Link to="/termos">Termos de uso</Link></li><li><Link to="/privacidade">Privacidade</Link></li><li><Link to="/compra-e-reembolso">Compra e reembolso</Link></li><li><button type="button" className="link" onClick={() => setConsent(null)}>Preferências de cookies</button></li></ul>
       </nav>
     </div>
     <div className="wrap site-footer-base"><span>Dados legais do vendedor: pendentes de aprovação.</span><a href="https://github.com/guilhermesorrentine-creator/skills" target="_blank" rel="noopener noreferrer">Código no GitHub ↗</a></div>

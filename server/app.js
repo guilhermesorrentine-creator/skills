@@ -7,6 +7,7 @@ import { createLibrary } from "./library.js";
 import { createMe } from "./me.js";
 import { createMailer } from "./email.js";
 import { createOnboarding } from "./onboarding.js";
+import { createConversions } from "./meta.js";
 import { createApi, json } from "./routes.js";
 import { createSupabaseStore } from "./store-supabase.js";
 import { createMemoryStore } from "./store-memory.js";
@@ -19,7 +20,7 @@ const loadCatalog = async () => (catalogCache ||= JSON.parse(await readFile(new 
 function assemble(store, asaas, config, extra = {}) {
   const library = createLibrary({ store, loadCatalog });
   const onboarding = createOnboarding({ store, mailer: createMailer(config.email), config });
-  return createApi({ store, commerce: createCommerce({ store, asaas, config, onboarding }), onboarding, library, me: createMe({ store, library }), ...extra });
+  return createApi({ store, commerce: createCommerce({ store, asaas, config, onboarding, conversions: createConversions(config.meta) }), onboarding, library, me: createMe({ store, library }), ...extra });
 }
 
 function build() {

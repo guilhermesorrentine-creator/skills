@@ -7,7 +7,7 @@ const PAID_PAYMENT = new Set(["PAYMENT_CONFIRMED", "PAYMENT_RECEIVED"]);
 const DISPUTE = new Set(["PAYMENT_CHARGEBACK_REQUESTED", "PAYMENT_CHARGEBACK_DISPUTE", "PAYMENT_AWAITING_CHARGEBACK_REVERSAL"]);
 
 // Pagamento único por edição (Asaas Checkout avulso) e licença vitalícia.
-export function createCommerce({ store, asaas, config, onboarding = null, now = () => new Date() }) {
+export function createCommerce({ store, asaas, config, onboarding = null, conversions = null, now = () => new Date() }) {
   async function userEntitlement(userId) {
     const [license, grants, editions] = await Promise.all([store.getLicense(userId), store.listGrants(userId), store.listEditions({ onSaleOnly: false })]);
     return { license, grants, editions, ...entitlement({ license, grants, editions, now: now() }) };
@@ -44,7 +44,7 @@ export function createCommerce({ store, asaas, config, onboarding = null, now = 
   }
 
   // Cria (ou reaproveita) o pedido e o Checkout avulso no Asaas. Preço sempre do servidor.
-  async function startCheckout(user, editionCode) {
+  async function startCheckout(user, editionCode, tracking = null) {
     const target = await store.getEditionByCode(String(editionCode || ""));
     if (!target || !target.on_sale) throw httpError(404, "edition_not_found", "Edição indisponível para compra.");
     const open = await store.getOpenOrder(user.id, now());
@@ -67,7 +67,8 @@ export function createCommerce({ store, asaas, config, onboarding = null, now = 
 
     // O índice único parcial impede dois pedidos em aberto simultâneos.
     const order = await store.insertOrder({ ...base, status: "creating", expires_at: expiresAt });
-    if (!order) return startCheckout(user, editionCode);
+    if (!order) return startCheckout(user, editionCode, tracking);
+    if (tracking) await saveTracking(order.id, tracking);
     try {
       const checkout = await asaas.createCheckout({
         billingTypes: ["PIX", "CREDIT_CARD"],
@@ -87,6 +88,22 @@ export function createCommerce({ store, asaas, config, onboarding = null, now = 
     } catch (error) {
       await store.updateOrder(order.id, { status: "failed", error: String(error.message).slice(0, 500) });
       throw error.status ? error : httpError(502, "asaas_error", "Não foi possível iniciar o pagamento.");
+    }
+  }
+
+  // Dados de anúncio (com consentimento) ficam no pedido; falha aqui não impede a compra.
+  async function saveTracking(orderId, tracking) {
+    try { await store.updateOrder(orderId, { ad_tracking: tracking }); } catch (error) { console.error("[meta] rastreio não salvo:", error.message); }
+  }
+
+  // Purchase para a API de Conversões, uma vez por pedido (só na transição para pago).
+  async function reportPurchase(order) {
+    if (!conversions || !order.ad_tracking || order.amount_cents <= 0) return;
+    try {
+      const [profile, editions] = await Promise.all([store.getProfile(order.user_id), store.listEditions({ onSaleOnly: false })]);
+      await conversions.purchase({ order, email: profile?.email, editionCode: editions.find((edition) => edition.id === order.edition_id)?.code, eventTime: now() });
+    } catch (error) {
+      console.error("[meta] Purchase não enviado:", error.message);
     }
   }
 
@@ -161,6 +178,7 @@ export function createCommerce({ store, asaas, config, onboarding = null, now = 
       await store.updateOrder(order.id, { status: "paid", paid_at: now().toISOString(), asaas_customer_id: checkout.customer || order.asaas_customer_id || null });
       if (checkout.customer) await store.setCustomerId(order.user_id, checkout.customer);
       await activateLicense(order.user_id, { ...order, status: "paid" }, order.kind === "upgrade" ? "upgraded" : "activated");
+      await reportPurchase(order);
       for (const pending of await store.listEvents({ status: "unlinked", limit: 50 })) if (pending.id !== row.id) await processEvent(pending);
       return finish(row, "processed", "Licença ativada.");
     }
@@ -187,6 +205,7 @@ export function createCommerce({ store, asaas, config, onboarding = null, now = 
     if (PAID_PAYMENT.has(payload.event) && order?.status === "pending") {
       await store.updateOrder(order.id, { status: "paid", paid_at: now().toISOString() });
       await activateLicense(profile.id, { ...order, status: "paid" });
+      await reportPurchase(order);
       return finish(row, "processed", "Licença ativada pela confirmação da cobrança.");
     }
     if (payload.event === "PAYMENT_REFUNDED" && order?.status === "paid") {

@@ -17,6 +17,8 @@ export function readConfig(env = process.env) {
     },
     // E-mails de boas-vindas (Resend). Sem chave, nada é enviado e o admin recebe o link para copiar.
     email: { apiKey: env.RESEND_API_KEY || "", from: env.EMAIL_FROM || "" },
+    // API de Conversões do Meta (Purchase). O token é segredo; o ID do Pixel é público.
+    meta: { pixelId: env.META_PIXEL_ID || env.VITE_META_PIXEL_ID || "", token: env.META_CAPI_TOKEN || "", testEventCode: env.META_TEST_EVENT_CODE || "" },
     // Atalho de desenvolvimento local: só existe fora da Vercel e fora de produção.
     devBypass: env.BT_DEV_BYPASS === "1" && !env.VERCEL && env.NODE_ENV !== "production",
   };

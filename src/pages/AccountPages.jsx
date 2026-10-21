@@ -84,7 +84,7 @@ export function SharedCollectionPage({ token }) {
 
 const legal = {
   termos: { title: "Termos de uso", sections: ["Objeto do serviço e descrição da plataforma", "Cadastro e responsabilidades do usuário", "Licença vitalícia por edição: alcance e limites", "Conteúdo de terceiros e licenças dos repositórios indexados", "Disponibilidade, manutenção e suporte", "Limitação de responsabilidade", "Foro e legislação aplicável"] },
-  privacidade: { title: "Política de privacidade", sections: ["Dados coletados (e-mail, favoritos, histórico, coleções, dados de pagamento recebidos do Asaas)", "Finalidade e base legal (LGPD)", "Operadores (Supabase, Asaas, Vercel)", "Compartilhamento opcional de coleções", "Direitos do titular e canal de contato", "Retenção e exclusão"] },
+  privacidade: { title: "Política de privacidade", sections: ["Dados coletados (e-mail, favoritos, histórico, coleções, dados de pagamento recebidos do Asaas)", "Finalidade e base legal (LGPD)", "Operadores (Supabase, Asaas, Vercel, Meta)", "Cookies de marketing: Pixel e API de Conversões do Meta, só com consentimento, revogável em Preferências de cookies", "Compartilhamento opcional de coleções", "Direitos do titular e canal de contato", "Retenção e exclusão"] },
   "compra-e-reembolso": { title: "Compra e reembolso", sections: ["Preço, pagamento único e meios de pagamento", "Liberação do acesso após confirmação", "Upgrades opcionais e cálculo da diferença", "Direito de arrependimento (CDC) e reembolsos", "Contestações e estornos", "Contato para cobrança"] },
 };
 
