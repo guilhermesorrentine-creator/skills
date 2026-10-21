@@ -46,7 +46,7 @@ const armsIn = (body, fill) => patch(body, {
   18: body[18].replace(/S/g, fill),
 });
 
-const camera = [
+export const camera = [
   "..KKK....",
   "KKKKKKKKK",
   "KOOOOKKOK",

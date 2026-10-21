@@ -1,5 +1,5 @@
 import { memo } from "react";
-import { characters } from "./sprites.js";
+import { camera, characters } from "./sprites.js";
 
 // Sprites originais desenhados em grade de pixels. Cada corpo é descrito pela metade esquerda
 // (10 colunas) e espelhado; acessórios assimétricos entram como camadas posicionadas.
