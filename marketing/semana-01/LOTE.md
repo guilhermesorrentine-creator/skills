@@ -222,3 +222,47 @@ Siga @voxelia.ia e comece pela de amanhã.
 
 #ia #aprendizado #inteligenciaartificial
 ```
+
+## Reels da semana (versões animadas dos carrosséis aprovados, 15 s, 9:16)
+
+Um Reel a cada 2 dias, às 9h, para não disputar horário com os posts de 12h30 e 19h.
+
+| Data | Hora | Reel | Arquivo |
+|---|---|---|---|
+| sex 23/10 | 09:00 | 5 jeitos de pedir pra IA | `reel-01-carrossel-pedidos.mp4` |
+| dom 25/10 | 09:00 | O que é uma Agent Skill? | `reel-05-carrossel-skill.mp4` |
+| ter 27/10 | 09:00 | Por que a IA inventa coisa? | `reel-09-carrossel-inventa.mp4` |
+
+### Reel sex 23/10
+
+```
+Você pede "faz um texto" e recebe um texto genérico. É isso?
+
+5 jeitos de pedir que funcionam. O número 4 muda tudo.
+
+Siga @voxelia.ia: uma dica de IA por dia.
+
+#inteligenciaartificial #chatgpt #produtividade
+```
+
+### Reel dom 25/10
+
+```
+Seria uma má ideia aprender o que é uma skill em 15 segundos?
+
+É o atalho que separa quem usa IA de quem só conversa com ela.
+
+Siga @voxelia.ia para conhecer uma por dia.
+
+#claudecode #agentesdeia #ia
+```
+
+### Reel ter 27/10
+
+```
+Parece que a IA mente pra você. Não é mentira, é estatística.
+
+4 jeitos de evitar. Salva antes de confiar no próximo número.
+
+#ia #inteligenciaartificial #chatgpt
+```
