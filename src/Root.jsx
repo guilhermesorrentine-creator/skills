@@ -7,7 +7,7 @@ import { matchPath, navigate, safeNext, usePathname } from "./lib/router.jsx";
 
 const AppRoutes = lazy(() => import("./pages/app/AppRoutes.jsx"));
 const AdminPage = lazy(() => import("./pages/AdminPage.jsx"));
-const authModes = { "/entrar": "login", "/cadastro": "signup", "/recuperar-senha": "recover", "/redefinir-senha": "reset" };
+const authModes = { "/entrar": "login", "/cadastro": "signup", "/recuperar-senha": "recover", "/redefinir-senha": "reset", "/criar-senha": "invite" };
 const legalSlugs = ["termos", "privacidade", "compra-e-reembolso"];
 const Loading = () => <main className="loading-line" role="status">Verificando acesso…</main>;
 function Redirect({ to }) {
@@ -27,7 +27,7 @@ function legacyTarget() {
 
 function Routes() {
   const path = usePathname().replace(/\/$/, "") || "/";
-  const { recovery } = useAuth();
+  const { recovery, invited, loading: authLoading, user } = useAuth();
   const { account, loading, signedIn, reload, error } = useAccount();
 
   useEffect(() => {
@@ -39,7 +39,8 @@ function Routes() {
   useEffect(() => {
     if (path === "/planos") navigate("/#acesso", { replace: true });
     if (recovery && path !== "/redefinir-senha") navigate("/redefinir-senha", { replace: true });
-  }, [path, recovery]);
+    if (invited && !authLoading && user && path !== "/criar-senha") navigate("/criar-senha", { replace: true });
+  }, [path, recovery, invited, authLoading, user]);
 
   // Entrar: sessão + licença validada no servidor → sistema; sem licença → contratação; sem sessão → login.
   const enter = useCallback((next = "/app") => {

@@ -4,6 +4,7 @@ import { Link } from "../lib/router.jsx";
 import { formatPrice } from "../lib/billing-client.js";
 import { CATEGORIES, TYPES } from "../lib/resources.js";
 import { Brand } from "../components/site/SiteNav.jsx";
+import { CopyButton } from "../components/shared.jsx";
 
 const tabs = [["recursos", "Recursos e guias"], ["caminhos", "Caminhos"], ["relacoes", "Relações"], ["edicoes", "Edições"], ["pedidos", "Pedidos"], ["licencas", "Licenças"], ["eventos", "Webhooks"], ["usuarios", "Usuários e acessos"], ["auditoria", "Auditoria"]];
 const when = (value) => (value ? new Date(value).toLocaleString("pt-BR") : "—");
@@ -48,7 +49,7 @@ export default function AdminPage() {
           {tab === "licencas" && <LicensesTab data={data} act={act} emailOf={emailOf} editionName={editionName}/>}
           {tab === "eventos" && <Table head={["Recebido", "Evento", "Status", "Nota", ""]} rows={data.events.map((e) => [when(e.received_at), e.event, e.status, e.note || "—",
             e.status !== "processed" ? <button key="p" type="button" className="link" onClick={() => act("/api/admin/events/reprocess", { id: e.id }, "Evento reprocessado.")}>Reprocessar</button> : "—"])}/>}
-          {tab === "usuarios" && <UsersTab data={data} act={act} emailOf={emailOf}/>}
+          {tab === "usuarios" && <UsersTab data={data} act={act} emailOf={emailOf} reload={load}/>}
           {tab === "auditoria" && <Table head={["Quando", "Quem", "Ação", "Alvo", "Detalhes"]} rows={data.audit.map((a) => [when(a.created_at), emailOf(a.actor_id), a.action, a.target_user_id ? emailOf(a.target_user_id) : "—", <code key="d">{JSON.stringify(a.details)}</code>])}/>}
         </div>
       </>}
@@ -158,9 +159,43 @@ function LicensesTab({ data, act, emailOf, editionName }) {
   </>;
 }
 
-function UsersTab({ data, act, emailOf }) {
+// Convite: cria a conta (se não existir), libera o acesso e envia as boas-vindas com o link para a
+// pessoa criar a própria senha. Sem envio de e-mail configurado, mostra o link para enviar à mão.
+function InviteForm({ data, reload }) {
+  const [form, setForm] = useState({ email: "", editionId: "", reason: "Acesso completo cortesia autorizado pelo proprietário." });
+  const [state, setState] = useState({ busy: false, error: "", result: null });
+  const submit = async (event) => {
+    event.preventDefault();
+    setState({ busy: true, error: "", result: null });
+    try {
+      const result = await apiFetch("/api/admin/invite", { method: "POST", body: form });
+      setState({ busy: false, error: "", result });
+      await reload();
+    } catch (cause) { setState({ busy: false, error: cause.message, result: null }); }
+  };
+  const result = state.result;
+  return <form className="admin-form invite-form" onSubmit={submit}>
+    <h2>Convidar e liberar acesso</h2>
+    <p className="small muted wide">A pessoa recebe um e-mail de boas-vindas com o botão para criar a própria senha. Nenhuma senha é criada ou enviada por aqui.</p>
+    <label className="field">E-mail<input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} required autoComplete="off"/></label>
+    <label className="field">Acesso<select value={form.editionId} onChange={(e) => setForm({ ...form, editionId: e.target.value })}><option value="">Completo (todas as edições)</option>{data.editions.map((ed) => <option key={ed.id} value={ed.id}>{ed.name}</option>)}</select></label>
+    <label className="field wide">Justificativa (mín. 10 caracteres)<textarea value={form.reason} onChange={(e) => setForm({ ...form, reason: e.target.value })} required minLength={10}/></label>
+    <div className="row wide"><button type="submit" className="btn btn-primary" disabled={state.busy} aria-busy={state.busy}>{state.busy ? "Convidando…" : "Convidar e liberar"}</button></div>
+    {state.error && <p className="form-error wide" role="alert">{state.error}</p>}
+    {result && <div className="wide invite-result" role="status">
+      <p className="form-ok">{result.created ? "Conta criada" : "Conta já existia"}{result.alreadyHadAccess ? " · já tinha acesso ativo" : " · acesso liberado"}{result.sent ? " · e-mail de boas-vindas enviado." : "."}</p>
+      {!result.sent && <>
+        <p className="notice">O e-mail não foi enviado{result.mailError ? ` (${result.mailError})` : " porque o envio ainda não está configurado (RESEND_API_KEY e EMAIL_FROM)"}. Envie este link só para {result.email}: ele é pessoal e dá acesso à conta.</p>
+        <p className="row"><code className="share-url">{result.link}</code><CopyButton value={result.link}>Copiar link</CopyButton></p>
+      </>}
+    </div>}
+  </form>;
+}
+
+function UsersTab({ data, act, emailOf, reload }) {
   const [grant, setGrant] = useState({ userId: "", reason: "", endsAt: "", editionId: "" });
   return <>
+    <InviteForm data={data} reload={reload}/>
     <h2>Usuários</h2>
     <Table head={["E-mail", "Admin", "Cliente Asaas", "Cadastro"]} rows={data.profiles.map((p) => [p.email, p.is_admin ? "sim" : "—", p.asaas_customer_id || "—", when(p.created_at)])}/>
     <h2>Acessos excepcionais</h2>

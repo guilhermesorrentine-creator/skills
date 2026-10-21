@@ -33,6 +33,15 @@ Links antigos: `#skill/<id>` → `/app/recursos/<id>`; `#repo/<nome>` → `/app/
   - Evento sem pedido/cliente conhecido fica `unlinked` e é reprocessado quando o `CHECKOUT_PAID` chega; falhas ficam `failed` para reprocessar.
 - **Conciliação:** `/admin` → Pedidos → Conciliar consulta `GET /v3/payments?customer=`.
 
+## Boas-vindas e convites
+
+- **Compra confirmada:** ao ativar a primeira licença, o servidor envia o e-mail "Seu acesso ao Arsenal IA está liberado", com o botão "Entrar no Arsenal" e os primeiros passos. Sai uma única vez por pessoa (registrado como evento `welcome_email`); falha de envio não desfaz a ativação.
+- **Convite pelo admin** (`/admin` → Usuários e acessos → Convidar e liberar): informa e-mail, acesso (completo = todas as edições, inclusive futuras) e justificativa. Se a conta não existe, é criada pelo Supabase Auth e o e-mail traz **"Criar minha senha e entrar"**, um link de uso único que leva a `/criar-senha`. Se já existe, o e-mail traz "Entrar no Arsenal". Tudo fica na auditoria.
+- **Nenhuma senha é gerada, guardada ou enviada.** A pessoa cria a própria senha pelo link.
+- **Envio:** API da Resend (`RESEND_API_KEY` e `EMAIL_FROM`, com domínio verificado). Sem elas, nada é enviado e o admin recebe o link do convite para mandar por outro canal, só para a própria pessoa.
+- **Layout:** `server/email-layout.js`, o mesmo dos modelos do Supabase (`scripts/build-email-templates.mjs`). Personagens em `public/email/personagens.png`, gerado por `node scripts/build-email-art.mjs` a partir de `src/components/categories/sprites.js`.
+- **Supabase:** a URL `/criar-senha` de cada ambiente precisa estar em Authentication → URL Configuration → Redirect URLs.
+
 ## Proteção do conteúdo
 
 - `public/` só tem `data/demo.json` (23 skills de amostra, sem caminhos). O build foi verificado sem o catálogo completo.

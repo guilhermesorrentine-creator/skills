@@ -13,7 +13,8 @@
   a { color:#7445C7; }
   @media (max-width: 600px) {
     .card { padding:28px 22px !important; }
-    .title { font-size:24px !important; }
+    .title { font-size:25px !important; }
+    .btn-wrap, .btn-wrap td, .btn-link { width:100% !important; display:block !important; box-sizing:border-box; }
   }
   @media (prefers-color-scheme: dark) {
     .t-bg { background:#15131B !important; }
@@ -54,19 +55,25 @@
   </tr>
 </table></td></tr>
         <tr>
-          <td class="card t-card" bgcolor="#FFFFFF" style="background:#FFFFFF;border:1px solid #E4E0D8;border-radius:20px;padding:36px 36px 32px;">
-            <h1 class="title t-text" style="margin:0 0 14px;font-family:'Plus Jakarta Sans','Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:28px;line-height:1.15;font-weight:800;letter-spacing:-0.5px;color:#23212B;">Confirme seu e-mail</h1>
+          <td class="t-card" bgcolor="#FFFFFF" style="background:#FFFFFF;border:1px solid #E4E0D8;border-radius:20px;overflow:hidden;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td align="center" class="t-soft" bgcolor="#ECE5FA" style="background:#ECE5FA;padding:26px 20px 18px;border-radius:20px 20px 0 0;">
+              <img src="{{ .SiteURL }}/email/personagens.png" width="300" alt="Os quatro personagens do Arsenal IA: Hacker, Estrategista, Criadora e Pesquisadora" style="display:block;width:300px;max-width:100%;height:auto;border:0;image-rendering:pixelated;">
+            </td></tr></table>
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td class="card" style="padding:34px 36px 32px;">
+            <h1 class="title t-text" style="margin:0 0 14px;font-family:'Plus Jakarta Sans','Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:29px;line-height:1.15;font-weight:800;letter-spacing:-0.5px;color:#23212B;">Confirme seu e-mail</h1>
             <p class="t-text2" style="margin:0 0 28px;font-family:'Plus Jakarta Sans','Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:16px;line-height:1.6;color:#55525F;">Falta só um passo para ativar sua conta no Arsenal IA. Confirme que <b>{{ .Email }}</b> é o seu endereço.</p>
-            <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+            <table role="presentation" cellpadding="0" cellspacing="0" border="0" class="btn-wrap">
               <tr>
-                <td align="center" bgcolor="#7445C7" style="border-radius:999px;background:#7445C7;">
-                  <a href="{{ .ConfirmationURL }}" target="_blank" style="display:inline-block;padding:14px 28px;font-family:'Plus Jakarta Sans','Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:15px;font-weight:700;line-height:1;color:#FFFFFF;text-decoration:none;border-radius:999px;">Confirmar e-mail</a>
+                <td align="center" bgcolor="#7445C7" style="border-radius:14px;background:#7445C7;">
+                  <a class="btn-link" href="{{ .ConfirmationURL }}" target="_blank" style="display:inline-block;padding:18px 34px;font-family:'Plus Jakarta Sans','Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:17px;font-weight:800;line-height:1;color:#FFFFFF;text-decoration:none;border-radius:14px;text-align:center;">Confirmar e-mail</a>
                 </td>
               </tr>
             </table>
-            <p class="t-text3" style="margin:28px 0 8px;font-family:'Plus Jakarta Sans','Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:13px;line-height:1.5;color:#6E6A78;">Se o botão não funcionar, copie e cole este endereço no navegador:</p>
+            
+            <p class="t-text3" style="margin:26px 0 8px;font-family:'Plus Jakarta Sans','Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:13px;line-height:1.5;color:#6E6A78;">Se o botão não funcionar, copie e cole este endereço no navegador:</p>
             <p class="t-soft" style="margin:0;padding:10px 12px;border-radius:10px;background:#ECE5FA;font-family:'JetBrains Mono',Consolas,'Courier New',monospace;font-size:12px;line-height:1.5;color:#55525F;word-break:break-all;"><a class="t-link" href="{{ .ConfirmationURL }}" target="_blank" style="color:#7445C7;text-decoration:none;">{{ .ConfirmationURL }}</a></p>
             <p class="t-text3 t-line" style="margin:28px 0 0;padding-top:20px;border-top:1px solid #E4E0D8;font-family:'Plus Jakarta Sans','Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:13px;line-height:1.5;color:#6E6A78;">Se você não criou esta conta, pode ignorar este e-mail. Por segurança, o link expira depois de um tempo.</p>
+            </td></tr></table>
           </td>
         </tr>
         <tr>

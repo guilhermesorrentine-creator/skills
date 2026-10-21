@@ -17,6 +17,13 @@ export function createSupabaseStore({ url, serviceKey }) {
 
   return {
     getProfile: (id) => one(db.from("profiles").select("*").eq("id", id)),
+    findProfileByEmail: (email) => one(db.from("profiles").select("*").eq("email", email.toLowerCase())),
+    // Cria a conta pelo Auth sem enviar o e-mail padrão do Supabase; devolve o link de uso único.
+    createInvitedUser: async (email, redirectTo) => {
+      const { data, error } = await db.auth.admin.generateLink({ type: "invite", email, options: { redirectTo } });
+      if (error) throw Object.assign(new Error(error.message), { status: 400, code: "invite_failed" });
+      return { userId: data.user.id, actionUrl: data.properties.action_link };
+    },
     findProfileByCustomer: (customer) => one(db.from("profiles").select("*").eq("asaas_customer_id", customer)),
     setCustomerId: (id, customer) => run(db.from("profiles").update({ asaas_customer_id: customer }).eq("id", id)),
     listProfiles: () => many(db.from("profiles").select("id,email,is_admin,asaas_customer_id,created_at").order("created_at", { ascending: false }).limit(1000)),

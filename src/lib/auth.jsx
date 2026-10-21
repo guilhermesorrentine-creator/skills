@@ -8,12 +8,17 @@ export const authConfigured = Boolean(supabase);
 // Sem Supabase em desenvolvimento local, a API pode usar o atalho BT_DEV_BYPASS do servidor.
 const devMode = !authConfigured && import.meta.env.DEV;
 
+// Chegada pelo link de convite: o Supabase traz `type=invite` no endereço e abre a sessão;
+// a pessoa ainda não tem senha, então o site leva para "Crie sua senha".
+const arrivedFromInvite = typeof window !== "undefined" && /type=invite/.test(window.location.hash + window.location.search);
+
 const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
   const [session, setSession] = useState(null);
   const [loading, setLoading] = useState(authConfigured);
   const [recovery, setRecovery] = useState(false);
+  const [invited, setInvited] = useState(arrivedFromInvite);
   useEffect(() => {
     if (!supabase) return;
     supabase.auth.getSession().then(({ data }) => { setSession(data.session); setLoading(false); });
@@ -23,7 +28,7 @@ export function AuthProvider({ children }) {
     });
     return () => data.subscription.unsubscribe();
   }, []);
-  const value = useMemo(() => ({ session, user: session?.user || null, loading, recovery, devMode, setRecovery }), [session, loading, recovery]);
+  const value = useMemo(() => ({ session, user: session?.user || null, loading, recovery, invited, devMode, setRecovery, setInvited }), [session, loading, recovery, invited]);
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 

@@ -7,7 +7,7 @@ const PAID_PAYMENT = new Set(["PAYMENT_CONFIRMED", "PAYMENT_RECEIVED"]);
 const DISPUTE = new Set(["PAYMENT_CHARGEBACK_REQUESTED", "PAYMENT_CHARGEBACK_DISPUTE", "PAYMENT_AWAITING_CHARGEBACK_REVERSAL"]);
 
 // Pagamento único por edição (Asaas Checkout avulso) e licença vitalícia.
-export function createCommerce({ store, asaas, config, now = () => new Date() }) {
+export function createCommerce({ store, asaas, config, onboarding = null, now = () => new Date() }) {
   async function userEntitlement(userId) {
     const [license, grants, editions] = await Promise.all([store.getLicense(userId), store.listGrants(userId), store.listEditions({ onSaleOnly: false })]);
     return { license, grants, editions, ...entitlement({ license, grants, editions, now: now() }) };
@@ -97,6 +97,7 @@ export function createCommerce({ store, asaas, config, now = () => new Date() })
     if (!license) {
       const created = await store.insertLicense({ user_id: userId, edition_id: target.id, status: "active", origin_order_id: order.id, activated_at: now().toISOString() });
       await store.insertLicenseEvent({ license_id: created.id, user_id: userId, kind, to_edition_id: target.id, order_id: order.id });
+      await onboarding?.welcomeBuyer(userId, target);
       return;
     }
     const currentRank = editions.find((edition) => edition.id === license.edition_id)?.rank || 0;

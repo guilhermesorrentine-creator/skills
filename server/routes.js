@@ -12,7 +12,7 @@ const fail = (error) => {
 };
 const httpError = (status, code, message) => Object.assign(new Error(message), { status, code });
 
-export function createApi({ store, commerce, library, me, verifyToken, devUser = null }) {
+export function createApi({ store, commerce, onboarding = null, library, me, verifyToken, devUser = null }) {
   async function requireUser(request) {
     if (devUser) return devUser;
     const header = request.headers.get("authorization") || "";
@@ -137,6 +137,13 @@ export function createApi({ store, commerce, library, me, verifyToken, devUser =
     },
     "POST /api/admin/orders/reconcile": async (request) => { const admin = await requireAdmin(request); return ok(await commerce.reconcileOrder(String((await body(request)).orderId || ""), admin.id)); },
     "POST /api/admin/licenses/status": async (request) => { const admin = await requireAdmin(request); const input = await body(request); return ok(await commerce.setLicenseStatus(input.userId, input.status, input.reason, admin.id)); },
+    // Convite: cria a conta (se preciso), libera o acesso e envia as boas-vindas com o link para criar a senha.
+    "POST /api/admin/invite": async (request) => {
+      const admin = await requireAdmin(request);
+      if (!onboarding) throw httpError(503, "not_configured", "Convites indisponíveis neste ambiente.");
+      const input = await body(request);
+      return ok(await onboarding.inviteUser({ email: input.email, reason: input.reason, editionId: input.editionId || null, actorId: admin.id }));
+    },
     "POST /api/admin/grants": async (request) => {
       const admin = await requireAdmin(request);
       const input = await body(request);

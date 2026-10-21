@@ -15,6 +15,8 @@ export function readConfig(env = process.env) {
       checkoutHost: asaasEnv === "production" ? "https://asaas.com" : "https://sandbox.asaas.com",
       checkoutMinutes: Math.min(1440, Math.max(10, Number(env.ASAAS_CHECKOUT_MINUTES) || 60)),
     },
+    // E-mails de boas-vindas (Resend). Sem chave, nada é enviado e o admin recebe o link para copiar.
+    email: { apiKey: env.RESEND_API_KEY || "", from: env.EMAIL_FROM || "" },
     // Atalho de desenvolvimento local: só existe fora da Vercel e fora de produção.
     devBypass: env.BT_DEV_BYPASS === "1" && !env.VERCEL && env.NODE_ENV !== "production",
   };

@@ -16,6 +16,12 @@ export function createMemoryStore(seed = {}) {
   return {
     db,
     getProfile: async (id) => clone(db.profiles.find((item) => item.id === id)),
+    findProfileByEmail: async (email) => clone(db.profiles.find((item) => item.email?.toLowerCase() === email.toLowerCase())),
+    createInvitedUser: async (email, redirectTo) => {
+      const id = randomUUID();
+      db.profiles.push({ id, email, is_admin: false, created_at: stamp() });
+      return { userId: id, actionUrl: `${redirectTo}#convite-local-${id}` };
+    },
     findProfileByCustomer: async (customer) => clone(db.profiles.find((item) => item.asaas_customer_id === customer)),
     setCustomerId: async (id, customer) => { const profile = db.profiles.find((item) => item.id === id); if (profile) profile.asaas_customer_id = customer; },
     listProfiles: async () => clone(db.profiles),
