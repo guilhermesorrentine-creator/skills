@@ -1,14 +1,18 @@
 import { useEffect, useRef, useState } from "react";
-import { authActions } from "../lib/auth.jsx";
+import { authActions, useAuth } from "../lib/auth.jsx";
 import { Link, navigate } from "../lib/router.jsx";
 import { formatPrice, purchase } from "../lib/billing-client.js";
 import { categoryLabel, typeLabel } from "../lib/resources.js";
 import { Brand } from "../components/site/SiteNav.jsx";
 
-function Shell({ title, eyebrow, children, signedIn = true }) {
+// Navegação das páginas simples: com sessão, Biblioteca/Sair; sem sessão, Entrar/Criar conta.
+function Shell({ title, eyebrow, children }) {
+  const { user, devMode } = useAuth();
   return <main id="conteudo" className="simple">
     <div className="simple-wrap">
-      <nav className="simple-nav" aria-label="Conta"><Brand/>{signedIn && <span className="row"><Link className="link" to="/app">Biblioteca</Link><button type="button" className="link" onClick={async () => { await authActions.signOut(); navigate("/"); }}>Sair</button></span>}</nav>
+      <nav className="simple-nav" aria-label="Conta"><Brand/>{user || devMode
+        ? <span className="row"><Link className="link" to="/app">Biblioteca</Link><button type="button" className="link" onClick={async () => { await authActions.signOut(); navigate("/"); }}>Sair</button></span>
+        : <span className="row"><Link className="btn btn-ghost btn-sm" to="/entrar">Entrar</Link><Link className="btn btn-primary btn-sm" to="/cadastro">Criar conta</Link></span>}</nav>
       {eyebrow && <p className="eyebrow">{eyebrow}</p>}
       <h1>{title}</h1>
       {children}
@@ -70,7 +74,7 @@ export function SharedCollectionPage({ token }) {
     fetch(`/api/shared?token=${encodeURIComponent(token)}`).then(async (r) => { const d = await r.json(); if (!r.ok) throw new Error(d.message); setState({ data: d }); }).catch((e) => setState({ error: e }));
     return () => meta.remove();
   }, [token]);
-  return <Shell eyebrow="Coleção compartilhada" title={state.data?.name || (state.error ? "Link indisponível" : "Carregando…")} signedIn={false}>
+  return <Shell eyebrow="Coleção compartilhada" title={state.data?.name || (state.error ? "Link indisponível" : "Carregando…")}>
     {state.error && <p className="muted">{state.error.message}</p>}
     {state.data && <>{state.data.description && <p className="muted">{state.data.description}</p>}
       <ol className="col-items">{state.data.items.map((item) => <li key={item.id} className="col-item"><div className="col-item-main"><b>{item.title}</b><span className="muted small">{typeLabel[item.type]} · {categoryLabel[item.category]}</span></div></li>)}</ol>
@@ -87,7 +91,7 @@ const legal = {
 // Documentos jurídicos: estrutura preparada, sem texto fictício.
 export function LegalPage({ slug }) {
   const doc = legal[slug];
-  return <Shell eyebrow="Documento" title={doc.title} signedIn={false}>
+  return <Shell eyebrow="Documento" title={doc.title}>
     <p className="notice" role="note">Documento pendente de aprovação do proprietário. O texto final ainda não foi redigido e esta página não tem valor jurídico.</p>
     <ol className="legal-outline">{doc.sections.map((s) => <li key={s}>{s}</li>)}</ol>
     <Link className="link" to="/">← Voltar ao início</Link>
@@ -96,5 +100,5 @@ export function LegalPage({ slug }) {
 
 export function NotFound({ inApp = false }) {
   const body = <div className="empty"><h3>Página não encontrada.</h3><p>O endereço não existe nesta versão.</p><Link className="btn btn-secondary btn-sm" to={inApp ? "/app" : "/"}>Voltar</Link></div>;
-  return inApp ? <div className="page">{body}</div> : <Shell title="Página não encontrada" signedIn={false}>{body}</Shell>;
+  return inApp ? <div className="page">{body}</div> : <Shell title="Página não encontrada">{body}</Shell>;
 }

@@ -1,8 +1,10 @@
 // Configuração do servidor. Segredos vêm só de variáveis de ambiente do servidor (nunca `VITE_`).
 export function readConfig(env = process.env) {
   const asaasEnv = env.ASAAS_ENV === "production" && env.ASAAS_ALLOW_PRODUCTION === "true" ? "production" : "sandbox";
+  // Em previews da Vercel, o retorno do checkout volta para o próprio preview (APP_URL é o domínio de produção).
+  const previewUrl = env.VERCEL_ENV === "preview" && env.VERCEL_BRANCH_URL ? `https://${env.VERCEL_BRANCH_URL}` : "";
   return {
-    appUrl: (env.APP_URL || "http://localhost:5173").replace(/\/$/, ""),
+    appUrl: (previewUrl || env.APP_URL || "http://localhost:5173").replace(/\/$/, ""),
     supabaseUrl: env.SUPABASE_URL || env.VITE_SUPABASE_URL || "",
     supabaseServiceKey: env.SUPABASE_SERVICE_ROLE_KEY || "",
     asaas: {

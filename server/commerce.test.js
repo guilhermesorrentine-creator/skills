@@ -228,4 +228,7 @@ test("produção do Asaas exige duas chaves explícitas", () => {
   assert.equal(readConfig({ ASAAS_ENV: "production" }).asaas.env, "sandbox");
   assert.equal(readConfig({ ASAAS_ENV: "production", ASAAS_ALLOW_PRODUCTION: "true" }).asaas.baseUrl, "https://api.asaas.com/v3");
   assert.equal(readConfig({ BT_DEV_BYPASS: "1", VERCEL: "1" }).devBypass, false);
+  // Retorno do checkout: o preview volta para si mesmo; produção usa APP_URL.
+  assert.equal(readConfig({ APP_URL: "https://prod.example", VERCEL_ENV: "preview", VERCEL_BRANCH_URL: "app-git-x.vercel.app" }).appUrl, "https://app-git-x.vercel.app");
+  assert.equal(readConfig({ APP_URL: "https://prod.example/", VERCEL_ENV: "production", VERCEL_BRANCH_URL: "app-git-main.vercel.app" }).appUrl, "https://prod.example");
 });
