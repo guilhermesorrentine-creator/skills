@@ -138,3 +138,8 @@ O vídeo descreve 7 etapas para quem começa sem investimento. O que entra na Vo
 - **API de Conversões** (`server/meta.js`): o `Purchase` sai do servidor, uma vez por pedido, quando o Asaas confirma o pagamento. Leva e-mail e ID do usuário em hash SHA-256, `fbp`/`fbc`, IP e navegador. Sem consentimento, nada é guardado nem enviado.
 - **Para ligar:** rodar a migração `20261021190000_meta_conversions.sql` no Supabase; na Vercel, `VITE_META_PIXEL_ID` (público) e `META_CAPI_TOKEN` (segredo); para testar, `META_TEST_EVENT_CODE` com o código da aba "Testar eventos" do Gerenciador de Eventos.
 - **Pendente:** o texto final da política de privacidade, que precisa citar o Meta e os cookies.
+
+## 9. Decisão de preço e mercados (21/10/2026)
+
+- **Agora, Brasil:** pagamento único de **R$ 97,90**, acesso vitalício, pelo Asaas. O objetivo é fazer caixa rápido.
+- **Depois, versão em inglês:** assinatura **anual de US$ 45**, com site, Instagram e anúncios em inglês. A forma de cobrança fora do Brasil ainda não foi escolhida (Paddle, Lemon Squeezy ou Stripe; falta confirmar se aceitam vendedor do Brasil). O Asaas só cobra em reais.
