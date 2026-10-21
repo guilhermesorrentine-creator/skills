@@ -42,12 +42,16 @@
   ],
   "rewrites": [
     {
+      "source": "/api/:path*",
+      "destination": "/api"
+    },
+    {
       "source": "/((?!api/|data/|assets/|favicon.svg|robots.txt|sitemap.xml).*)",
       "destination": "/index.html"
     }
   ],
   "functions": {
-    "api/[...path].js": {
+    "api/index.js": {
       "includeFiles": "src/data/catalog.json"
     }
   }

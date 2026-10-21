@@ -3,7 +3,7 @@
 ## Arquitetura
 
 - **Frontend:** React + Vite + Motion, roteamento por caminho (`src/lib/router.jsx`), SPA com fallback na Vercel.
-- **Backend:** uma Vercel Function (`api/[...path].js`) → `server/app.js` → `server/routes.js`. Regras puras em `server/licensing.js`; serviços em `commerce.js` (pedidos, Asaas, licenças), `library.js` (catálogo unificado) e `me.js` (favoritos, histórico, coleções).
+- **Backend:** uma Vercel Function (`api/index.js` + rewrite de `/api/*`) → `server/app.js` → `server/routes.js`. Regras puras em `server/licensing.js`; serviços em `commerce.js` (pedidos, Asaas, licenças), `library.js` (catálogo unificado) e `me.js` (favoritos, histórico, coleções).
 - **Dados:** Supabase Auth (contas) e Postgres (`supabase/migrations/`). RLS em todas as tabelas; o navegador nunca grava direto.
 - **Catálogo:** Agent Skills em `src/data/catalog.json` (canônico no repositório); demais tipos na tabela `resources`, cadastrados pela administração. A API une os dois e filtra pela edição do usuário.
 

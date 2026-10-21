@@ -41,7 +41,7 @@ O importador remove o campo `local_dir`, substitui caminhos de usuário/rede e i
 
 Landing pública em `/` e sistema em `/app` para quem tem licença. Contas no Supabase Auth; pagamento único por edição (licença vitalícia) via Asaas Checkout avulso, Pix ou cartão, inicialmente em Sandbox. Além das Agent Skills, a plataforma suporta subagentes, workflows, ferramentas, referências e guias cadastrados em `/admin`, coleções pessoais com link de visualização, favoritos e histórico na conta.
 
-Backend em `server/`, publicado por uma única Vercel Function (`api/[...path].js`); migrações em `supabase/migrations/`. Arquitetura, modelo comercial, webhooks, administração, homologação e recuperação: [`docs/comercial-asaas.md`](docs/comercial-asaas.md). Variáveis: [`.env.example`](.env.example).
+Backend em `server/`, publicado por uma única Vercel Function (`api/index.js` + rewrite de `/api/*`); migrações em `supabase/migrations/`. Arquitetura, modelo comercial, webhooks, administração, homologação e recuperação: [`docs/comercial-asaas.md`](docs/comercial-asaas.md). Variáveis: [`.env.example`](.env.example).
 
 Sem Supabase, é possível ver o sistema localmente com `BT_DEV_BYPASS=1` em `.env.development.local` (ignorado na Vercel e em produção).
 
