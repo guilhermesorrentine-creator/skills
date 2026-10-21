@@ -40,7 +40,7 @@ export default function SiteNav({ onSection, onEnter, onBuy, signedIn }) {
       </nav>
       <div className="site-nav-actions">
         <button type="button" className="btn btn-ghost btn-sm" onClick={() => { setOpen(false); onEnter(); }}>{signedIn ? "Entrar na Voxelia" : "Entrar"}</button>
-        <button type="button" className="btn btn-primary btn-sm nav-cta" onClick={() => { setOpen(false); onBuy(); }}>Garantir acesso</button>
+        <button type="button" className="btn btn-primary btn-sm nav-cta" onClick={() => { setOpen(false); onBuy(); }}>Quero meu acesso</button>
         <button type="button" className="nav-toggle" aria-expanded={open} aria-controls="site-links" onClick={() => setOpen((value) => !value)}><span className="sr-only">{open ? "Fechar menu" : "Abrir menu"}</span><i aria-hidden="true"/><i aria-hidden="true"/></button>
       </div>
     </div>

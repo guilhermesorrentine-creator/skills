@@ -12,21 +12,39 @@ import { CATEGORIES, categoryLabel, TYPES } from "../lib/resources.js";
 import { buildResourceIndex, searchResources } from "../lib/search.js";
 import { formatPrice, purchase } from "../lib/billing-client.js";
 
-const benefits = [
-  { title: "Encontre ferramentas rápido", text: "Uma busca para skills, ferramentas, guias e referências, com sinônimos em português e inglês." },
-  { title: "Pesquise pelo objetivo", text: "Escreva o que quer fazer, como “criar um site”, e veja recursos relacionados." },
-  { title: "Descubra outras áreas", text: "Software, empreendedorismo, conteúdo e ciência organizados lado a lado." },
-  { title: "Guias práticos selecionados", text: "Conteúdo próprio para os recursos mais importantes, publicado conforme fica pronto." },
-  { title: "Salve o que importa", text: "Favoritos e histórico ficam na sua conta, em qualquer dispositivo." },
-  { title: "Coleções pessoais", text: "Organize recursos em coleções privadas e compartilhe só para visualização, se quiser." },
-  { title: "Compare opções", text: "Até três skills lado a lado com os campos documentados na fonte." },
+// Copy de venda: cada bloco responde a uma objeção de quem está começando com IA.
+// Só fatos verificáveis (números vêm do acervo); nada de depoimento ou escassez inventados.
+const pains = [
+  { title: "Horas garimpando o GitHub", text: "Você abre dez abas, lê READMEs em inglês e ainda não sabe qual skill resolve o seu problema." },
+  { title: "Instalou e não funcionou", text: "Faltou um passo que ninguém explicou. A ferramenta fica parada e a ideia também." },
+  { title: "Tudo espalhado", text: "Links salvos no WhatsApp, prints, favoritos do navegador. Quando precisa, não acha." },
 ];
 
+const benefits = [
+  { title: "Diga o objetivo, receba o caminho", text: "Escreva “quero criar um site” ou “editar vídeos” e veja na hora as skills e ferramentas que fazem isso, em português." },
+  { title: "Guias passo a passo em português", text: "O que é, como instalar e o comando exato para copiar. Sem decifrar documentação." },
+  { title: "Milhares de skills já organizadas", text: "Software, empreendedorismo, conteúdo e ciência, cada uma com a fonte original e o criador creditado." },
+  { title: "Sua biblioteca, do seu jeito", text: "Favoritos, coleções e histórico na sua conta, em qualquer dispositivo." },
+];
+
+const fit = {
+  yes: [
+    "Quer usar IA para criar sites, vídeos, conteúdo ou automações sem perder dias pesquisando",
+    "Usa ou quer começar a usar o Claude Code e outros agentes",
+    "Empreende, cria conteúdo ou programa e precisa de resultado rápido",
+    "Prefere pagar uma vez a assinar mais uma mensalidade",
+  ],
+  no: [
+    "Procura um curso em vídeo com aulas ao vivo",
+    "Quer uma ferramenta que faça tudo sozinha, sem você executar nada",
+  ],
+};
+
 const steps = [
-  { title: "Encontre", text: "Busque por nome, tecnologia ou objetivo, ou explore por área e tipo." },
-  { title: "Aprenda", text: "Abra a página do recurso: resumo, origem e, quando houver, guia e instruções." },
-  { title: "Utilize", text: "Copie as instruções disponíveis e abra a referência original para aplicar no seu projeto." },
-  { title: "Organize", text: "Favorite, monte coleções e retome do histórico quando voltar." },
+  { title: "Garanta o acesso", text: "Pix ou cartão. O acesso é liberado assim que o pagamento é confirmado." },
+  { title: "Diga o que quer criar", text: "Busque pelo objetivo e escolha entre opções já filtradas." },
+  { title: "Siga o guia", text: "Copie o comando, cole no seu agente e veja funcionando." },
+  { title: "Volte quando precisar", text: "Tudo salvo na sua conta, para sempre, sem mensalidade." },
 ];
 
 const goalChips = ["Quero criar um site", "Automatizar tarefas", "Editar vídeos", "Analisar dados", "Melhorar a segurança"];
@@ -38,7 +56,9 @@ const faq = [
   { q: "Como é o pagamento?", a: "Pagamento único por Pix ou cartão de crédito, no ambiente seguro do Asaas. A Voxelia não armazena dados do cartão. O acesso é liberado quando o Asaas confirma o pagamento." },
   { q: "O que acontece quando sair uma nova edição?", a: "Novas edições podem trazer recursos extras. O upgrade é opcional: você paga só a diferença de preço e, se preferir não atualizar, continua com a edição que comprou." },
   { q: "O conteúdo das skills é exclusivo?", a: "Não. As Agent Skills vêm de repositórios públicos e cada página aponta para a fonte original. O valor da Voxelia está na curadoria, na organização, na busca, nos guias próprios e nas ferramentas de organização." },
-  { q: "Posso pedir reembolso?", a: "As regras de reembolso e cancelamento estão na política de compra.", pending: true },
+  { q: "E se eu não gostar?", a: "Você tem 15 dias de garantia. Se a Voxelia não servir para você, peça o reembolso dentro desse prazo e devolvemos o valor pago." },
+  { q: "Preciso saber programar?", a: "Não para começar. Os guias explicam cada passo em português, com o comando pronto para copiar. Quem programa vai mais longe, mas quem não programa também usa." },
+  { q: "Por que pagar se as skills são públicas?", a: "Porque achar, entender e fazer funcionar é o que toma tempo. A Voxelia junta tudo, explica em português e mostra o caminho mais curto do objetivo até o resultado." },
 ];
 
 export default function LandingPage({ account, signedIn, onEnter }) {
@@ -87,23 +107,30 @@ export default function LandingPage({ account, signedIn, onEnter }) {
         <motion.span className="l-blob l-blob-a" style={reduced ? undefined : { y: blobY }} aria-hidden="true"/>
         <motion.span className="l-blob l-blob-b" style={reduced ? undefined : { y: blobY2 }} aria-hidden="true"/>
         <div className="wrap l-hero-copy">
-          <motion.p className="eyebrow" {...reveal(reduced, 0)}><span className="pill-dot" aria-hidden="true"/> Skills · subagentes · ferramentas · guias</motion.p>
-          <motion.h1 id="hero-title" {...reveal(reduced, 1)}>Tudo o que você precisa para criar com IA, <span className="hl">em um só lugar.</span></motion.h1>
-          <motion.p className="l-lead" {...reveal(reduced, 2)}>Descubra skills, subagentes, ferramentas, guias e referências organizadas para transformar ideias em projetos.</motion.p>
+          <motion.p className="eyebrow" {...reveal(reduced, 0)}><span className="pill-dot" aria-hidden="true"/> {demo ? `${demo.stats.skills.toLocaleString("pt-BR")} skills · ${demo.stats.repos} repositórios · guias em português` : "Skills · ferramentas · guias em português"}</motion.p>
+          <motion.h1 id="hero-title" {...reveal(reduced, 1)}>Pare de caçar ferramentas de IA. <span className="hl">Comece a criar hoje.</span></motion.h1>
+          <motion.p className="l-lead" {...reveal(reduced, 2)}>Diga o que quer fazer — um site, um vídeo, uma automação — e a Voxelia mostra a skill certa, o passo a passo em português e o comando pronto para copiar.</motion.p>
           <motion.div className="l-actions" {...reveal(reduced, 3)}>
-            <button type="button" className="btn btn-secondary" onClick={(event) => scrollTo(event, "demonstracao")}>Conhecer a Voxelia</button>
-            <button type="button" className="btn btn-primary" onClick={buy} disabled={busy}>{owned ? "Entrar na Voxelia" : "Garantir acesso vitalício"}</button>
+            <button type="button" className="btn btn-primary" onClick={buy} disabled={busy}>{owned ? "Entrar na Voxelia" : edition ? `Quero meu acesso por ${formatPrice(edition.priceCents)}` : "Quero meu acesso"}</button>
+            <button type="button" className="btn btn-secondary" onClick={(event) => scrollTo(event, "funcionando")}>Ver funcionando</button>
           </motion.div>
+          <motion.p className="l-trust" {...reveal(reduced, 4)}>Pagamento único · Pix ou cartão · Garantia de 15 dias</motion.p>
           {buyError && <p className="form-error" role="alert">{buyError}</p>}
         </div>
         <div className="wrap"><HeroScene demo={demo}/></div>
       </section>
 
+      <Section id="problema" eyebrow="Se isso soa familiar" title="A IA é poderosa. Achar o caminho é que cansa.">
+        <div className="l-pains">
+          {pains.map((item, index) => <Reveal key={item.title} index={index} className="l-pain"><h3>{item.title}</h3><p>{item.text}</p></Reveal>)}
+        </div>
+      </Section>
+
       <Section id="funcionando" eyebrow="Veja funcionando" title="Um comando. O agente trabalha." lead="Cada personagem mostra uma skill do acervo em ação, com o comando que está no guia.">
         <TerminalScene/>
       </Section>
 
-      <Section id="recursos" eyebrow="Benefícios" title="Menos tempo procurando, mais tempo criando.">
+      <Section id="recursos" eyebrow="O que muda" title="Do objetivo ao resultado, sem garimpo.">
         <div className="l-benefits">
           {benefits.map((item, index) => <Reveal key={item.title} index={index} className="l-benefit">
             <span className="l-benefit-n" aria-hidden="true">{String(index + 1).padStart(2, "0")}</span>
@@ -112,7 +139,7 @@ export default function LandingPage({ account, signedIn, onEnter }) {
         </div>
       </Section>
 
-      <Section id="demonstracao" eyebrow="Demonstração" title="Experimente a busca por objetivo." lead="Uma amostra pública com skills reais do acervo. Na Voxelia completa a busca cobre todo o índice e todos os tipos de recurso.">
+      <Section id="demonstracao" eyebrow="Teste agora, de graça" title="Escreva o que você quer criar." lead="Esta é uma amostra pública com skills reais. Com o acesso, a busca cobre o acervo inteiro, com guias e comandos prontos.">
         <DemoSearch demo={demo}/>
       </Section>
 
@@ -133,7 +160,7 @@ export default function LandingPage({ account, signedIn, onEnter }) {
         </div>
       </Section>
 
-      <Section id="como-funciona" eyebrow="Como funciona" title="Encontre. Aprenda. Utilize. Organize.">
+      <Section id="como-funciona" eyebrow="Como funciona" title="Do pagamento ao primeiro resultado em minutos.">
         <ol className="l-steps">
           {steps.map((step, index) => <Reveal as="li" key={step.title} index={index} className="l-step">
             <span className="l-step-n" aria-hidden="true">{index + 1}</span>
@@ -142,27 +169,37 @@ export default function LandingPage({ account, signedIn, onEnter }) {
         </ol>
       </Section>
 
-      <Section id="acesso" eyebrow="Acesso vitalício" title="Pague uma vez. Use sem mensalidade.">
+      <Section id="para-quem" eyebrow="Para quem é" title="Feita para quem quer resultado com IA.">
+        <div className="l-fit">
+          <Reveal index={0} className="l-fit-col l-fit-yes"><h3>É para você se…</h3><ul>{fit.yes.map((t) => <li key={t}>{t}</li>)}</ul></Reveal>
+          <Reveal index={1} className="l-fit-col l-fit-no"><h3>Não é para você se…</h3><ul>{fit.no.map((t) => <li key={t}>{t}</li>)}</ul></Reveal>
+        </div>
+      </Section>
+
+      <Section id="acesso" eyebrow="Acesso vitalício" title="Pague uma vez. Use para sempre.">
         <motion.div className="l-offer" initial={reduced ? false : { opacity: 0, y: 60, scale: 1.06, filter: "blur(10px)" }} whileInView={{ opacity: 1, y: 0, scale: 1, filter: "blur(0px)" }} viewport={{ once: true, amount: 0.3 }}
           transition={{ default: { duration: 0.75, ease: motionTokens.easing.snapSettle }, opacity: { duration: 0.2 } }}>
           <div className="l-offer-main">
             <p className="eyebrow">{edition ? edition.name : "Voxelia — Edição 1"}</p>
             {edition ? <p className="l-price"><b>{formatPrice(edition.priceCents)}</b><span>pagamento único</span></p> : <p className="l-price-soon">{editions == null ? "Carregando…" : "Vendas em preparação. A compra será aberta em breve."}</p>}
             <ul className="l-offer-list">
+              <li>{demo ? `${demo.stats.skills.toLocaleString("pt-BR")} skills organizadas por objetivo e área` : "Milhares de skills organizadas por objetivo e área"}</li>
+              <li>Guias passo a passo em português, com comandos prontos</li>
               <li>Acesso vitalício aos recursos e funcionalidades da edição adquirida</li>
               <li>Sem mensalidade, anuidade ou renovação automática</li>
               <li>Pix ou cartão de crédito, pelo Asaas</li>
               <li>Upgrades futuros opcionais, pagando só a diferença</li>
               {(edition?.features || []).map((feature) => <li key={feature}>{feature}</li>)}
             </ul>
-            <button type="button" className="btn btn-primary" onClick={buy} disabled={busy || (!edition && !owned)}>{owned ? "Entrar na Voxelia" : busy ? "Abrindo pagamento…" : "Garantir acesso"}</button>
+            <button type="button" className="btn btn-primary" onClick={buy} disabled={busy || (!edition && !owned)}>{owned ? "Entrar na Voxelia" : busy ? "Abrindo pagamento…" : "Quero meu acesso agora"}</button>
             {buyError && <p className="form-error" role="alert">{buyError}</p>}
+            <p className="l-guarantee"><b>Garantia de 15 dias.</b> Se não servir para você, devolvemos o valor pago. O risco é nosso.</p>
           </div>
           <div className="l-offer-art" aria-hidden="true" ref={offerRef}>{CATEGORIES.map((c) => <CyberpunkCharacter key={c.id} category={c.id} active={offerFidgets[c.id] === "act"} fidget={offerFidgets[c.id] === "hop" ? "hop" : null}/>)}</div>
         </motion.div>
       </Section>
 
-      <Section id="faq" eyebrow="Perguntas frequentes" title="Antes de garantir o seu acesso.">
+      <Section id="faq" eyebrow="Dúvidas" title="Ainda pensando? Respostas diretas.">
         <div className="l-faq">
           {faq.map((item, index) => <motion.details key={item.q} className="l-faq-item" {...cardReveal(reduced, index, 0.6)}>
             <summary>{item.q}</summary>
@@ -174,8 +211,9 @@ export default function LandingPage({ account, signedIn, onEnter }) {
 
       <section className="l-final" aria-labelledby="final-title">
         <div className="wrap l-final-inner">
-          <h2 id="final-title">Comece a criar com os recursos certos.</h2>
-          <button type="button" className="btn btn-primary" onClick={buy} disabled={busy}>{owned ? "Entrar na Voxelia" : "Garantir acesso"}</button>
+          <h2 id="final-title">Sua próxima ideia com IA começa aqui.</h2>
+          <button type="button" className="btn btn-primary" onClick={buy} disabled={busy}>{owned ? "Entrar na Voxelia" : "Quero meu acesso"}</button>
+          <p className="l-trust">Pagamento único · Garantia de 15 dias</p>
         </div>
       </section>
     </main>
