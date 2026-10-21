@@ -28,6 +28,8 @@
   --blob-a: #e2d4fb;
   --blob-b: #fbe4ee;
   --ground-shadow: rgba(35, 33, 43, 0.12);
+  --ph-bg: #ffe9a8;
+  --ph-text: #3d2a00;
 
   /* Cores auxiliares por área/tipo: suaves, sempre com rótulo textual. */
   --tint-software: #ece5fa;
@@ -112,6 +114,8 @@
     --blob-a: #2b2149;
     --blob-b: #331d2b;
     --ground-shadow: rgba(0, 0, 0, 0.35);
+    --ph-bg: #5c4710;
+    --ph-text: #ffe9a8;
 
     --tint-software: #2a2240;
     --tint-empreendedorismo: #362717;

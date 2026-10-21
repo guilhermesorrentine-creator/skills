@@ -33,3 +33,9 @@ test("markdown seguro: títulos viram sumário, código é bloco, links só HTTP
   assert.equal(safeHref("https://21st.dev"), "https://21st.dev/");
   assert.ok(!JSON.stringify(blocks).includes("<script"));
 });
+
+test("marcadores «troque» são destacados e copiados sem as aspas", async () => {
+  const { splitPlaceholders, stripPlaceholders } = await import("./markdown-parse.js");
+  assert.deepEqual(splitPlaceholders("harvey train «https://seu-site.com»"), ["harvey train ", { placeholder: "https://seu-site.com" }]);
+  assert.equal(stripPlaceholders("cd «pasta» && «x»"), "cd pasta && x");
+});

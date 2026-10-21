@@ -44,3 +44,7 @@ export function parseMarkdown(source = "") {
   return { blocks, headings };
 }
 
+
+// Marcadores «assim» indicam o que a pessoa troca pelo seu: destacados na tela, copiados sem as aspas.
+export const splitPlaceholders = (text) => text.split(/(«[^»\n]+»)/).filter(Boolean).map((part) => (part.startsWith("«") && part.endsWith("»") ? { placeholder: part.slice(1, -1) } : part));
+export const stripPlaceholders = (text) => text.replace(/«([^»\n]+)»/g, "$1");
