@@ -1,7 +1,7 @@
 // Catálogo unificado: Agent Skills (src/data/catalog.json, canônico no repositório) + recursos
 // gerenciados pela administração (tabela `resources`). Filtrado pelos direitos do usuário.
 import { canAccessResource } from "./licensing.js";
-import { safeGitHubUrl } from "../src/lib/search.js";
+import { repoOwner, safeGitHubUrl } from "../src/lib/search.js";
 
 export const RESOURCE_TYPES = ["skill", "subagent", "workflow", "guide", "tool", "reference"];
 export const CATEGORIES = ["software", "empreendedorismo", "conteudo", "ciencia"];
@@ -10,6 +10,7 @@ export function skillResources(catalog) {
   const out = [];
   for (const repo of catalog) {
     const repoUrl = safeGitHubUrl(repo.url);
+    const owner = repoOwner(repo.url);
     for (const skill of repo.skills || []) {
       out.push({
         id: `${repo.name}::${skill.path || skill.name}`,
@@ -21,6 +22,9 @@ export function skillResources(catalog) {
         source_name: repo.name,
         source_url: repoUrl && skill.path ? `${repoUrl}/blob/HEAD/${skill.path.split("/").map(encodeURIComponent).join("/")}` : repoUrl,
         repo_name: repo.name,
+        repo_url: repoUrl,
+        author: owner?.name || "",
+        author_url: owner?.url || null,
         path: skill.path || "",
         visibility: "edition",
         min_edition_rank: 1,

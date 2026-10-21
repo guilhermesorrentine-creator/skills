@@ -9,6 +9,378 @@
       "ciencia": 177
     }
   },
+  "repos": [
+    {
+      "name": "android-skills",
+      "category": "software",
+      "url": "https://github.com/android/skills",
+      "owner": {
+        "name": "android",
+        "url": "https://github.com/android"
+      },
+      "skills": 30
+    },
+    {
+      "name": "claude-mem",
+      "category": "software",
+      "url": "https://github.com/thedotmack/claude-mem",
+      "owner": {
+        "name": "thedotmack",
+        "url": "https://github.com/thedotmack"
+      },
+      "skills": 40
+    },
+    {
+      "name": "claude-plugins-official",
+      "category": "software",
+      "url": "https://github.com/anthropics/claude-plugins-official",
+      "owner": {
+        "name": "anthropics",
+        "url": "https://github.com/anthropics"
+      },
+      "skills": 33
+    },
+    {
+      "name": "CLI-Anything",
+      "category": "software",
+      "url": "https://github.com/HKUDS/CLI-Anything",
+      "owner": {
+        "name": "HKUDS",
+        "url": "https://github.com/HKUDS"
+      },
+      "skills": 151
+    },
+    {
+      "name": "codex-plugin-cc",
+      "category": "software",
+      "url": "https://github.com/openai/codex-plugin-cc",
+      "owner": {
+        "name": "openai",
+        "url": "https://github.com/openai"
+      },
+      "skills": 3
+    },
+    {
+      "name": "ECC",
+      "category": "software",
+      "url": "https://github.com/affaan-m/ECC",
+      "owner": {
+        "name": "affaan-m",
+        "url": "https://github.com/affaan-m"
+      },
+      "skills": 1062
+    },
+    {
+      "name": "habblaud",
+      "category": "software",
+      "url": "https://github.com/marmottajr/habblaud",
+      "owner": {
+        "name": "marmottajr",
+        "url": "https://github.com/marmottajr"
+      },
+      "skills": 0
+    },
+    {
+      "name": "headroom",
+      "category": "software",
+      "url": "https://github.com/headroomlabs-ai/headroom",
+      "owner": {
+        "name": "headroomlabs-ai",
+        "url": "https://github.com/headroomlabs-ai"
+      },
+      "skills": 0
+    },
+    {
+      "name": "LinkSwift",
+      "category": "software",
+      "url": "https://github.com/hmjz100/LinkSwift",
+      "owner": {
+        "name": "hmjz100",
+        "url": "https://github.com/hmjz100"
+      },
+      "skills": 0
+    },
+    {
+      "name": "OmniRoute",
+      "category": "software",
+      "url": "https://github.com/diegosouzapw/OmniRoute",
+      "owner": {
+        "name": "diegosouzapw",
+        "url": "https://github.com/diegosouzapw"
+      },
+      "skills": 53
+    },
+    {
+      "name": "one-skill-to-rule-them-all",
+      "category": "software",
+      "url": "https://github.com/rebelytics/one-skill-to-rule-them-all",
+      "owner": {
+        "name": "rebelytics",
+        "url": "https://github.com/rebelytics"
+      },
+      "skills": 1
+    },
+    {
+      "name": "rea",
+      "category": "software",
+      "url": "https://github.com/morluto/rea",
+      "owner": {
+        "name": "morluto",
+        "url": "https://github.com/morluto"
+      },
+      "skills": 5
+    },
+    {
+      "name": "ruflo",
+      "category": "software",
+      "url": "https://github.com/ruvnet/ruflo",
+      "owner": {
+        "name": "ruvnet",
+        "url": "https://github.com/ruvnet"
+      },
+      "skills": 380
+    },
+    {
+      "name": "security-audit-skill",
+      "category": "software",
+      "url": "https://github.com/cloudflare/security-audit-skill",
+      "owner": {
+        "name": "cloudflare",
+        "url": "https://github.com/cloudflare"
+      },
+      "skills": 1
+    },
+    {
+      "name": "superpowers",
+      "category": "software",
+      "url": "https://github.com/obra/superpowers",
+      "owner": {
+        "name": "obra",
+        "url": "https://github.com/obra"
+      },
+      "skills": 15
+    },
+    {
+      "name": "xerj",
+      "category": "software",
+      "url": "https://github.com/xerj-org/xerj",
+      "owner": {
+        "name": "xerj-org",
+        "url": "https://github.com/xerj-org"
+      },
+      "skills": 2
+    },
+    {
+      "name": "arena-skill",
+      "category": "empreendedorismo",
+      "url": "https://github.com/Jakeschincariol/arena-skill",
+      "owner": {
+        "name": "Jakeschincariol",
+        "url": "https://github.com/Jakeschincariol"
+      },
+      "skills": 1
+    },
+    {
+      "name": "artcraft",
+      "category": "empreendedorismo",
+      "url": "https://github.com/storytold/artcraft",
+      "owner": {
+        "name": "storytold",
+        "url": "https://github.com/storytold"
+      },
+      "skills": 0
+    },
+    {
+      "name": "brag",
+      "category": "empreendedorismo",
+      "url": "https://github.com/latent-spaces/brag",
+      "owner": {
+        "name": "latent-spaces",
+        "url": "https://github.com/latent-spaces"
+      },
+      "skills": 2
+    },
+    {
+      "name": "claude-video",
+      "category": "empreendedorismo",
+      "url": "https://github.com/bradautomates/claude-video",
+      "owner": {
+        "name": "bradautomates",
+        "url": "https://github.com/bradautomates"
+      },
+      "skills": 1
+    },
+    {
+      "name": "Concat",
+      "category": "empreendedorismo",
+      "url": "https://github.com/jub0t/Concat",
+      "owner": {
+        "name": "jub0t",
+        "url": "https://github.com/jub0t"
+      },
+      "skills": 1
+    },
+    {
+      "name": "founder-skill",
+      "category": "empreendedorismo",
+      "url": "https://github.com/Jakeschincariol/founder-skill",
+      "owner": {
+        "name": "Jakeschincariol",
+        "url": "https://github.com/Jakeschincariol"
+      },
+      "skills": 11
+    },
+    {
+      "name": "google-maps-scraper-kit",
+      "category": "empreendedorismo",
+      "url": "https://github.com/Mahanaicoach/google-maps-scraper-kit",
+      "owner": {
+        "name": "Mahanaicoach",
+        "url": "https://github.com/Mahanaicoach"
+      },
+      "skills": 1
+    },
+    {
+      "name": "harvey",
+      "category": "empreendedorismo",
+      "url": "https://github.com/ethanplusai/harvey",
+      "owner": {
+        "name": "ethanplusai",
+        "url": "https://github.com/ethanplusai"
+      },
+      "skills": 0
+    },
+    {
+      "name": "hyperframes",
+      "category": "empreendedorismo",
+      "url": "https://github.com/heygen-com/hyperframes",
+      "owner": {
+        "name": "heygen-com",
+        "url": "https://github.com/heygen-com"
+      },
+      "skills": 40
+    },
+    {
+      "name": "instagram-agent-skill",
+      "category": "empreendedorismo",
+      "url": "https://github.com/Jakeschincariol/instagram-agent-skill",
+      "owner": {
+        "name": "Jakeschincariol",
+        "url": "https://github.com/Jakeschincariol"
+      },
+      "skills": 13
+    },
+    {
+      "name": "master-skills",
+      "category": "empreendedorismo",
+      "url": "https://github.com/Jakeschincariol/master-skills",
+      "owner": {
+        "name": "Jakeschincariol",
+        "url": "https://github.com/Jakeschincariol"
+      },
+      "skills": 2
+    },
+    {
+      "name": "MoneyPrinterTurbo",
+      "category": "empreendedorismo",
+      "url": "https://github.com/harry0703/MoneyPrinterTurbo",
+      "owner": {
+        "name": "harry0703",
+        "url": "https://github.com/harry0703"
+      },
+      "skills": 1
+    },
+    {
+      "name": "motionmaxxing",
+      "category": "empreendedorismo",
+      "url": "https://github.com/Tejashmakwana/motionmaxxing",
+      "owner": {
+        "name": "Tejashmakwana",
+        "url": "https://github.com/Tejashmakwana"
+      },
+      "skills": 1
+    },
+    {
+      "name": "OpenMontage",
+      "category": "empreendedorismo",
+      "url": "https://github.com/calesthio/OpenMontage",
+      "owner": {
+        "name": "calesthio",
+        "url": "https://github.com/calesthio"
+      },
+      "skills": 139
+    },
+    {
+      "name": "remotion",
+      "category": "empreendedorismo",
+      "url": "https://github.com/remotion-dev/remotion",
+      "owner": {
+        "name": "remotion-dev",
+        "url": "https://github.com/remotion-dev"
+      },
+      "skills": 87
+    },
+    {
+      "name": "studio",
+      "category": "empreendedorismo",
+      "url": "https://github.com/mackswendhell/studio",
+      "owner": {
+        "name": "mackswendhell",
+        "url": "https://github.com/mackswendhell"
+      },
+      "skills": 12
+    },
+    {
+      "name": "youtube-agent-skill",
+      "category": "empreendedorismo",
+      "url": "https://github.com/Jakeschincariol/youtube-agent-skill",
+      "owner": {
+        "name": "Jakeschincariol",
+        "url": "https://github.com/Jakeschincariol"
+      },
+      "skills": 11
+    },
+    {
+      "name": "anatomy",
+      "category": "conteudo",
+      "url": "https://github.com/wheresryan22/anatomy",
+      "owner": {
+        "name": "wheresryan22",
+        "url": "https://github.com/wheresryan22"
+      },
+      "skills": 1
+    },
+    {
+      "name": "awesome-design-md",
+      "category": "conteudo",
+      "url": "https://github.com/VoltAgent/awesome-design-md",
+      "owner": {
+        "name": "VoltAgent",
+        "url": "https://github.com/VoltAgent"
+      },
+      "skills": 0
+    },
+    {
+      "name": "VoiceStudio",
+      "category": "conteudo",
+      "url": "https://github.com/debpalash/VoiceStudio",
+      "owner": {
+        "name": "debpalash",
+        "url": "https://github.com/debpalash"
+      },
+      "skills": 4
+    },
+    {
+      "name": "scientific-agent-skills",
+      "category": "ciencia",
+      "url": "https://github.com/K-Dense-AI/scientific-agent-skills",
+      "owner": {
+        "name": "K-Dense-AI",
+        "url": "https://github.com/K-Dense-AI"
+      },
+      "skills": 177
+    }
+  ],
   "skills": [
     {
       "id": "superpowers::skills/brainstorming/SKILL.md",

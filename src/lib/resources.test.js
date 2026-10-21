@@ -61,3 +61,9 @@ test("terminal guiado pelo scroll: começa vazio, digita, conclui e troca de cen
   assert.deepEqual(sceneAt(0.6, 4).index, 2);
   assert.equal(sceneAt(1, 4).index, 3);
 });
+
+test("crédito ao criador vem da URL do GitHub do repositório", async () => {
+  const { repoOwner } = await import("./search.js");
+  assert.deepEqual(repoOwner("https://github.com/K-Dense-AI/scientific-agent-skills"), { name: "K-Dense-AI", url: "https://github.com/K-Dense-AI" });
+  assert.equal(repoOwner("https://evil.example/x/y"), null);
+});

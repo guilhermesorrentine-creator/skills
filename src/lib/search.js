@@ -95,6 +95,13 @@ export function buildSearchIndex(catalog) {
   return { repos, skills };
 }
 
+// Dono do repositório (conta ou organização no GitHub), lido da URL validada: crédito ao criador.
+export function repoOwner(url) {
+  const safe = safeGitHubUrl(url);
+  const owner = safe ? new URL(safe).pathname.split("/").filter(Boolean)[0] : "";
+  return owner ? { name: owner, url: `https://github.com/${owner}` } : null;
+}
+
 export function safeGitHubUrl(value) {
   try {
     const url = new URL(value);
