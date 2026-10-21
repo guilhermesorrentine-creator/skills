@@ -1,0 +1,118 @@
+{
+  "repo": "founder-skill",
+  "voice": "pm_alex",
+  "accent": "#f2a65a",
+  "lines": [
+    {
+      "scene": "hook",
+      "say": "Você vai gastar milhares de reais pra descobrir se o seu negócio dá certo?",
+      "key": "milhares de reais",
+      "p": {
+        "label": "suas economias",
+        "prefix": "R$ ",
+        "from": 20000,
+        "to": 0
+      }
+    },
+    {
+      "scene": "varal",
+      "say": "Alguém criou onze skills de graça que testam a ideia antes de você lançar.",
+      "key": "onze skills",
+      "p": {
+        "items": [
+          "conselho",
+          "concorrência",
+          "clientes",
+          "preço",
+          "oferta",
+          "financeiro",
+          "marketing",
+          "marca",
+          "operação",
+          "lançamento",
+          "plano"
+        ]
+      }
+    },
+    {
+      "scene": "conselho",
+      "say": "Uma vira o seu conselho de diretores: três agentes dão nota e votam.",
+      "key": "conselho",
+      "p": {
+        "board": [
+          {
+            "score": 8,
+            "vote": "investe"
+          },
+          {
+            "score": 6,
+            "vote": "investe se…"
+          },
+          {
+            "score": 9,
+            "vote": "passa"
+          }
+        ]
+      }
+    },
+    {
+      "scene": "multidao",
+      "say": "Outra cria cem compradores virtuais, cada um com renda, hábitos e objeções,",
+      "key": "cem compradores",
+      "p": {
+        "label": "100 compradores virtuais",
+        "yes": 61
+      }
+    },
+    {
+      "scene": "+",
+      "say": "e conta quem compra, quem passa e por quê.",
+      "key": "por quê"
+    },
+    {
+      "scene": "cfo",
+      "say": "O diretor financeiro calcula a margem real e quanto você precisa vender pra empatar.",
+      "key": "margem real",
+      "p": {
+        "number": "186",
+        "label": "cafés por dia para empatar",
+        "note": "exemplo do repositório: café de matcha"
+      }
+    },
+    {
+      "scene": "plano",
+      "say": "No fim, sai um plano de negócios com veredito calculado: lucrativo, ainda não ou incompleto.",
+      "key": "veredito",
+      "p": {
+        "title": "Plano de negócios",
+        "stamp": "LUCRATIVO",
+        "opts": [
+          "lucrativo",
+          "ainda não",
+          "incompleto"
+        ]
+      }
+    },
+    {
+      "scene": "voxelia",
+      "say": "Chama fáunder skil. É de código aberto, e a gente explica cada passo em português.",
+      "show": "Chama founder-skill. É de código aberto, e a gente explica cada passo em português.",
+      "key": "founder-skill",
+      "p": {
+        "query": "testar ideia de negócio",
+        "tagline": "Testa o negócio antes de lançar",
+        "chips": [
+          "Empreendedorismo",
+          "11 skills",
+          "Código aberto"
+        ]
+      }
+    },
+    {
+      "scene": "cta",
+      "say": "O passo a passo completo tá no nosso site. Link no comentário fixado.",
+      "key": "comentário fixado"
+    }
+  ],
+  "char": "empreendedorismo"
+}

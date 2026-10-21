@@ -1,0 +1,101 @@
+{
+  "repo": "CLI-Anything",
+  "char": "software",
+  "accent": "#a589ec",
+  "lines": [
+    {
+      "scene": "apps",
+      "say": "O seu agente de IA sabe conversar. Mas consegue usar o GIMP, o Blender ou o seu programa favorito?",
+      "key": "programa favorito",
+      "p": {
+        "apps": [
+          "GIMP",
+          "Blender",
+          "Obsidian",
+          "Zotero",
+          "FreeCAD",
+          "n8n"
+        ]
+      }
+    },
+    {
+      "scene": "transform",
+      "say": "Alguém criou um projeto de graça que transforma qualquer programa numa linha de comando que o agente entende.",
+      "key": "linha de comando",
+      "p": {
+        "app": "GIMP",
+        "machine": "CLI-Anything",
+        "cmd": "cli-anything-gimp --json"
+      }
+    },
+    {
+      "scene": "varal",
+      "say": "E já existe um catálogo pronto: GIMP, Blender, Obsidian, Zotero e muitos outros.",
+      "key": "catálogo",
+      "p": {
+        "items": [
+          "GIMP",
+          "Blender",
+          "Obsidian",
+          "Zotero",
+          "n8n",
+          "FreeCAD",
+          "MuseScore",
+          "LibreOffice"
+        ]
+      }
+    },
+    {
+      "scene": "terminal",
+      "say": "Você instala com um comando, e o agente passa a usar sozinho.",
+      "key": "um comando",
+      "p": {
+        "lines": [
+          {
+            "cmd": "pip install cli-anything-hub"
+          },
+          {
+            "out": "✓ instalado"
+          },
+          {
+            "cmd": "cli-hub install gimp"
+          },
+          {
+            "out": "✓ gimp pronto para o agente"
+          }
+        ]
+      }
+    },
+    {
+      "scene": "fases",
+      "say": "E se o programa não estiver lá, um gerador em sete fases cria a linha de comando nova.",
+      "show": "E se o programa não estiver lá, um gerador em 7 fases cria a linha de comando nova.",
+      "key": "7 fases",
+      "p": {
+        "label": "gerador em 7 fases",
+        "n": 7,
+        "result": "✓ linha de comando nova"
+      }
+    },
+    {
+      "scene": "voxelia",
+      "say": "Chama Cê Éle Í Éniting. É de código aberto, e a gente explica cada passo em português.",
+      "show": "Chama CLI-Anything. É de código aberto, e a gente explica cada passo em português.",
+      "key": "CLI-Anything",
+      "p": {
+        "query": "usar programas com IA",
+        "tagline": "Qualquer programa pronto para o agente",
+        "chips": [
+          "Software",
+          "Apache 2.0",
+          "Código aberto"
+        ]
+      }
+    },
+    {
+      "scene": "cta",
+      "say": "O passo a passo completo tá no nosso site. Link no comentário fixado.",
+      "key": "comentário fixado"
+    }
+  ]
+}

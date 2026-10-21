@@ -1,0 +1,120 @@
+{
+  "repo": "instagram-agent-skill",
+  "char": "conteudo",
+  "accent": "#f27aa8",
+  "lines": [
+    {
+      "scene": "flop",
+      "say": "Você passa horas pensando no que postar, e o vídeo não sai do lugar?",
+      "key": "horas",
+      "p": {
+        "views": 37
+      }
+    },
+    {
+      "scene": "varal",
+      "say": "Alguém criou treze skills de graça que cuidam do seu Instagram.",
+      "show": "Alguém criou 13 skills de graça que cuidam do seu Instagram.",
+      "key": "13 skills",
+      "p": {
+        "items": [
+          "reel",
+          "em alta",
+          "legenda",
+          "carrossel",
+          "stories",
+          "perfil",
+          "plano",
+          "humanizar",
+          "comentar",
+          "responder",
+          "direct",
+          "reaproveitar",
+          "auditoria"
+        ]
+      }
+    },
+    {
+      "scene": "ganchos",
+      "say": "Ela escreve o roteiro do Reel a partir de vinte e seis fórmulas de gancho, e dá nota pro gancho antes de você gravar.",
+      "show": "Ela escreve o roteiro do Reel a partir de 26 fórmulas de gancho, e dá nota pro gancho antes de você gravar.",
+      "key": "gancho",
+      "p": {
+        "label": "3 ganchos com nota",
+        "hooks": [
+          {
+            "text": "Ninguém te contou isso sobre…",
+            "score": 58
+          },
+          {
+            "text": "Pare de fazer isso no seu…",
+            "score": 92,
+            "best": true
+          },
+          {
+            "text": "3 erros que travam o seu…",
+            "score": 74
+          }
+        ]
+      }
+    },
+    {
+      "scene": "semana",
+      "say": "Descobre o que está funcionando no seu nicho, monta carrossel e planeja a semana.",
+      "key": "semana",
+      "p": {
+        "label": "a semana planejada"
+      }
+    },
+    {
+      "scene": "humanizar",
+      "say": "E tem um humanizador, que tira a cara de texto de IA.",
+      "key": "humanizador",
+      "p": {
+        "title": "Legenda",
+        "before": [
+          "Não é só um app ",
+          {
+            "bad": "—"
+          },
+          " é a sua ",
+          {
+            "bad": "jornada transformadora"
+          },
+          "."
+        ],
+        "after": "Não é só um app: é a sua rotina mais leve.",
+        "badge": "✓ sem cara de IA"
+      }
+    },
+    {
+      "scene": "aprovar",
+      "say": "Mas nada é publicado sem você: ela escreve, você posta.",
+      "key": "sem você",
+      "p": {
+        "draft": "Roteiro pronto",
+        "you": "você decide"
+      }
+    },
+    {
+      "scene": "voxelia",
+      "say": "Chama Instagram Ejent. É de código aberto, e a gente explica cada passo em português.",
+      "show": "Chama Instagram Agent. É de código aberto, e a gente explica cada passo em português.",
+      "key": "Instagram Agent",
+      "p": {
+        "query": "crescer no instagram",
+        "tagline": "13 skills que cuidam do seu Instagram",
+        "chips": [
+          "Conteúdo",
+          "13 skills",
+          "Código aberto"
+        ]
+      }
+    },
+    {
+      "scene": "cta",
+      "say": "O passo a passo completo tá no nosso site. Link no comentário fixado.",
+      "key": "comentário fixado"
+    }
+  ]
+}
