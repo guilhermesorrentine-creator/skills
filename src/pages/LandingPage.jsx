@@ -109,7 +109,7 @@ export default function LandingPage({ account, signedIn, onEnter }) {
         <div className="wrap l-hero-copy">
           <motion.p className="eyebrow" {...reveal(reduced, 0)}><span className="pill-dot" aria-hidden="true"/> {demo ? `${demo.stats.skills.toLocaleString("pt-BR")} skills · ${demo.stats.repos} repositórios · guias em português` : "Skills · ferramentas · guias em português"}</motion.p>
           <motion.h1 id="hero-title" {...reveal(reduced, 1)}>Pare de caçar ferramentas de IA. <span className="hl">Comece a criar hoje.</span></motion.h1>
-          <motion.p className="l-lead" {...reveal(reduced, 2)}>Diga o que quer fazer — um site, um vídeo, uma automação — e a Voxelia mostra a skill certa, o passo a passo em português e o comando pronto para copiar.</motion.p>
+          <motion.p className="l-lead" {...reveal(reduced, 2)}>A Voxelia ajuda criadores e empreendedores a fazer sites, vídeos e automações com IA sem perder horas garimpando ferramentas em inglês. Você diz o objetivo; ela mostra a skill certa, o passo a passo em português e o comando pronto para copiar.</motion.p>
           <motion.div className="l-actions" {...reveal(reduced, 3)}>
             <button type="button" className="btn btn-primary" onClick={buy} disabled={busy}>{owned ? "Entrar na Voxelia" : edition ? `Quero meu acesso por ${formatPrice(edition.priceCents)}` : "Quero meu acesso"}</button>
             <button type="button" className="btn btn-secondary" onClick={(event) => scrollTo(event, "funcionando")}>Ver funcionando</button>

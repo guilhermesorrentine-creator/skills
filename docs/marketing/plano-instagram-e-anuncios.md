@@ -89,7 +89,7 @@ As outras 19 legendas seguem o mesmo molde (`ig-caption`): linha 1 com a chamada
 
 | Campanha | Verba | Público | Criativos | Otimização |
 |---|---|---|---|---|
-| **C1 · Vendas · Público frio · Teste de criativos** | R$ 20/dia | Brasil, 20 a 45 anos, interesses: inteligência artificial, ChatGPT, programação, empreendedorismo digital, criação de conteúdo. Advantage+ público ligado | 4 anúncios: Reel 1 (prova site), Reel 3 (oferta), Carrossel 2 (dor), Reel 15 (garantia) | Evento **Purchase**; enquanto não houver compras suficientes, **InitiateCheckout** |
+| **C1 · Vendas · Público consciente · Teste por subnicho** | R$ 20/dia | Brasil, 20 a 45 anos, 3 conjuntos (ver seção 6): **Criadores** (criação de conteúdo, edição de vídeo, Canva + IA), **Empreendedores** (empreendedorismo digital, automação, ChatGPT), **Usuários de IA para código** (Claude, Cursor, GitHub, programação) | Por conjunto, 2 anúncios com a mensagem do subnicho: Reel 1 ou 13 (prova), Reel 3 (oferta), Carrossel 2 (dor), Reel 15 (garantia) | Evento **Purchase**; enquanto não houver compras suficientes, **InitiateCheckout** |
 | **C2 · Vendas · Remarketing** | R$ 10/dia | Visitou a landing nos últimos 14 dias sem comprar + interagiu com o Instagram em 30 dias | 2 anúncios: Carrossel 9 (objeção "skills públicas"), Reel 15 (garantia) | Evento **Purchase** |
 
 Regras de gestão (revisão a cada 3 dias):
@@ -110,7 +110,23 @@ Com R$ 30/dia, a campanha provavelmente não sai da fase de aprendizado do Meta 
 5. **Política de compra e termos publicados** com a garantia de 15 dias e os dados de quem vende.
 6. **Conta de anúncios** no Business Manager com forma de pagamento cadastrada **pelo dono da conta**.
 
-## 6. Quem faz o quê
+## 6. Revisão final: vídeo "O jeito certo de vender SaaS" (Gabriel Costa)
+
+O vídeo descreve 7 etapas para quem começa sem investimento. O que entra na Voxelia e o que fica de fora:
+
+| Etapa do vídeo | Como fica na Voxelia |
+|---|---|
+| **Funding:** sem investimento, precisa de receita rápido | Igual ao nosso caso. Verba pequena (R$ 30/dia) e foco em venda, não em seguidores. |
+| **Nicho vertical** vende mais e custa menos | A Voxelia serve a todos, mas **a comunicação de cada anúncio fala com um subnicho só**. A C1 passa a ter 3 conjuntos: **Criadores de conteúdo** (vídeo, legendas, design), **Empreendedores** (automação, site, marketing) e **Quem já usa Claude Code** (skills, subagentes). Cada um com criativo e texto próprios. |
+| **B2B pequeno e médio** fecha mais rápido | Não muda agora: R$ 97,90 é compra individual. Fica anotada uma oferta futura "Voxelia para equipes e agências". |
+| **Monetização simples**, um plano só | Já está assim: um plano, pagamento único, Pix ou cartão. |
+| **Go to market:** começar por venda consultiva (call) | Com ticket de R$ 97,90 uma call por cliente custa mais do que a venda. Fica o **marketing direto pelo site**, com a parte consultiva leve: palavra-chave no comentário → DM com o guia → link da oferta. |
+| **Níveis de consciência:** anunciar para quem já sabe que tem o problema e que existem soluções | Anúncios pagos só para **público consciente** (interesses em Claude Code, ChatGPT, Cursor, automação com IA; visitantes do site). Conteúdo que educa do zero ("o que é uma Agent Skill") fica **só no orgânico**. |
+| **Oferta irresistível:** (resultado dos sonhos × chance de dar certo) ÷ (tempo × esforço) | **Resultado:** frase "ajuda X a Y sem W" no topo da landing. **Chance de dar certo:** demonstrações reais (terminal, busca ao vivo); depoimentos só quando existirem compradores reais que autorizem. **Tempo:** "do pagamento ao primeiro resultado em minutos". **Esforço:** guias e comandos prontos, garantia de 15 dias. Sem âncora de preço inventada e sem urgência falsa. |
+| **Funis simples:** WhatsApp, página de captura, abordagem direta | Entra uma **C3 opcional · Cadastros** (R$ 10/dia tirados da C1 depois da primeira semana): material grátis "10 skills para começar com IA" em troca do e-mail, seguido de 3 e-mails até a oferta. Depende do envio de e-mail (Resend) e do domínio. |
+| **Roteiro de call** (frame, rapport, diagnóstico, apresentação, fechamento) | Só para a futura oferta de equipes. No dia a dia, a mesma lógica vira o roteiro das respostas de DM: perguntar o objetivo, indicar o guia certo, e só depois a oferta. |
+
+## 7. Quem faz o quê
 
 - **Você:** criar o Instagram e o Business Manager (eu não posso criar contas), cadastrar o pagamento da conta de anúncios, comprar o domínio e aprovar cada publicação e cada campanha antes de ir ao ar.
 - **Eu (Claude):** perfil, legendas, artes e vídeos dos posts; agendamento no Meta Business Suite com a sua sessão aberta no Chrome; montagem das campanhas no Gerenciador de Anúncios, deixadas em rascunho até a sua aprovação; Pixel, API de Conversões e aviso de cookies no site; relatório semanal com os números.
