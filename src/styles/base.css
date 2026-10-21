@@ -109,3 +109,23 @@ kbd { display: inline-flex; align-items: center; padding: 2px 6px; border-radius
 .consent { position: fixed; left: 16px; right: 16px; bottom: 64px; z-index: 70; display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px; max-width: 760px; margin: 0 auto; padding: 14px 18px; border-radius: var(--radius-lg); background: var(--surface); border: 1px solid var(--line); box-shadow: var(--shadow-2); font-size: 14px; color: var(--text-2); }
 .consent p { flex: 1 1 320px; margin: 0; }
 .consent-actions { display: flex; gap: 8px; }
+
+/* Celular: o botão de animações sai de cima do conteúdo e dos CTAs fixos e vai para o fim da página. */
+@media (max-width: 760px) {
+  .motion-toggle { position: static; display: flex; width: fit-content; margin: 8px auto 28px; box-shadow: none; }
+  .consent { bottom: 16px; }
+  .repo-page ~ .motion-toggle { margin-bottom: 150px; }
+}
+
+/* Celular: alvos de toque com pelo menos 44 px (botões pequenos, chips e abas). */
+@media (max-width: 760px) {
+  .btn-sm, .chip, .hw-tab, .term-tab, .term-pause, .nav-toggle { min-height: 44px; display: inline-flex; align-items: center; justify-content: center; }
+  .brand { min-height: 44px; }
+  input, select, textarea { font-size: 16px; }
+  .simple-nav .link, .simple-nav .btn { min-height: 44px; display: inline-flex; align-items: center; }
+}
+
+/* Telas de toque: atalhos de teclado não fazem sentido. */
+@media (hover: none) and (pointer: coarse) {
+  .hw-search kbd, .app-search-trigger kbd { display: none; }
+}

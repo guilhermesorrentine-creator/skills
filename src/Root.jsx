@@ -8,6 +8,7 @@ import ConsentBanner from "./components/site/ConsentBanner.jsx";
 
 const AppRoutes = lazy(() => import("./pages/app/AppRoutes.jsx"));
 const AdminPage = lazy(() => import("./pages/AdminPage.jsx"));
+const RepoPage = lazy(() => import("./pages/RepoPage.jsx"));
 const authModes = { "/entrar": "login", "/cadastro": "signup", "/recuperar-senha": "recover", "/redefinir-senha": "reset", "/criar-senha": "invite" };
 const legalSlugs = ["termos", "privacidade", "compra-e-reembolso"];
 const Loading = () => <main className="loading-line" role="status">Verificando acesso…</main>;
@@ -69,6 +70,8 @@ function Routes() {
     return <Suspense fallback={<Loading/>}><AppRoutes path={path} account={account}/></Suspense>;
   });
   if (path === "/admin") return requireSession(() => <Suspense fallback={<Loading/>}><AdminPage/></Suspense>);
+  const repo = matchPath("/r/:name", path);
+  if (repo) return <Suspense fallback={<Loading/>}><RepoPage name={repo.name} account={signedIn ? account : null} onEnter={enter}/></Suspense>;
   const shared = matchPath("/c/:token", path);
   if (shared) return <SharedCollectionPage token={shared.token}/>;
   const slug = path.slice(1);

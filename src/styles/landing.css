@@ -187,6 +187,10 @@
 @media (max-width: 900px) {
   .hero-char-label { min-width: 0; font-size: 13px; overflow-wrap: anywhere; text-align: left; }
 }
+@media (max-width: 560px) {
+  .hero-char { grid-template-columns: 1fr; justify-items: center; }
+  .hero-char-label { overflow-wrap: normal; text-align: center; }
+}
 @media (max-width: 400px) {
   .site-nav .brand-name { display: none; }
 }
@@ -252,7 +256,7 @@
 .term-meter span { display: block; height: 100%; background: var(--term-accent); transform-origin: left center; }
 .term-tab.is-past { color: var(--term-text); }
 @media (max-width: 860px) {
-  .term-track { height: calc(var(--scenes, 4) * 130vh + 100vh); }
+  .term-track { height: calc(var(--scenes, 4) * 75vh + 100vh); }
   .term-sticky { top: calc(var(--nav-height) + 14px); height: calc(100vh - var(--nav-height) - 28px); min-height: 0; max-height: none; grid-template-columns: 1fr; grid-template-rows: auto auto minmax(0, 1fr) auto; grid-template-areas: "teacher" "teacher" "window" "note"; gap: 8px; }
   .term-track.is-static .term-sticky { height: auto; }
   .term-track.is-static .term-sticky .term-body { height: 300px; }

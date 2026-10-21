@@ -1,0 +1,905 @@
+[
+ {
+  "name": "android-skills",
+  "category": "software",
+  "url": "https://github.com/android/skills",
+  "owner": {
+   "name": "android",
+   "url": "https://github.com/android"
+  },
+  "skills": 30,
+  "guideId": "guia-android-skills",
+  "title": "Android Skills: as instruções oficiais do Google para agentes desenvolverem apps Android",
+  "summary": "30 skills oficiais do time Android, focadas onde os modelos mais erram: migrações, segurança, desempenho, Wear OS, TV, câmera, faturamento e mais. Instalação pela Android CLI ou como plugin. Apache 2.0.",
+  "license": "Apache 2.0",
+  "intro": [
+   "Um conjunto de instruções oficiais, em formato de skill, que ajudam agentes de IA a seguir as boas práticas de desenvolvimento Android do developer.android.com.",
+   "O foco é onde as avaliações mostram que os modelos mais erram — não em temas que eles já dominam, como o básico de Jetpack Compose."
+  ],
+  "sections": [
+   "Algumas das skills",
+   "Parte 1 — Instalar no Claude Code",
+   "Parte 2 — Ou pela Android CLI",
+   "Parte 3 — Usar",
+   "Cuidados"
+  ]
+ },
+ {
+  "name": "claude-mem",
+  "category": "software",
+  "url": "https://github.com/thedotmack/claude-mem",
+  "owner": {
+   "name": "thedotmack",
+   "url": "https://github.com/thedotmack"
+  },
+  "skills": 40,
+  "guideId": "guia-claude-mem",
+  "title": "Claude-Mem: memória que passa de uma sessão para a outra no Claude Code",
+  "summary": "Registra automaticamente o que acontece nas sessões, gera resumos e entrega esse contexto nas próximas conversas. Busca no histórico em linguagem natural e tag para excluir o que é sensível. Apache 2.0.",
+  "license": "Apache 2.0",
+  "intro": [
+   "Uma memória persistente para o Claude Code: ele registra automaticamente o que acontece nas sessões, gera resumos e entrega esse contexto nas conversas seguintes — assim o Claude continua sabendo do projeto mesmo depois que a sessão termina."
+  ],
+  "sections": [
+   "Parte 1 — Instalar",
+   "Parte 2 — O que você ganha",
+   "Parte 3 — Buscar no que já aconteceu",
+   "Parte 4 — Proteger o que é sensível",
+   "Como funciona por dentro"
+  ]
+ },
+ {
+  "name": "claude-plugins-official",
+  "category": "software",
+  "url": "https://github.com/anthropics/claude-plugins-official",
+  "owner": {
+   "name": "anthropics",
+   "url": "https://github.com/anthropics"
+  },
+  "skills": 33,
+  "guideId": "guia-claude-plugins-official",
+  "title": "Diretório oficial de plugins do Claude Code: como achar, instalar e avaliar",
+  "summary": "O catálogo da Anthropic com plugins próprios (revisão de código, criação de skills, design de interface, LSPs de várias linguagens) e de parceiros. Como instalar e o que conferir antes.",
+  "license": "Varia por plugin",
+  "intro": [
+   "Um catálogo curado de plugins para o Claude Code: os da própria Anthropic, na pasta plugins, e os de parceiros e da comunidade, em external_plugins."
+  ],
+  "sections": [
+   "Antes de instalar qualquer plugin",
+   "Parte 1 — Instalar um plugin",
+   "Alguns plugins da Anthropic no catálogo",
+   "Como um plugin é montado (para quem quer criar)"
+  ]
+ },
+ {
+  "name": "CLI-Anything",
+  "category": "software",
+  "url": "https://github.com/HKUDS/CLI-Anything",
+  "owner": {
+   "name": "HKUDS",
+   "url": "https://github.com/HKUDS"
+  },
+  "skills": 151,
+  "guideId": "guia-cli-anything",
+  "title": "CLI-Anything: deixar qualquer programa pronto para ser usado por agentes de IA",
+  "summary": "Um catálogo de linhas de comando prontas (GIMP, Blender, Obsidian, Zotero e muitas outras) que o agente instala e usa, e um gerador que cria uma linha de comando nova para o software que você quiser. Apache 2.0.",
+  "license": "Apache 2.0",
+  "intro": [
+   "Um projeto que deixa qualquer software pronto para ser usado por agentes de IA, transformando-o numa linha de comando: estruturada, com ajuda embutida e saída em JSON, que o agente entende e encadeia.",
+   "Ele tem dois usos:",
+   "- Usar linhas de comando que já existem — o CLI-Hub reúne as da comunidade (GIMP, Blender, Obsidian, Zotero, n8n, FreeCAD, MuseScore e muitas outras).\n- Criar uma nova — um gerador em 7 fases monta a linha de comando de um programa, código ou ferramenta interna que ainda não exista no catálogo."
+  ],
+  "sections": [
+   "Parte 1 — Usar o catálogo (CLI-Hub)",
+   "Parte 2 — Deixar o agente escolher sozinho",
+   "Parte 3 — Criar uma linha de comando nova",
+   "Por que linha de comando"
+  ]
+ },
+ {
+  "name": "codex-plugin-cc",
+  "category": "software",
+  "url": "https://github.com/openai/codex-plugin-cc",
+  "owner": {
+   "name": "openai",
+   "url": "https://github.com/openai"
+  },
+  "skills": 3,
+  "guideId": "guia-codex-plugin-cc",
+  "title": "Codex dentro do Claude Code: revisões de código e tarefas delegadas",
+  "summary": "Plugin oficial da OpenAI para chamar o Codex sem sair do Claude Code: revisão normal, revisão que questiona o desenho, delegar uma correção e passar a conversa para o Codex. Apache 2.0.",
+  "license": "Apache 2.0",
+  "intro": [
+   "Um plugin para usar o Codex de dentro do Claude Code: pedir revisões de código ou delegar tarefas, sem trocar de ferramenta."
+  ],
+  "sections": [
+   "O que você precisa",
+   "Parte 1 — Instalar",
+   "Os comandos",
+   "Dicas"
+  ]
+ },
+ {
+  "name": "ECC",
+  "category": "software",
+  "url": "https://github.com/affaan-m/ECC",
+  "owner": {
+   "name": "affaan-m",
+   "url": "https://github.com/affaan-m"
+  },
+  "skills": 1062,
+  "guideId": "guia-ecc",
+  "title": "ECC: um sistema de engenharia completo para o seu agente de código",
+  "summary": "71 agentes, 311 skills, ganchos, memória e varredura de segurança que fazem o agente planejar, testar, implementar, revisar, verificar e lembrar. Instalação guiada, inclusive no Windows. Grátis, MIT.",
+  "license": "MIT",
+  "intro": [
+   "Um sistema de engenharia que você instala uma vez no seu agente: ele passa a planejar antes de construir, testar as mudanças, revisar o próprio trabalho com um olhar novo, lembrar o que aprendeu e melhorar.",
+   "``texto\nplanejar → testar → implementar → revisar → verificar → lembrar → melhorar\n``",
+   "Funciona melhor no Claude Code e tem caminhos para Codex, Qoder e, com recursos limitados, Cursor, OpenCode, Gemini, Zed e GitHub Copilot."
+  ],
+  "sections": [
+   "O que vem no pacote",
+   "Antes de tudo: só fontes oficiais",
+   "O que você precisa",
+   "Parte 1 — Instalar no Windows (passo a passo do projeto)",
+   "Parte 2 — Usar"
+  ]
+ },
+ {
+  "name": "habblaud",
+  "category": "software",
+  "url": "https://github.com/marmottajr/habblaud",
+  "owner": {
+   "name": "marmottajr",
+   "url": "https://github.com/marmottajr"
+  },
+  "skills": 0,
+  "guideId": "guia-habblaud",
+  "title": "Habblaud: um escritório em pixel art para ver o que seus agentes do Claude Code estão fazendo",
+  "summary": "Cada projeto vira uma sala e cada agente um personagem que mostra em tempo real se está trabalhando, esperando você ou terminou — com o uso de cada conta. Roda local e não lê credenciais. Grátis, MIT.",
+  "license": "MIT",
+  "intro": [
+   "Um escritório em pixel art para o Claude Code: cada projeto vira uma sala e cada agente um personagem que mostra, em tempo real, quem está digitando, quem levantou a mão porque precisa de você, quem entregou o trabalho, e quanto você já gastou de cada conta na janela de 5 horas e na semana.",
+   "Quando um agente precisa de você, aparece um aviso — e dá para aprovar, responder ou mandar a próxima instrução direto do escritório. Quando dois agentes ficam sem tarefa, eles \"vivem\": veem futebol, jogam pingue-pongue e conversam na cozinha."
+  ],
+  "sections": [
+   "Privacidade",
+   "O que você precisa",
+   "Parte 1 — Baixar",
+   "Parte 2 — Ligar com o Docker (recomendado)",
+   "Aviso do próprio projeto"
+  ]
+ },
+ {
+  "name": "headroom",
+  "category": "software",
+  "url": "https://github.com/headroomlabs-ai/headroom",
+  "owner": {
+   "name": "headroomlabs-ai",
+   "url": "https://github.com/headroomlabs-ai"
+  },
+  "skills": 0,
+  "guideId": "guia-headroom",
+  "title": "Headroom: comprimir o que o seu agente lê e gastar bem menos tokens",
+  "summary": "Comprime saídas de ferramentas, logs, arquivos e histórico antes de chegar ao modelo, no seu computador. Envolve o Claude Code num comando, funciona como proxy ou biblioteca, e guarda os originais para recuperar quando preciso. Apache 2.0.",
+  "license": "Apache 2.0",
+  "intro": [
+   "Uma camada que comprime tudo o que o seu agente lê — saídas de ferramentas, logs, trechos de busca, arquivos e o histórico da conversa — antes de chegar ao modelo. A proposta: as mesmas respostas com uma fração dos tokens. A compressão roda no seu computador; nada do conteúdo é enviado a outro lugar para ser comprimido."
+  ],
+  "sections": [
+   "Formas de usar",
+   "Parte 1 — Instalar",
+   "Parte 2 — Ligar no Claude Code",
+   "Parte 3 — Conferir que está funcionando",
+   "Como funciona por dentro"
+  ]
+ },
+ {
+  "name": "OmniRoute",
+  "category": "software",
+  "url": "https://github.com/diegosouzapw/OmniRoute",
+  "owner": {
+   "name": "diegosouzapw",
+   "url": "https://github.com/diegosouzapw"
+  },
+  "skills": 53,
+  "guideId": "guia-omniroute",
+  "title": "OmniRoute: um endereço só para usar centenas de modelos de IA, incluindo planos gratuitos",
+  "summary": "Gateway local que junta suas contas de vários provedores de IA num endereço único, escolhe o modelo sozinho e troca de provedor quando a cota acaba. Projeto brasileiro. Grátis, MIT.",
+  "license": "MIT",
+  "intro": [
+   "Um gateway de IA que roda no seu computador: você conecta as suas contas de vários provedores e aponta as suas ferramentas (Claude Code, Codex, Cursor, Cline e outras) para um único endereço. Ele escolhe o modelo e, se a cota acaba ou um provedor falha, passa para o próximo disponível."
+  ],
+  "sections": [
+   "Entenda o \"gratuito\" antes de começar",
+   "Parte 1 — Instalar",
+   "Parte 2 — Iniciar e conectar um provedor",
+   "Parte 3 — Testar",
+   "O modelo auto e as variações",
+   "Usar direto com o Claude Code"
+  ]
+ },
+ {
+  "name": "one-skill-to-rule-them-all",
+  "category": "software",
+  "url": "https://github.com/rebelytics/one-skill-to-rule-them-all",
+  "owner": {
+   "name": "rebelytics",
+   "url": "https://github.com/rebelytics"
+  },
+  "skills": 1,
+  "guideId": "guia-one-skill-to-rule-them-all",
+  "title": "Task Observer: a meta-skill que cria e melhora todas as suas skills",
+  "summary": "Roda junto com o seu trabalho, percebe correções e tarefas repetidas, sugere skills novas e melhorias nas que você já tem — inclusive nela mesma. Você aprova cada mudança. Licença CC BY 4.0.",
+  "license": "CC BY 4.0",
+  "intro": [
+   "Uma meta-skill: ela roda junto com o seu trabalho, observa o que você faz e sugere skills novas e melhorias nas skills que você já tem — inclusive nela mesma.",
+   "Segundo o autor, ela já registrou mais de 1.900 observações nas 83 skills dele, a maioria transformada em melhorias."
+  ],
+  "sections": [
+   "O que ela observa",
+   "Parte 1 — Instalar",
+   "Parte 2 — Ativar (não pule)",
+   "Parte 3 — O hábito que faz diferença",
+   "Onde funciona melhor"
+  ]
+ },
+ {
+  "name": "rea",
+  "category": "software",
+  "url": "https://github.com/morluto/rea",
+  "owner": {
+   "name": "morluto",
+   "url": "https://github.com/morluto"
+  },
+  "skills": 5,
+  "guideId": "guia-rea",
+  "title": "REA: o seu agente entendendo como qualquer app funciona por dentro",
+  "summary": "Um servidor MCP de engenharia reversa: o agente inspeciona um app sem o código-fonte, explica como uma função funciona, mostra a evidência e ajuda a construir a sua versão. Roda local. Grátis, MIT.",
+  "license": "MIT",
+  "intro": [
+   "Viu uma função num app e quer na sua? Peça ao seu agente para investigar com o REA: ele inspeciona o app sem o código-fonte, explica como a função funciona, mostra a evidência e ajuda a construir uma versão no seu projeto.",
+   "O REA conecta o agente a ferramentas que inspecionam binários nativos, apps em JavaScript e Electron, assemblies .NET, APKs Android e sites. A análise roda no seu computador."
+  ],
+  "sections": [
+   "Antes de tudo: baixe só de fontes oficiais",
+   "O que você precisa",
+   "Parte 1 — Configurar o seu agente",
+   "Parte 2 — Pedir ao agente",
+   "Parte 3 — Usar pelo terminal (opcional)",
+   "O que dá para analisar (alguns exemplos)",
+   "Manter atualizado",
+   "Uso responsável"
+  ]
+ },
+ {
+  "name": "ruflo",
+  "category": "software",
+  "url": "https://github.com/ruvnet/ruflo",
+  "owner": {
+   "name": "ruvnet",
+   "url": "https://github.com/ruvnet"
+  },
+  "skills": 380,
+  "guideId": "guia-ruflo",
+  "title": "Ruflo: a estrutura que organiza equipes de agentes no Claude Code",
+  "summary": "Um meta-harness: agentes que se organizam em enxames, memória entre sessões, roteamento de tarefas e um painel de controle dentro do Claude Code. Duas formas de instalar, da leve à completa. Grátis, MIT.",
+  "license": "MIT",
+  "intro": [
+   "Um \"harness\" — a estrutura em volta do modelo — para Claude Code e Codex: o modelo escreve, e o Ruflo dá ferramentas, memória, ciclos e controles para os agentes se organizarem em equipes, lembrarem entre sessões e aprenderem com cada tarefa.",
+   "Você não precisa aprender as centenas de ferramentas: depois de instalado, use o Claude Code normalmente e os ganchos encaminham as tarefas sozinhos."
+  ],
+  "sections": [
+   "Escolha o caminho de instalação",
+   "Caminho A — plugins",
+   "Caminho B — instalação completa",
+   "Usar como servidor MCP em outros apps",
+   "Primeira tarefa sugerida pelo projeto"
+  ]
+ },
+ {
+  "name": "security-audit-skill",
+  "category": "software",
+  "url": "https://github.com/cloudflare/security-audit-skill",
+  "owner": {
+   "name": "cloudflare",
+   "url": "https://github.com/cloudflare"
+  },
+  "skills": 1,
+  "guideId": "guia-security-audit-skill",
+  "title": "Security Audit: a skill da Cloudflare que transforma o seu agente num auditor de segurança",
+  "summary": "Mapeia o sistema, caça vulnerabilidades com agentes isolados, tenta derrubar cada achado com um verificador independente e entrega um relatório só com o que foi confirmado. Grátis, MIT.",
+  "license": "MIT",
+  "intro": [
+   "Uma skill que transforma o seu agente de código num auditor de segurança: ela coordena agentes isolados que mapeiam o sistema, caçam vulnerabilidades, tentam derrubar cada achado e entregam um relatório só com o que se sustentou.",
+   "Foi a skill que deu origem à ferramenta de descoberta de vulnerabilidades da própria Cloudflare, descrita no artigo Build your own vulnerability harness."
+  ],
+  "sections": [
+   "O que você precisa",
+   "Parte 1 — Instalar",
+   "Parte 2 — Rodar uma auditoria",
+   "As seis fases",
+   "Como ler o resultado",
+   "Rode mais de uma vez"
+  ]
+ },
+ {
+  "name": "superpowers",
+  "category": "software",
+  "url": "https://github.com/obra/superpowers",
+  "owner": {
+   "name": "obra",
+   "url": "https://github.com/obra"
+  },
+  "skills": 15,
+  "guideId": "guia-superpowers",
+  "title": "Superpowers: um método completo de desenvolvimento para o seu agente de código",
+  "summary": "Antes de escrever código, o agente entende o que você quer, mostra o desenho, monta um plano em tarefas curtas e executa com testes e revisão. As skills disparam sozinhas. Grátis, MIT.",
+  "license": "MIT",
+  "intro": [
+   "Um método completo de desenvolvimento de software para agentes de código: em vez de sair escrevendo código, o agente primeiro pergunta o que você realmente quer, mostra o desenho em partes curtas, monta um plano em tarefas de 2 a 5 minutos e só então executa — com testes antes do código e revisão a cada etapa.",
+   "As skills disparam sozinhas, no momento certo. Você não precisa chamar nada."
+  ],
+  "sections": [
+   "Parte 1 — Instalar no Claude Code",
+   "Parte 2 — Usar no dia a dia",
+   "As 15 skills",
+   "Quando algo der errado",
+   "A filosofia por trás"
+  ]
+ },
+ {
+  "name": "xerj",
+  "category": "software",
+  "url": "https://github.com/xerj-org/xerj",
+  "owner": {
+   "name": "xerj-org",
+   "url": "https://github.com/xerj-org"
+  },
+  "skills": 2,
+  "guideId": "guia-xerj",
+  "title": "XERJ: busca local para o seu agente parar de gastar tokens lendo arquivo por arquivo",
+  "summary": "Um programa só que indexa código, documentos, logs e PDFs e entrega ao agente o trecho exato que ele precisa. Também baixa e indexa projetos abertos parecidos para o agente aprender como eles resolveram. Apache 2.0.",
+  "license": "Apache 2.0",
+  "intro": [
+   "Um buscador local para agentes de IA: um único programa indexa uma pasta (código, documentos, logs, CSV, PDFs) e, em vez de o agente ler arquivos inteiros, ele pede ao XERJ e recebe só o trecho exato que precisa.",
+   "O uso principal é o que o projeto chama de \"reference coding\": diante de uma tarefa, o agente baixa os projetos abertos mais parecidos, indexa e consulta como eles resolveram antes de escrever o próprio código. Num estudo controlado do projeto, isso cortou os tokens de saída em 2,7 vezes em relação a buscar com grep, com a mesma taxa de acerto. O ganho é maior em código privado, de nicho ou recente, e neutro em bibliotecas populares que o modelo já conhece."
+  ],
+  "sections": [
+   "Parte 1 — Instalar pedindo ao agente (jeito fácil)",
+   "Parte 2 — Instalar você mesmo",
+   "Parte 3 — Primeiros comandos",
+   "Atenção ao --insecure",
+   "Conectar por MCP (apps de desktop)",
+   "Retribuir ao projeto"
+  ]
+ },
+ {
+  "name": "arena-skill",
+  "category": "empreendedorismo",
+  "url": "https://github.com/Jakeschincariol/arena-skill",
+  "owner": {
+   "name": "Jakeschincariol",
+   "url": "https://github.com/Jakeschincariol"
+  },
+  "skills": 1,
+  "guideId": "guia-arena-skill",
+  "title": "Arena: 100 versões do Claude competem e só a melhor resposta sobrevive",
+  "summary": "Quando a resposta não ficou boa, /arena cria até 100 subagentes com estratégias diferentes para a mesma tarefa, que se atacam em duelos até sobrar uma. Não mexe nos seus arquivos. Grátis, MIT.",
+  "license": "MIT",
+  "intro": [
+   "Quando o Claude insiste em respostas ruins, o /arena coloca até 100 versões dele para competir: todas recebem a mesma tarefa, cada uma com uma estratégia diferente, e se enfrentam em duelos — uma ataca a solução da outra, cada uma defende e revisa a sua, e um juiz dá a nota. Quem perde sai: 100 viram 50, 25, 13, 7, 4, 2 e 1.",
+   "Volta para você a solução que sobreviveu, os ataques que ela venceu no caminho e quantas rodadas levou.",
+   "Ele não toca nos seus arquivos. Tudo é escrito dentro de .arena/, e usar a resposta vencedora é decisão sua."
+  ],
+  "sections": [
+   "O que você precisa",
+   "Parte 1 — Instalar",
+   "Parte 2 — Usar",
+   "Por que as respostas saem diferentes"
+  ]
+ },
+ {
+  "name": "artcraft",
+  "category": "empreendedorismo",
+  "url": "https://github.com/storytold/artcraft",
+  "owner": {
+   "name": "storytold",
+   "url": "https://github.com/storytold"
+  },
+  "skills": 0,
+  "guideId": "guia-artcraft",
+  "title": "ArtCraft: um ateliê para criar imagens e vídeos com IA com controle de cena",
+  "summary": "App de desktop para Windows e macOS que junta vários modelos de imagem, vídeo e 3D com ferramentas visuais: compor em 2D, montar a cena em 3D, posar personagens e posicionar a câmera antes de gerar. MIT ou Apache 2.0.",
+  "license": "MIT ou Apache 2.0",
+  "intro": [
+   "Um ambiente de criação de imagens e vídeos com IA em que você monta a cena antes de gerar: compõe em 2D, posiciona objetos em 3D, posa personagens, escolhe a câmera e só então escolhe o modelo. A ideia do projeto: trocar \"pedir por prompt\" por \"construir\"."
+  ],
+  "sections": [
+   "O que dá para fazer",
+   "Parte 1 — Baixar",
+   "Parte 2 — Começar",
+   "Custos"
+  ]
+ },
+ {
+  "name": "brag",
+  "category": "empreendedorismo",
+  "url": "https://github.com/latent-spaces/brag",
+  "owner": {
+   "name": "latent-spaces",
+   "url": "https://github.com/latent-spaces"
+  },
+  "skills": 2,
+  "guideId": "guia-brag",
+  "title": "Brag: transforme o seu projeto num vídeo curto de lançamento",
+  "summary": "Um comando dentro do seu projeto gera um vídeo de lançamento com música, movimento e o texto para divulgar. Tem uma versão enxuta (/brag-slim) e um site que faz por você. Grátis, MIT.",
+  "license": "MIT",
+  "intro": [
+   "\"Você construiu. Agora mostre.\" O /brag é uma skill que transforma o projeto que você criou num vídeo curto de lançamento, com música, movimento e o texto para compartilhar — num comando só. Por baixo, usa o HyperFrames.",
+   "O vídeo que roda no site do projeto foi feito pelo próprio /brag."
+  ],
+  "sections": [
+   "Não quer instalar nada?",
+   "Parte 1 — Instalar no Claude Code",
+   "Parte 2 — Gerar o vídeo",
+   "A versão enxuta: /brag-slim"
+  ]
+ },
+ {
+  "name": "claude-video",
+  "category": "empreendedorismo",
+  "url": "https://github.com/bradautomates/claude-video",
+  "owner": {
+   "name": "bradautomates",
+   "url": "https://github.com/bradautomates"
+  },
+  "skills": 1,
+  "guideId": "guia-claude-video",
+  "title": "Watch: o seu agente assistindo vídeos, quadro a quadro e com transcrição",
+  "summary": "Um link ou arquivo de vídeo vira quadros com horário e transcrição para o agente analisar. Instala pelo Claude Desktop sem terminal, ou no Codex e outros agentes. Grátis, MIT.",
+  "license": "MIT",
+  "intro": [
+   "Dá ao seu agente olhos para vídeo: um link ou arquivo vira quadros com horário e uma transcrição, para ele analisar, resumir, achar trechos ou planejar uma edição.",
+   "Onde funciona: numa sessão Code do Claude (app desktop, VS Code ou terminal), no Codex e em outros agentes locais. Não funciona no chat comum do Claude nem no Cowork."
+  ],
+  "sections": [
+   "Parte 1 — Instalar no Claude Desktop (sem terminal)",
+   "Parte 1 (alternativas) — terminal e outros agentes",
+   "Parte 2 — O primeiro vídeo",
+   "Uso responsável"
+  ]
+ },
+ {
+  "name": "Concat",
+  "category": "empreendedorismo",
+  "url": "https://github.com/jub0t/Concat",
+  "owner": {
+   "name": "jub0t",
+   "url": "https://github.com/jub0t"
+  },
+  "skills": 1,
+  "guideId": "guia-concat",
+  "title": "Concat: editor de vídeo gratuito, local e que agentes de IA conseguem usar",
+  "summary": "Alternativa ao CapCut para Windows, macOS, Linux e Android: legendas automáticas, voz sintética e clonagem, remoção de fundo, 100 efeitos, exportação até 4K. Sem marca d'água nem conta, e com servidor MCP. AGPL 3.0.",
+  "license": "AGPL 3.0",
+  "intro": [
+   "Um editor de vídeo gratuito e de código aberto, alternativa ao CapCut, que cobre o que as pessoas mais usam: legendas automáticas, voz sintética, remoção de fundo, keyframes e efeitos — tudo rodando no seu computador, sem marca d'água, sem conta e sem pagar.",
+   "E tem um diferencial para quem trabalha com IA: um servidor MCP embutido, para o Claude e outros agentes editarem vídeo com ele."
+  ],
+  "sections": [
+   "Destaques",
+   "Parte 1 — Baixar",
+   "Parte 2 — Primeiros passos",
+   "Parte 3 — Deixar o Claude editar",
+   "Leia antes"
+  ]
+ },
+ {
+  "name": "founder-skill",
+  "category": "empreendedorismo",
+  "url": "https://github.com/Jakeschincariol/founder-skill",
+  "owner": {
+   "name": "Jakeschincariol",
+   "url": "https://github.com/Jakeschincariol"
+  },
+  "skills": 11,
+  "guideId": "guia-founder-skill",
+  "title": "Founder: 11 skills que testam o seu negócio antes de você lançar",
+  "summary": "Conselho de administração, painel com 100 compradores simulados, CFO, preço, oferta, marketing, marca, operação e lançamento, terminando num plano de negócios com veredito calculado. Grátis, MIT.",
+  "license": "MIT",
+  "intro": [
+   "Uma equipe de onze especialistas dentro do Claude que examina a sua ideia de negócio antes de você gastar dinheiro descobrindo do jeito difícil: como lançar, como divulgar e como realmente lucrar.",
+   "Um deles é o seu conselho de administração, que lê a ideia por três estruturas publicadas (dos livros $100M Offers, de Alex Hormozi; De Zero a Um, de Peter Thiel; e a biografia de Steve Jobs por Walter Isaacson). Outro é o diretor de marketing. Outro, o CFO, que acha a sua margem de lucro real. E há o painel de consumidores: ele cria 100 compradores simulados com o perfil do seu cliente e passa o seu negócio por cada um."
+  ],
+  "sections": [
+   "As onze skills",
+   "Parte 1 — Instalar",
+   "Parte 2 — Rodar na ordem certa",
+   "O exemplo que vem no repositório",
+   "As ferramentas em Python",
+   "Leia antes de confiar nos resultados"
+  ]
+ },
+ {
+  "name": "google-maps-scraper-kit",
+  "category": "empreendedorismo",
+  "url": "https://github.com/Mahanaicoach/google-maps-scraper-kit",
+  "owner": {
+   "name": "Mahanaicoach",
+   "url": "https://github.com/Mahanaicoach"
+  },
+  "skills": 1,
+  "guideId": "guia-google-maps-scraper-kit",
+  "title": "Google Maps Scraper Kit: listas de empresas do Google Maps, no seu computador",
+  "summary": "Diga o tipo de negócio e a cidade e receba um CSV com nome, telefone, e-mail, site, endereço e avaliação. Roda local com Docker e pode ser comandado pelo Claude Code. Leia os cuidados legais antes. MIT.",
+  "license": "MIT",
+  "intro": [
+   "Um coletor de empresas do Google Maps que roda no seu computador: você diz o tipo de negócio e a cidade e recebe um CSV com nome, telefone, e-mail, site, categoria, endereço, nota e número de avaliações — sem chave de API do Google e sem créditos de serviço pago."
+  ],
+  "sections": [
+   "Leia antes de usar",
+   "O que você precisa",
+   "Parte 1 — Instalar e ligar",
+   "Parte 2 — Primeira busca",
+   "Parte 3 — Pedir ao Claude Code",
+   "Limites honestos (do próprio projeto)"
+  ]
+ },
+ {
+  "name": "harvey",
+  "category": "empreendedorismo",
+  "url": "https://github.com/ethanplusai/harvey",
+  "owner": {
+   "name": "ethanplusai",
+   "url": "https://github.com/ethanplusai"
+  },
+  "skills": 0,
+  "guideId": "guia-harvey",
+  "title": "Harvey: um vendedor autônomo que roda na sua assinatura do Claude",
+  "summary": "Acha empresas para você vender, lê o site de cada uma, escreve e-mails personalizados, lê as respostas e conduz a conversa até a reunião. Grátis, MIT, roda no seu computador.",
+  "license": "MIT",
+  "intro": [
+   "Um agente de vendas que acha empresas que valem a pena abordar, aprende algo específico sobre cada uma, escreve um e-mail frio que cita isso, envia, lê as respostas e leva a conversa até uma reunião — em ciclos, sozinho, no seu computador.",
+   "O diferencial: não existe conta de API de modelo. O Harvey usa a sua assinatura do Claude (Pro ou Max) pelo Claude Code. As chamadas ao modelo entram no plano que você já paga, sem cobrança por token."
+  ],
+  "sections": [
+   "Quanto custa usar",
+   "O que você precisa",
+   "Parte 1 — Instalar com a ajuda do Claude (jeito fácil)",
+   "Parte 2 — Instalar você mesmo (alternativa)",
+   "Parte 3 — Ensinar o seu produto ao Harvey",
+   "Parte 4 — Confirmar o que ele deve procurar",
+   "Parte 5 — Achar empresas e ver o painel",
+   "Parte 6 — Aprovar os e-mails",
+   "Comandos do dia a dia",
+   "Como ajustar o jeito dele vender",
+   "Cuidados antes de enviar de verdade",
+   "Se algo der errado"
+  ]
+ },
+ {
+  "name": "hyperframes",
+  "category": "empreendedorismo",
+  "url": "https://github.com/heygen-com/hyperframes",
+  "owner": {
+   "name": "heygen-com",
+   "url": "https://github.com/heygen-com"
+  },
+  "skills": 40,
+  "guideId": "guia-hyperframes",
+  "title": "HyperFrames: vídeos MP4 feitos com HTML, direto do seu agente de código",
+  "summary": "Framework da HeyGen que transforma HTML, CSS, mídia e animações em vídeos MP4 determinísticos. 21 skills ensinam o agente a planejar, montar, revisar e renderizar: lançamentos, explicadores, legendas, motion graphics. Apache 2.0.",
+  "license": "Apache 2.0",
+  "intro": [
+   "Um framework aberto que transforma HTML, CSS, mídia e animações em vídeos MP4 — sempre com o mesmo resultado a cada renderização. Você usa pelo terminal ou, o mais prático, pedindo ao seu agente de código: as skills ensinam o agente a planejar, escrever, revisar e renderizar.",
+   "O vídeo de lançamento da própria plataforma Voxelia foi feito com ele."
+  ],
+  "sections": [
+   "O que dá para criar",
+   "O que você precisa",
+   "Parte 1 — Instalar no Claude Code",
+   "Parte 2 — Primeiro vídeo",
+   "Comandos úteis no terminal"
+  ]
+ },
+ {
+  "name": "instagram-agent-skill",
+  "category": "empreendedorismo",
+  "url": "https://github.com/Jakeschincariol/instagram-agent-skill",
+  "owner": {
+   "name": "Jakeschincariol",
+   "url": "https://github.com/Jakeschincariol"
+  },
+  "skills": 13,
+  "guideId": "guia-instagram-agent-skill",
+  "title": "Instagram Agent: 13 skills que cuidam de uma conta do Instagram",
+  "summary": "Roteiros de Reels com ganchos testados, o que está funcionando no seu nicho, legendas, carrosséis, stories, nota do perfil, plano da semana e um humanizador que tira cara de texto de IA. Você posta. Grátis, MIT.",
+  "license": "MIT",
+  "intro": [
+   "Treze skills que tocam uma conta do Instagram: escrevem Reels a partir de 26 fórmulas de gancho (e dão nota ao gancho antes de você gravar), acham o que está funcionando no seu nicho, escrevem legendas, montam carrosséis, avaliam o perfil e planejam a semana.",
+   "Nada é publicado sem você. Elas escrevem; você posta."
+  ],
+  "sections": [
+   "As 13 skills",
+   "Parte 1 — Instalar",
+   "Parte 2 — Ensine a sua voz (10 minutos que valem a pena)",
+   "Parte 3 — Primeiro Reel",
+   "Cuidados"
+  ]
+ },
+ {
+  "name": "master-skills",
+  "category": "empreendedorismo",
+  "url": "https://github.com/Jakeschincariol/master-skills",
+  "owner": {
+   "name": "Jakeschincariol",
+   "url": "https://github.com/Jakeschincariol"
+  },
+  "skills": 2,
+  "guideId": "guia-master-skills",
+  "title": "Master Skills: editar vídeo, viralizar e construir sites com três skills",
+  "summary": "/edit corta silêncios, legenda e cria visuais e stop motion; /virality acha o que funciona no seu nicho e reescreve na sua voz; /build junta as melhores skills de design e código. Grátis, MIT.",
+  "license": "MIT",
+  "intro": [
+   "Três skills \"mestras\" que juntam o melhor de outras skills: uma para editar vídeo, uma para viralizar e uma para construir sites e apps."
+  ],
+  "sections": [
+   "As três",
+   "Parte 1 — Instalar",
+   "Parte 2 — Usar",
+   "Leia antes"
+  ]
+ },
+ {
+  "name": "MoneyPrinterTurbo",
+  "category": "empreendedorismo",
+  "url": "https://github.com/harry0703/MoneyPrinterTurbo",
+  "owner": {
+   "name": "harry0703",
+   "url": "https://github.com/harry0703"
+  },
+  "skills": 1,
+  "guideId": "guia-moneyprinterturbo",
+  "title": "MoneyPrinterTurbo: vídeos curtos gerados a partir de um tema",
+  "summary": "Você dá o tema; ele escreve o roteiro, busca imagens, gera a narração, as legendas e a música e monta o vídeo em 9:16, 16:9 ou 1:1. Pacote de um clique no Windows. Grátis, MIT.",
+  "license": "MIT",
+  "intro": [
+   "Um gerador de vídeos curtos completos a partir de um tema: ele escreve o roteiro, encontra imagens e vídeos de banco, gera a narração, as legendas e a música de fundo, e monta o vídeo em alta definição."
+  ],
+  "sections": [
+   "O que ele faz",
+   "O que você precisa",
+   "Parte 1 — Jeito mais fácil: pedir ao seu agente",
+   "Parte 2 — No Windows, pacote de um clique",
+   "Parte 3 — Primeiro vídeo",
+   "Leia antes de publicar"
+  ]
+ },
+ {
+  "name": "motionmaxxing",
+  "category": "empreendedorismo",
+  "url": "https://github.com/Tejashmakwana/motionmaxxing",
+  "owner": {
+   "name": "Tejashmakwana",
+   "url": "https://github.com/Tejashmakwana"
+  },
+  "skills": 1,
+  "guideId": "guia-motionmaxxing",
+  "title": "motionmaxxing: a skill que faz vídeo de IA parecer feito por um motion designer",
+  "summary": "Uma skill baseada na medição de 53 momentos de motion design profissional: ~150 regras, 12 curvas de movimento medidas e verificações automáticas que reprovam os vícios do vídeo de IA. Apache 2.0.",
+  "license": "Apache 2.0",
+  "intro": [
+   "Uma skill que transforma o vídeo \"genérico de IA\" num filme que parece feito por um motion designer — e mostra os números para provar."
+  ],
+  "sections": [
+   "O diagnóstico: por que vídeo de IA parece \"slide que se mexe\"",
+   "De onde vêm as regras",
+   "O processo, em dez passos",
+   "O que você precisa",
+   "Parte 1 — Instalar no Claude Code",
+   "Parte 2 — Usar",
+   "A escala de nota"
+  ]
+ },
+ {
+  "name": "OpenMontage",
+  "category": "empreendedorismo",
+  "url": "https://github.com/calesthio/OpenMontage",
+  "owner": {
+   "name": "calesthio",
+   "url": "https://github.com/calesthio"
+  },
+  "skills": 139,
+  "guideId": "guia-openmontage",
+  "title": "OpenMontage: um estúdio de produção de vídeo dentro do seu agente de código",
+  "summary": "Descreva o vídeo e o agente pesquisa, roteiriza, gera imagens, narra, acha música, edita e monta — com custo estimado e aprovação cena a cena antes de gerar. Funciona sem chaves pagas. AGPL 3.0.",
+  "license": "AGPL 3.0",
+  "intro": [
+   "Transforma o seu assistente de código num estúdio completo de produção de vídeo: você descreve o que quer em linguagem simples, e o agente cuida de pesquisa, roteiro, geração de imagens, narração, música, edição e montagem final.",
+   "Ele faz vídeos com imagens geradas e também vídeos com filmagem real, montados a partir de acervos gratuitos e abertos."
+  ],
+  "sections": [
+   "Dois recursos que fazem diferença",
+   "O que você precisa",
+   "Parte 1 — Instalar",
+   "Parte 2 — Pedir o vídeo",
+   "O que funciona sem nenhuma chave paga",
+   "Acompanhar a produção"
+  ]
+ },
+ {
+  "name": "remotion",
+  "category": "empreendedorismo",
+  "url": "https://github.com/remotion-dev/remotion",
+  "owner": {
+   "name": "remotion-dev",
+   "url": "https://github.com/remotion-dev"
+  },
+  "skills": 87,
+  "guideId": "guia-remotion",
+  "title": "Remotion: criar vídeos com React, à mão ou pedindo ao seu agente",
+  "summary": "Vídeos feitos com código React: pedindo ao agente, editando com arrastar e soltar ou ligando a dados para gerar em lote. Mais de mil páginas de documentação e skills oficiais para agentes. Grátis para pessoas e empresas de até 3 pessoas.",
+  "license": "Remotion License",
+  "intro": [
+   "Ferramentas de vídeo para a era dos agentes: o vídeo é escrito em código React, e você escolhe como trabalhar — pedindo ao seu agente, editando com arrastar e soltar, ou programando para gerar vídeos a partir de dados. O código é sempre a fonte da verdade, e dá para trocar de jeito a qualquer momento."
+  ],
+  "sections": [
+   "Quem pode usar de graça",
+   "Parte 1 — Criar o primeiro projeto",
+   "Parte 2 — Fazer vídeos pedindo ao agente",
+   "O que vem pronto",
+   "Onde aprender mais"
+  ]
+ },
+ {
+  "name": "studio",
+  "category": "empreendedorismo",
+  "url": "https://github.com/mackswendhell/studio",
+  "owner": {
+   "name": "mackswendhell",
+   "url": "https://github.com/mackswendhell"
+  },
+  "skills": 12,
+  "guideId": "guia-studio",
+  "title": "Studio: edite seus vídeos conversando com o Claude",
+  "summary": "Você grava e corta; o Claude assiste, transcreve palavra por palavra e monta a edição: textos animados, prints com zoom e marca-texto, tela dividida, gráficos e legendas. Nível gratuito com Remotion e nível avançado com IA generativa.",
+  "license": "MIT",
+  "intro": [
+   "Um projeto que transforma o Claude num diretor de vídeo: você grava e corta, e ele assiste, entende o que você fala e monta a edição — textos animados, prints com zoom e marca-texto, tela dividida, gráficos, legendas e, se quiser, cenas geradas por IA. Ele para nos pontos certos para você aprovar."
+  ],
+  "sections": [
+   "Os dois níveis",
+   "O que você precisa",
+   "Parte 1 — Instalar os programas (Windows)",
+   "Parte 2 — Baixar o Studio",
+   "Parte 3 — Testar",
+   "Parte 4 — Preparar o seu primeiro vídeo",
+   "Parte 5 — Editar conversando",
+   "O que acontece em cada etapa",
+   "Regras que o diretor sempre segue",
+   "Opcional — transcrição mais rápida com a Groq",
+   "Nível 2 — conectar a Higgsfield"
+  ]
+ },
+ {
+  "name": "youtube-agent-skill",
+  "category": "empreendedorismo",
+  "url": "https://github.com/Jakeschincariol/youtube-agent-skill",
+  "owner": {
+   "name": "Jakeschincariol",
+   "url": "https://github.com/Jakeschincariol"
+  },
+  "skills": 11,
+  "guideId": "guia-youtube-agent-skill",
+  "title": "YouTube Agent: 11 skills que cuidam de um canal do YouTube",
+  "summary": "Roteiros com ganchos testados, título e thumbnail avaliados juntos, leitura da retenção segundo a segundo, lista de cortes, Shorts escondidos no vídeo longo, SEO e capítulos. Você publica. Grátis, MIT.",
+  "license": "MIT",
+  "intro": [
+   "Onze skills que tocam um canal do YouTube: escrevem o roteiro a partir de 21 fórmulas de gancho (com nota antes de gravar), avaliam título e thumbnail juntos, leem a sua retenção e dizem o segundo exato em que as pessoas saíram, e acham os Shorts escondidos no seu vídeo longo.",
+   "Nada é publicado sem você. Elas escrevem; você sobe."
+  ],
+  "sections": [
+   "As 11 skills",
+   "Parte 1 — Instalar",
+   "Parte 2 — Ensine a sua voz",
+   "Parte 3 — Primeiro roteiro",
+   "As ferramentas em Python"
+  ]
+ },
+ {
+  "name": "anatomy",
+  "category": "conteudo",
+  "url": "https://github.com/wheresryan22/anatomy",
+  "owner": {
+   "name": "wheresryan22",
+   "url": "https://github.com/wheresryan22"
+  },
+  "skills": 1,
+  "guideId": "guia-anatomy",
+  "title": "Anatomy: figuras interativas que explicam ideias técnicas como objetos físicos",
+  "summary": "Peça ao Claude uma figura e ele inventa uma máquina cujo funcionamento é o próprio conceito, montada em peças isométricas sombreadas, com movimento e leitura ao vivo. Sem chaves de API. MIT.",
+  "license": "MIT",
+  "intro": [
+   "Peça ao Claude uma figura que explique uma ideia técnica e o Anatomy faz ele inventar um objeto físico cujo funcionamento é o próprio conceito — um cache que pula trabalho quando nada mudou vira uma fechadura de pinos, por exemplo. Depois, monta esse objeto com dezenas de peças sólidas e sombreadas, num cartão com título, dica e leitura ao vivo, que se move com o mouse e o teclado."
+  ],
+  "sections": [
+   "Os três tipos de figura",
+   "Parte 1 — Instalar",
+   "Parte 2 — Pedir uma figura",
+   "Onde usar"
+  ]
+ },
+ {
+  "name": "awesome-design-md",
+  "category": "conteudo",
+  "url": "https://github.com/VoltAgent/awesome-design-md",
+  "owner": {
+   "name": "VoltAgent",
+   "url": "https://github.com/VoltAgent"
+  },
+  "skills": 0,
+  "guideId": "guia-awesome-design-md",
+  "title": "Awesome DESIGN.md: sistemas de design prontos para o seu agente seguir",
+  "summary": "Uma coleção de arquivos DESIGN.md extraídos de sites reais: cores, tipografia, componentes, espaçamento e regras. Copie para o projeto e peça ao agente uma página nesse estilo, com consistência. MIT.",
+  "license": "MIT",
+  "intro": [
+   "Uma coleção de arquivos DESIGN.md prontos, extraídos de sites reais, para você copiar no seu projeto e pedir ao agente: \"construa uma página que siga isto\" — e receber uma interface consistente com aquela linguagem visual."
+  ],
+  "sections": [
+   "O que vem em cada arquivo",
+   "Parte 1 — Escolher e copiar",
+   "Parte 2 — Pedir ao agente",
+   "Use como inspiração, não como cópia"
+  ]
+ },
+ {
+  "name": "VoiceStudio",
+  "category": "conteudo",
+  "url": "https://github.com/debpalash/VoiceStudio",
+  "owner": {
+   "name": "debpalash",
+   "url": "https://github.com/debpalash"
+  },
+  "skills": 4,
+  "guideId": "guia-voicestudio",
+  "title": "VoiceStudio: clonagem e criação de voz, dublagem e transcrição no seu computador",
+  "summary": "App de desktop aberto para clonar ou desenhar vozes, dublar vídeos, transcrever, ditar e criar audiolivros em 646 idiomas, com API local e servidor MCP para agentes. Funciona até sem placa de vídeo. AGPL 3.0.",
+  "license": "AGPL 3.0",
+  "intro": [
+   "Um app aberto para clonar a sua voz ou desenhar uma nova, dublar vídeos, transcrever, ditar e criar audiolivros em 646 idiomas — rodando no seu computador, com uma API local e um servidor MCP para o seu agente usar.",
+   "O motor padrão é o OmniVoice (k2-fsa), e há outros à escolha."
+  ],
+  "sections": [
+   "O que você precisa",
+   "Parte 1 — Instalar no Windows",
+   "Parte 2 — Primeira voz",
+   "Parte 3 — Deixar o agente usar",
+   "Uso responsável"
+  ]
+ },
+ {
+  "name": "scientific-agent-skills",
+  "category": "ciencia",
+  "url": "https://github.com/K-Dense-AI/scientific-agent-skills",
+  "owner": {
+   "name": "K-Dense-AI",
+   "url": "https://github.com/K-Dense-AI"
+  },
+  "skills": 177,
+  "guideId": "guia-scientific-agent-skills",
+  "title": "Scientific Agent Skills: 177 skills que transformam o seu agente num assistente de pesquisa",
+  "summary": "Biologia, química, medicina, física, engenharia, ciência de dados, revisão de literatura e redação científica: skills que ensinam o agente a usar bibliotecas, bancos de dados e métodos de cada área. MIT.",
+  "license": "MIT",
+  "intro": [
+   "Uma coleção de 177 skills científicas e de pesquisa que ensinam o seu agente de IA a trabalhar com bibliotecas, bancos de dados e ferramentas especializadas — transformando o assistente de código num \"cientista de IA\" no seu computador."
+  ],
+  "sections": [
+   "Áreas cobertas",
+   "Parte 1 — Instalar",
+   "Parte 2 — Usar",
+   "Para aprender mais",
+   "Leia antes"
+  ]
+ }
+]

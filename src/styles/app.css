@@ -197,10 +197,13 @@
   .resource-body.with-toc { grid-template-columns: 1fr; }
   .toc { position: static; }
   .compare-grid { grid-template-columns: 1fr; }
+  .app-side { height: 100dvh; }
+  .app-link { height: 46px; font-size: 15px; }
+  .app-menu-btn { min-width: 44px; min-height: 44px; }
 }
 @media (max-width: 560px) {
   .app-search-trigger kbd, .app-search-trigger span:nth-child(2) { display: none; }
-  .app-search-trigger { flex: 0 0 auto; width: 42px; justify-content: center; padding: 0; }
+  .app-search-trigger { flex: 0 0 auto; width: 44px; height: 44px; justify-content: center; padding: 0; }
   .admin-form { grid-template-columns: 1fr; }
   .auth-card { padding: 22px; }
   .home-search .btn { display: none; }
@@ -211,3 +214,36 @@
 .home-hero-char { position: absolute; right: clamp(16px, 4vw, 48px); top: 18px; width: 118px; pointer-events: none; }
 .home-hero-char .pixel-sprite { width: 118px; }
 @media (max-width: 1180px) { .home-hero-char { display: none; } }
+
+/* Vitrine pública do repositório (/r/<nome>): celular primeiro, CTA fixo no rodapé. */
+.repo-page { min-height: 100vh; padding-bottom: 120px; }
+.repo-top { position: sticky; top: 0; z-index: 20; display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 10px var(--gutter); background: var(--surface-glass); backdrop-filter: blur(12px); border-bottom: 1px solid var(--line); }
+.repo-main { width: min(720px, 100% - 2 * var(--gutter)); margin-inline: auto; display: grid; gap: 14px; padding-top: 16px; }
+.repo-hero { position: relative; overflow: hidden; display: grid; gap: 10px; padding: 22px 18px 20px; border-radius: var(--radius-lg); }
+.repo-hero.area-software { background: var(--tint-software); --ink: var(--ink-software); }
+.repo-hero.area-empreendedorismo { background: var(--tint-empreendedorismo); --ink: var(--ink-empreendedorismo); }
+.repo-hero.area-conteudo { background: var(--tint-conteudo); --ink: var(--ink-conteudo); }
+.repo-hero.area-ciencia { background: var(--tint-ciencia); --ink: var(--ink-ciencia); }
+.repo-hero .eyebrow { color: var(--ink); padding-right: 84px; }
+.repo-hero h1 { font-size: clamp(26px, 7vw, 40px); line-height: 1.1; color: var(--text); padding-right: 84px; }
+.repo-art { position: absolute; right: 10px; top: 14px; width: 84px; }
+.repo-art .pixel-sprite { width: 100%; filter: none; }
+.repo-summary { font-size: 17px; line-height: 1.5; color: var(--text-2); }
+.repo-chips { display: flex; flex-wrap: wrap; gap: 8px; list-style: none; padding: 0; }
+.repo-chips li { padding: 6px 12px; border-radius: var(--radius-pill); background: var(--surface); color: var(--ink); font: 600 14px/1.3 var(--font-sans); }
+.repo-block { display: grid; gap: 10px; padding: 18px; border-radius: var(--radius-lg); background: var(--surface); border: 1px solid var(--line); }
+.repo-block h2 { font-size: 20px; }
+.repo-block p { font-size: 16px; line-height: 1.6; color: var(--text-2); }
+.repo-locked { list-style: none; padding: 0; display: grid; gap: 8px; }
+.repo-locked li { display: flex; gap: 10px; align-items: center; min-height: 44px; padding: 8px 12px; border-radius: 12px; background: var(--surface-sunken); font: 600 15px/1.35 var(--font-sans); color: var(--text); }
+.repo-note { font-size: 15px; }
+.repo-more { text-align: center; padding: 8px 0 4px; }
+.repo-cta { position: fixed; left: 0; right: 0; bottom: 0; z-index: 30; display: grid; gap: 6px; padding: 12px var(--gutter) calc(12px + env(safe-area-inset-bottom)); background: var(--surface-glass); backdrop-filter: blur(14px); border-top: 1px solid var(--line); }
+.repo-cta .btn-primary { width: 100%; min-height: 52px; font-size: 17px; }
+@media (min-width: 760px) {
+  .repo-page { padding-bottom: 40px; }
+  .repo-hero { padding: 36px 32px; }
+  .repo-art { width: 120px; right: 28px; top: 28px; }
+  .repo-hero h1 { padding-right: 140px; }
+  .repo-cta { position: sticky; bottom: 16px; width: min(720px, 100% - 2 * var(--gutter)); margin: 18px auto 0; border: 1px solid var(--line); border-radius: var(--radius-lg); grid-template-columns: 1fr auto; align-items: center; }
+}
