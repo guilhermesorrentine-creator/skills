@@ -22,6 +22,8 @@ export function createMemoryStore(seed = {}) {
       db.profiles.push({ id, email, is_admin: false, created_at: stamp() });
       return { userId: id, actionUrl: `${redirectTo}#convite-local-${id}` };
     },
+    createPasswordLink: async (email, redirectTo) => `${redirectTo}#novo-link-local-${encodeURIComponent(email)}`,
+    hasSignedIn: async (userId) => Boolean(db.profiles.find((item) => item.id === userId)?.last_sign_in_at),
     findProfileByCustomer: async (customer) => clone(db.profiles.find((item) => item.asaas_customer_id === customer)),
     setCustomerId: async (id, customer) => { const profile = db.profiles.find((item) => item.id === id); if (profile) profile.asaas_customer_id = customer; },
     listProfiles: async () => clone(db.profiles),

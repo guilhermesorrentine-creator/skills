@@ -38,7 +38,7 @@ function Routes() {
   }, []);
   useEffect(() => {
     if (path === "/planos") navigate("/#acesso", { replace: true });
-    if (recovery && path !== "/redefinir-senha") navigate("/redefinir-senha", { replace: true });
+    if (recovery && !["/redefinir-senha", "/criar-senha"].includes(path)) navigate("/redefinir-senha", { replace: true });
     if (invited && !authLoading && user && path !== "/criar-senha") navigate("/criar-senha", { replace: true });
   }, [path, recovery, invited, authLoading, user]);
 

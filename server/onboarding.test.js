@@ -7,7 +7,7 @@ import { createMemoryStore } from "./store-memory.js";
 
 const config = { appUrl: "https://arsenal.example" };
 const fakeMailer = () => { const sent = []; return { sent, send: async (message) => { sent.push(message); } }; };
-const seed = () => createMemoryStore({ profiles: [{ id: "adm", email: "adm@x.com", is_admin: true }, { id: "u1", email: "ja@x.com" }] });
+const seed = () => createMemoryStore({ profiles: [{ id: "adm", email: "adm@x.com", is_admin: true, last_sign_in_at: "2026-10-01" }, { id: "u1", email: "ja@x.com", last_sign_in_at: "2026-10-01" }] });
 
 test("convite cria a conta, libera todas as edições, audita e envia o link de criar senha", async () => {
   const store = seed();
@@ -79,4 +79,23 @@ test("rota de convite exige administrador", async () => {
   const ok = await call("adm");
   assert.equal(ok.status, 200);
   assert.equal((await ok.json()).created, true);
+});
+
+test("reconvidar quem nunca entrou manda um link novo de criar senha", async () => {
+  const store = seed();
+  const mailer = fakeMailer();
+  const onboarding = createOnboarding({ store, mailer, config });
+  await onboarding.inviteUser({ email: "novo@x.com", reason: "Cortesia autorizada pelo dono", actorId: "adm" });
+  const again = await onboarding.inviteUser({ email: "novo@x.com", reason: "Cortesia autorizada pelo dono", actorId: "adm" });
+  assert.equal(again.created, false);
+  assert.match(mailer.sent[1].html, /Criar minha senha e entrar/);
+  assert.match(mailer.sent[1].html, /novo-link-local/);
+});
+
+test("quem já usa a conta recebe só o botão de entrar", async () => {
+  const store = seed();
+  const mailer = fakeMailer();
+  await createOnboarding({ store, mailer, config }).inviteUser({ email: "ja@x.com", reason: "Cortesia autorizada pelo dono", actorId: "adm" });
+  assert.match(mailer.sent[0].html, /Entrar no Arsenal/);
+  assert.ok(!/criar-senha/.test(mailer.sent[0].html));
 });

@@ -24,6 +24,17 @@ export function createSupabaseStore({ url, serviceKey }) {
       if (error) throw Object.assign(new Error(error.message), { status: 400, code: "invite_failed" });
       return { userId: data.user.id, actionUrl: data.properties.action_link };
     },
+    // Conta criada mas nunca usada: novo link de uso único para criar a senha (convite reenviado).
+    createPasswordLink: async (email, redirectTo) => {
+      const { data, error } = await db.auth.admin.generateLink({ type: "recovery", email, options: { redirectTo } });
+      if (error) throw Object.assign(new Error(error.message), { status: 400, code: "invite_failed" });
+      return data.properties.action_link;
+    },
+    hasSignedIn: async (userId) => {
+      const { data, error } = await db.auth.admin.getUserById(userId);
+      if (error) throw error;
+      return Boolean(data?.user?.last_sign_in_at);
+    },
     findProfileByCustomer: (customer) => one(db.from("profiles").select("*").eq("asaas_customer_id", customer)),
     setCustomerId: (id, customer) => run(db.from("profiles").update({ asaas_customer_id: customer }).eq("id", id)),
     listProfiles: () => many(db.from("profiles").select("id,email,is_admin,asaas_customer_id,created_at").order("created_at", { ascending: false }).limit(1000)),

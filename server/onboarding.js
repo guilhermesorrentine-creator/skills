@@ -38,11 +38,16 @@ export function createOnboarding({ store, mailer, config }) {
     let profile = await store.findProfileByEmail(address);
     let actionUrl = null;
     const created = !profile;
+    const setPasswordUrl = `${config.appUrl}/criar-senha`;
     if (created) {
-      const invite = await store.createInvitedUser(address, `${config.appUrl}/criar-senha`);
+      const invite = await store.createInvitedUser(address, setPasswordUrl);
       actionUrl = invite.actionUrl;
       profile = (await store.getProfile(invite.userId)) || { id: invite.userId, email: address };
+    } else if (!(await store.hasSignedIn(profile.id))) {
+      // Convidada antes e nunca entrou (link expirado ou perdido): manda um link novo de criar senha.
+      actionUrl = await store.createPasswordLink(address, setPasswordUrl);
     }
+    const kind = actionUrl ? "invite" : "grant";
 
     const grants = await store.listGrants(profile.id);
     const active = grants.find((grant) => !grant.revoked_at && (!grant.ends_at || new Date(grant.ends_at) > new Date()));
@@ -52,11 +57,11 @@ export function createOnboarding({ store, mailer, config }) {
     let sent = false;
     let mailError = null;
     try {
-      sent = await deliver(address, welcomeEmail({ kind: created ? "invite" : "grant", email: address, actionUrl, appUrl: config.appUrl }));
+      sent = await deliver(address, welcomeEmail({ kind, email: address, actionUrl, appUrl: config.appUrl }));
     } catch (error) {
       mailError = error.message;
     }
-    if (sent) await store.insertAudit({ actor_id: actorId, action: "welcome_email", target_user_id: profile.id, details: { kind: created ? "invite" : "grant" } });
+    if (sent) await store.insertAudit({ actor_id: actorId, action: "welcome_email", target_user_id: profile.id, details: { kind } });
     // O link de convite só volta para a administração quando o e-mail não saiu.
     return { userId: profile.id, email: address, created, alreadyHadAccess: Boolean(active), sent, mailError, link: sent ? null : actionUrl || `${config.appUrl}/entrar` };
   }
