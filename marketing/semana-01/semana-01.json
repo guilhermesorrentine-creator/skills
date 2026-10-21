@@ -1,0 +1,131 @@
+{
+  "semana": "01",
+  "posts": [
+    {
+      "id": "01-carrossel-pedidos", "data": "qui 22/10", "hora": "12:30", "tipo": "carrossel", "char": "software", "accent": "#a589ec",
+      "capa": "Pare de pedir \"faz um texto\" pra IA.", "capaSub": "5 jeitos de pedir que funcionam de verdade.",
+      "slides": [
+        ["Dê o contexto", "Quem é você, para quem é e para quê. \"Sou dono de uma padaria e quero um post para o Dia das Mães\" muda tudo."],
+        ["Diga o formato", "\"3 opções de até 2 linhas\" rende mais do que \"um texto\". A IA não lê mente."],
+        ["Mostre um exemplo", "Cole um texto que você gostou e peça \"nesse estilo\". Exemplo vale mais que adjetivo."],
+        ["Peça perguntas antes", "\"Antes de responder, me faça 3 perguntas.\" Ela descobre o que você esqueceu de dizer."],
+        ["Corrija em vez de recomeçar", "\"Mais curto\", \"menos formal\", \"tira os emojis\". A segunda versão quase sempre é a boa."]
+      ],
+      "fim": "Salve para usar no próximo pedido.",
+      "legenda": "Seria uma má ideia testar o número 4 hoje?\n\nA maioria pede \"faz um texto\" e recebe um texto genérico. O problema não é a IA, é o pedido.\n\nSalva esse carrossel e manda pra quem ainda pede \"resume aí\".\n\n#inteligenciaartificial #chatgpt #produtividade"
+    },
+    {
+      "id": "02-avo", "data": "qui 22/10", "hora": "19:00", "tipo": "post", "char": "conteudo", "accent": "#f27aa8",
+      "frase": "Pedir \"resume esse texto\" pro ChatGPT?", "destaque": "Sua avó também faz.",
+      "legenda": "Nada contra a vovó. Mas se é só isso que você faz com IA, está deixando 90% na mesa.\n\nO que você mais pede pra IA hoje? Conta aqui embaixo.\n\n#ia #inteligenciaartificial #chatgpt"
+    },
+    {
+      "id": "03-carrossel-claude-code", "data": "sex 23/10", "hora": "12:30", "tipo": "carrossel", "char": "software", "accent": "#a589ec",
+      "capa": "Claude Code em 5 comandos.", "capaSub": "O começo que ninguém te explicou.",
+      "slides": [
+        ["claude", "No terminal, dentro da pasta do projeto. Abre a conversa com o agente que lê e edita seus arquivos."],
+        ["/init", "Cria o CLAUDE.md: um resumo do projeto que o agente lê toda vez. Comece por aqui."],
+        ["/clear", "Limpa a conversa quando muda de assunto. Contexto velho atrapalha a tarefa nova."],
+        ["/model", "Troca o modelo. Use o mais forte para planejar e um mais leve para tarefas simples."],
+        ["/help", "Lista tudo o que dá para fazer. Ninguém decora, todo mundo consulta."]
+      ],
+      "fim": "Salve e teste hoje à noite.",
+      "legenda": "Comenta CLAUDE se você quer o próximo: skills que deixam o Claude Code muito melhor.\n\nCinco comandos e você sai do zero. O resto é praticar.\n\n#claudecode #ia #programacao"
+    },
+    {
+      "id": "04-lugar-errado", "data": "sex 23/10", "hora": "19:00", "tipo": "post", "char": "ciencia", "accent": "#5fd3a0",
+      "frase": "Você não está atrasado na IA.", "destaque": "Está procurando no lugar errado.",
+      "legenda": "Parece que toda semana sai uma ferramenta nova e você sente que ficou para trás. É isso?\n\nNão é falta de inteligência. É excesso de aba aberta.\n\nSiga @voxelia.ia: uma skill útil por dia, explicada em português.\n\n#ia #inteligenciaartificial #tecnologia"
+    },
+    {
+      "id": "05-carrossel-skill", "data": "sáb 24/10", "hora": "12:30", "tipo": "carrossel", "char": "ciencia", "accent": "#5fd3a0",
+      "capa": "O que é uma Agent Skill?", "capaSub": "E por que você vai querer dez delas.",
+      "slides": [
+        ["É um arquivo de instruções", "Um SKILL.md com o passo a passo de uma tarefa: como fazer, o que evitar, que ferramentas usar."],
+        ["O agente carrega quando precisa", "Você pede \"faz um vídeo\" e ele usa a skill de vídeo. Não precisa explicar tudo de novo."],
+        ["Alguém já resolveu seu problema", "Tem skill pública para site, vídeo, planilha, pesquisa, segurança. Milhares delas."],
+        ["O difícil é achar a certa", "Estão espalhadas em centenas de repositórios, quase tudo em inglês."],
+        ["Por isso existe a Voxelia", "2.281 skills organizadas por objetivo, com guia em português."]
+      ],
+      "fim": "Salve para lembrar o que é skill.",
+      "legenda": "Você é contra aprender uma skill nova por semana?\n\nSkill é o atalho que separa quem usa IA de quem só conversa com ela.\n\nSiga @voxelia.ia para conhecer uma por dia.\n\n#claudecode #agentesdeia #ia"
+    },
+    {
+      "id": "06-prompt-pronto", "data": "sáb 24/10", "hora": "19:00", "tipo": "post", "char": "empreendedorismo", "accent": "#f2a65a",
+      "frase": "Copiar prompt pronto do Instagram", "destaque": "é o novo \"compartilhe se ama sua mãe\".",
+      "legenda": "Prompt pronto ajuda no primeiro dia. No segundo, você precisa entender o porquê.\n\nVocê copia prompt ou escreve o seu? Responde aqui.\n\n#ia #prompt #chatgpt"
+    },
+    {
+      "id": "07-carrossel-empreendedor", "data": "dom 25/10", "hora": "12:30", "tipo": "carrossel", "char": "empreendedorismo", "accent": "#f2a65a",
+      "capa": "5 trabalhos que a IA já faz pelo seu negócio.", "capaSub": "Hoje. Sem contratar ninguém.",
+      "slides": [
+        ["Proposta comercial", "Você passa os dados do cliente, ela monta a proposta no seu tom. Você revisa e envia."],
+        ["Respostas de atendimento", "As 20 perguntas que todo cliente faz, respondidas uma vez e reaproveitadas sempre."],
+        ["Planilha que conversa", "Cole os números e pergunte: \"qual produto deu mais lucro no mês?\""],
+        ["Página de vendas", "Com uma skill de site, o agente cria e publica uma página simples."],
+        ["Vídeo curto", "Roteiro, legenda e até o vídeo, com skills como HyperFrames e Remotion."]
+      ],
+      "fim": "Salve e escolha um para testar.",
+      "legenda": "Qual desses você ainda faz na mão? Comenta o número.\n\nIA não substitui o dono do negócio. Substitui o trabalho repetido que rouba o tempo dele.\n\n#empreendedorismo #ia #pequenosnegocios"
+    },
+    {
+      "id": "08-concorrencia", "data": "dom 25/10", "hora": "19:00", "tipo": "post", "char": "empreendedorismo", "accent": "#f2a65a",
+      "frase": "Sua concorrência não é mais inteligente.", "destaque": "Só usa as ferramentas certas.",
+      "legenda": "Quanto custa mais um mês fazendo na mão o que um agente faz em minutos?\n\nSiga @voxelia.ia e veja quais são.\n\n#empreendedorismo #ia #negocios"
+    },
+    {
+      "id": "09-carrossel-inventa", "data": "seg 26/10", "hora": "12:30", "tipo": "carrossel", "char": "ciencia", "accent": "#5fd3a0",
+      "capa": "Por que a IA inventa coisa?", "capaSub": "E 4 jeitos de evitar.",
+      "slides": [
+        ["Ela completa, não consulta", "O modelo gera o texto mais provável. Sem fonte, ele preenche o buraco com algo que parece certo."],
+        ["Dê a fonte", "Cole o documento, o link ou os dados. \"Responda só com base nisto\" corta muita invenção."],
+        ["Autorize o \"não sei\"", "Escreva: \"se não tiver certeza, diga que não sabe\". Parece bobo, funciona."],
+        ["Peça a origem", "\"De onde veio esse número?\" Se ela não mostra, desconfie."],
+        ["Confira o que importa", "Número, nome, lei e data: sempre confira antes de publicar."]
+      ],
+      "fim": "Salve antes de confiar no próximo número.",
+      "legenda": "Já pegou a IA inventando? Conta o caso mais absurdo.\n\nNão é mentira, é estatística. E dá para controlar.\n\n#ia #inteligenciaartificial #chatgpt"
+    },
+    {
+      "id": "10-abas", "data": "seg 26/10", "hora": "19:00", "tipo": "post", "char": "software", "accent": "#a589ec",
+      "frase": "Dez abas abertas não é pesquisa.", "destaque": "É ansiedade.",
+      "legenda": "Você deve estar pensando: \"mais um perfil dizendo que eu uso IA errado\". Justo.\n\nMas me diz: quantas abas você tem abertas agora?\n\n#ia #produtividade #tecnologia"
+    },
+    {
+      "id": "11-carrossel-video", "data": "ter 27/10", "hora": "12:30", "tipo": "carrossel", "char": "conteudo", "accent": "#f27aa8",
+      "capa": "Vídeo com IA sem saber editar.", "capaSub": "O caminho mais curto em 5 passos.",
+      "slides": [
+        ["Escreva a ideia em uma frase", "\"Vídeo de 20 segundos mostrando meu cardápio novo.\" Clareza antes de ferramenta."],
+        ["Escolha a skill de vídeo", "HyperFrames e Remotion transformam código em vídeo, e o agente escreve o código por você."],
+        ["Peça ao agente", "Formato vertical, duração, cores da marca. Ele monta as cenas."],
+        ["Revise quadro a quadro", "Peça ajustes como pediria a um editor: \"texto maior\", \"corta essa cena\"."],
+        ["Renderize e poste", "Sai um MP4 pronto. Este perfil faz assim."]
+      ],
+      "fim": "Salve e faça o seu esta semana.",
+      "legenda": "Comenta VIDEO e eu te mando qual skill usar para o seu caso.\n\nO último Reel deste perfil foi feito exatamente assim.\n\n#ia #reels #criacaodeconteudo"
+    },
+    {
+      "id": "12-label", "data": "ter 27/10", "hora": "19:00", "tipo": "post", "char": "conteudo", "accent": "#f27aa8",
+      "frase": "Parece que toda semana sai uma IA nova", "destaque": "e você fica para trás. É isso?",
+      "legenda": "Você não precisa de todas. Precisa da certa para o que você quer fazer.\n\nO que você quer criar com IA este mês? Responde aqui que eu indico o caminho.\n\n#ia #inteligenciaartificial #tecnologia"
+    },
+    {
+      "id": "13-carrossel-ferramentas", "data": "qua 28/10", "hora": "12:30", "tipo": "carrossel", "char": "software", "accent": "#a589ec",
+      "capa": "ChatGPT, Claude ou Gemini?", "capaSub": "Não é time de futebol.",
+      "slides": [
+        ["Pare de torcer", "Cada modelo vai melhor em coisas diferentes, e isso muda a cada atualização."],
+        ["Teste na sua tarefa", "Mesmo pedido nos três. Compare o resultado, não a fama."],
+        ["Agente é outra liga", "Chat responde. Agente executa: lê arquivos, roda comandos, entrega pronto."],
+        ["Skill é o que ensina o agente", "O mesmo modelo, com a skill certa, faz um trabalho muito melhor."],
+        ["Escolha pelo resultado", "Ferramenta boa é a que entrega o que você precisa hoje."]
+      ],
+      "fim": "Salve para a próxima discussão no grupo.",
+      "legenda": "Qual você mais usa? Responde com o nome.\n\nSpoiler: a pergunta certa não é \"qual é melhor\", é \"qual é melhor para isto\".\n\n#chatgpt #claude #gemini"
+    },
+    {
+      "id": "14-nao", "data": "qua 28/10", "hora": "19:00", "tipo": "post", "char": "ciencia", "accent": "#5fd3a0",
+      "frase": "Seria uma má ideia aprender", "destaque": "uma skill nova por semana?",
+      "legenda": "52 por ano. Sem curso, sem mensalidade, uma de cada vez.\n\nSiga @voxelia.ia e comece pela de amanhã.\n\n#ia #aprendizado #inteligenciaartificial"
+    }
+  ]
+}
