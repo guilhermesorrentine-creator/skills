@@ -3,7 +3,7 @@ export function createAsaasClient({ baseUrl, apiKey, fetchImpl = fetch }) {
   async function call(method, path, body) {
     const response = await fetchImpl(`${baseUrl}${path}`, {
       method,
-      headers: { "access_token": apiKey, "Content-Type": "application/json", "User-Agent": "biblioteca-total/4.0" },
+      headers: { "access_token": apiKey, "Content-Type": "application/json", "User-Agent": "arsenal-ia/4.0" },
       body: body ? JSON.stringify(body) : undefined,
     });
     const text = await response.text();

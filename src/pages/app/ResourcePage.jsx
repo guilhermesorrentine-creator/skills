@@ -50,7 +50,7 @@ export default function ResourcePage({ id }) {
       <div className="r-card-top"><span className="badge">{categoryLabel[resource.category]}</span><span className="badge badge-type">{typeLabel[resource.type]}</span>{source && !["guide", "skill"].includes(resource.type) && <span className="badge badge-type">Externo</span>}</div>
       <h1>{resource.title}</h1>
       {resource.summary && <p className="resource-summary">{resource.summary}</p>}
-      <p className="resource-source">Fonte: <b>{resource.source_name || "Biblioteca Total"}</b>{resource.path && <> · <code>{resource.path}</code></>}{resource.author && <> · Autoria: {resource.author}</>}{resource.license && <> · Licença: {resource.license}</>}</p>
+      <p className="resource-source">Fonte: <b>{resource.source_name || "Arsenal IA"}</b>{resource.path && <> · <code>{resource.path}</code></>}{resource.author && <> · Autoria: {resource.author}</>}{resource.license && <> · Licença: {resource.license}</>}</p>
       <div className="resource-actions">
         <FavoriteToggle id={resource.id} title={resource.title}/>
         <SaveToCollection id={resource.id} title={resource.title}/>
@@ -67,7 +67,7 @@ export default function ResourcePage({ id }) {
         {instructions && <section className="panel"><h2>Instruções</h2><pre className="instructions">{instructions}</pre><CopyButton value={instructions}>Copiar instruções</CopyButton></section>}
         {isSkill && <section className="panel"><h2>Como utilizar</h2>
           <p>O conteúdo completo desta skill está no arquivo original. Abra a fonte, confira os requisitos e adapte o pedido ao seu agente.</p>
-          <p className="small muted">Modelo genérico da Biblioteca Total (não é documentação oficial da skill):</p>
+          <p className="small muted">Modelo genérico do Arsenal IA (não é documentação oficial da skill):</p>
           <pre className="instructions">{genericPrompt}</pre><CopyButton value={genericPrompt}>Copiar modelo</CopyButton>
         </section>}
         {isSkill && <section className="panel panel-muted"><h2>Informações não disponíveis no catálogo</h2><p className="small">Requisitos, compatibilidade com agentes, exemplos e instruções de instalação não constam no índice e não foram inferidos. Consulte a fonte original.</p></section>}

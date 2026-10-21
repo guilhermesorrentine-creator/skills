@@ -1,4 +1,4 @@
-# Escopo do site — Biblioteca Total
+# Escopo do site — Arsenal IA
 
 ## Objetivo
 

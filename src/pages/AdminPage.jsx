@@ -32,7 +32,7 @@ export default function AdminPage() {
 
   return <main id="conteudo" className="admin">
     <div className="admin-wrap">
-      <nav className="simple-nav" aria-label="Administração"><Brand/><Link className="link" to="/app">Voltar à biblioteca</Link></nav>
+      <nav className="simple-nav" aria-label="Administração"><Brand/><Link className="link" to="/app">Voltar ao Arsenal</Link></nav>
       <h1>Administração</h1>
       {error && <p className="form-error" role="alert">{error}</p>}
       {message && <p className={message.startsWith("Erro") ? "form-error" : "form-ok"} role="status">{message}</p>}

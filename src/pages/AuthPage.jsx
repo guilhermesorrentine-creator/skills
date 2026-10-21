@@ -7,7 +7,7 @@ import { Brand } from "../components/site/SiteNav.jsx";
 import { motionTokens } from "../lib/motion-tokens.js";
 
 const copy = {
-  login: { title: "Entrar", lead: "Acesse sua conta da Biblioteca Total.", submit: "Entrar" },
+  login: { title: "Entrar", lead: "Acesse sua conta do Arsenal IA.", submit: "Entrar" },
   signup: { title: "Criar conta", lead: "Só e-mail e senha. Os dados de pagamento ficam no ambiente do Asaas.", submit: "Criar conta" },
   recover: { title: "Recuperar senha", lead: "Enviaremos um link para você criar uma nova senha.", submit: "Enviar link" },
   reset: { title: "Nova senha", lead: "Defina a nova senha da sua conta.", submit: "Salvar nova senha" },

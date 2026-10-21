@@ -1,4 +1,4 @@
-# Biblioteca Total 4.0 — arquitetura, comércio e operação
+# Arsenal IA 4.0 — arquitetura, comércio e operação
 
 ## Arquitetura
 

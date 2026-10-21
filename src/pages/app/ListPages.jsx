@@ -96,7 +96,7 @@ export function ResourceListPage({ section }) {
 }
 
 export function LoadError({ error }) {
-  return <div className="page"><div className="empty"><h3>Não foi possível carregar a biblioteca.</h3><p>{error.message}</p><button type="button" className="btn btn-secondary btn-sm" onClick={() => location.reload()}>Tentar novamente</button></div></div>;
+  return <div className="page"><div className="empty"><h3>Não foi possível carregar o acervo.</h3><p>{error.message}</p><button type="button" className="btn btn-secondary btn-sm" onClick={() => location.reload()}>Tentar novamente</button></div></div>;
 }
 
 export function FavoritesPage() {

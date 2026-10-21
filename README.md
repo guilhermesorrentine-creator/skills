@@ -1,6 +1,6 @@
-# Biblioteca Total 4.0
+# Arsenal IA 4.0
 
-Guia navegável para 37 repositórios e 2.281 Agent Skills em quatro áreas. A página é estática, responsiva e não usa backend. O catálogo publicado remove caminhos locais; os textos das skills são renderizados como texto simples.
+Plataforma comercial (antes chamada Biblioteca Total) que organiza 37 repositórios e 2.281 Agent Skills em quatro áreas, com guias passo a passo, busca por objetivo e coleções. As chaves internas (`biblioteca-total:*` no navegador, nome do pacote) mantêm o nome antigo para não perder dados já salvos.
 
 ## Executar localmente
 

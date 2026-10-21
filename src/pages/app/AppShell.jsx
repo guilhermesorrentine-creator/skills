@@ -38,7 +38,7 @@ export default function AppShell({ path, account, children }) {
 
   return <div className={`app ${open ? "nav-open" : ""}`}>
     <a className="skip-link" href="#app-main">Pular para o conteúdo</a>
-    <aside className="app-side" aria-label="Menu da biblioteca">
+    <aside className="app-side" aria-label="Menu do Arsenal">
       <div className="app-side-head"><Brand to="/app"/></div>
       <nav><ul>{menu.map((item) => <li key={item.to}><Link to={item.to} className="app-link" aria-current={active(item.to) ? "page" : undefined}>
         <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d={item.icon} fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round" strokeLinecap="round"/></svg>{item.label}

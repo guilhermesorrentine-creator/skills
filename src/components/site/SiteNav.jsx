@@ -11,7 +11,7 @@ export const landingLinks = [
 ];
 
 export function Brand({ to = "/" }) {
-  return <Link className="brand" to={to} aria-label="Biblioteca Total, início"><span className="brand-mark" aria-hidden="true"><i/><i/><i/></span><span className="brand-name">Biblioteca Total</span></Link>;
+  return <Link className="brand" to={to} aria-label="Arsenal IA, início"><span className="brand-mark" aria-hidden="true"><i/><i/><i/></span><span className="brand-name">Arsenal IA</span></Link>;
 }
 
 // Barra em cápsula da landing; vira menu compacto acessível no celular.
@@ -39,7 +39,7 @@ export default function SiteNav({ onSection, onEnter, onBuy, signedIn }) {
         <ul>{landingLinks.map((link) => <li key={link.id}><a href={`#${link.id}`} onClick={(event) => go(event, link.id)}>{link.label}</a></li>)}</ul>
       </nav>
       <div className="site-nav-actions">
-        <button type="button" className="btn btn-ghost btn-sm" onClick={() => { setOpen(false); onEnter(); }}>{signedIn ? "Abrir biblioteca" : "Entrar"}</button>
+        <button type="button" className="btn btn-ghost btn-sm" onClick={() => { setOpen(false); onEnter(); }}>{signedIn ? "Entrar no Arsenal" : "Entrar"}</button>
         <button type="button" className="btn btn-primary btn-sm nav-cta" onClick={() => { setOpen(false); onBuy(); }}>Garantir acesso</button>
         <button type="button" className="nav-toggle" aria-expanded={open} aria-controls="site-links" onClick={() => setOpen((value) => !value)}><span className="sr-only">{open ? "Fechar menu" : "Abrir menu"}</span><i aria-hidden="true"/><i aria-hidden="true"/></button>
       </div>

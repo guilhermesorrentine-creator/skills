@@ -46,7 +46,7 @@ export default function AppHome({ account }) {
         : <div className="f-grid">{me.collections.slice(0, 3).map((c, i) => <Link key={c.id} to={`/app/colecoes/${c.id}`} className="f-card" data-category={["software", "conteudo", "ciencia"][i % 3]}><span className="tag-mono">{c.items.length} item(ns)</span><h3>{c.name}</h3>{c.description && <p>{c.description}</p>}</Link>)}</div>}
     </section>
 
-    <section className="home-block"><h2>Seleção da Biblioteca</h2>
+    <section className="home-block"><h2>Seleção do Arsenal</h2>
       {loading ? <p className="muted">Carregando…</p> : <div className="r-grid">{featured.map((item) => <ResourceCard key={item.id} item={item}/>)}</div>}
     </section>
 

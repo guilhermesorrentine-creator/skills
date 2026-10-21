@@ -15,17 +15,17 @@ const templates = [
   {
     file: "confirmacao.html",
     slot: "Confirm signup",
-    subject: "Confirme seu e-mail — Biblioteca Total",
+    subject: "Confirme seu e-mail — Arsenal IA",
     preheader: "Falta só um passo para ativar sua conta.",
     title: "Confirme seu e-mail",
-    body: "Falta só um passo para ativar sua conta na Biblioteca Total. Confirme que <b>{{ .Email }}</b> é o seu endereço.",
+    body: "Falta só um passo para ativar sua conta no Arsenal IA. Confirme que <b>{{ .Email }}</b> é o seu endereço.",
     button: "Confirmar e-mail",
     note: "Se você não criou esta conta, pode ignorar este e-mail.",
   },
   {
     file: "recuperacao-senha.html",
     slot: "Reset Password",
-    subject: "Redefina sua senha — Biblioteca Total",
+    subject: "Redefina sua senha — Arsenal IA",
     preheader: "Recebemos um pedido para redefinir sua senha.",
     title: "Redefina sua senha",
     body: "Recebemos um pedido para redefinir a senha da conta <b>{{ .Email }}</b>. Use o botão abaixo para criar uma nova senha.",
@@ -35,7 +35,7 @@ const templates = [
   {
     file: "troca-email.html",
     slot: "Change Email Address",
-    subject: "Confirme seu novo e-mail — Biblioteca Total",
+    subject: "Confirme seu novo e-mail — Arsenal IA",
     preheader: "Confirme a troca do e-mail da sua conta.",
     title: "Confirme seu novo e-mail",
     body: "Recebemos um pedido para trocar o e-mail da sua conta de <b>{{ .Email }}</b> para <b>{{ .NewEmail }}</b>.",
@@ -54,7 +54,7 @@ const logo = `<table role="presentation" cellpadding="0" cellspacing="0" border=
         <td valign="bottom" style="padding:0 1px;"><div style="width:4px;height:13px;background:#FFFFFF;border-radius:2px;font-size:0;line-height:0;">&nbsp;</div></td>
       </tr></table>
     </td>
-    <td style="padding-left:10px;font-family:${font};font-size:15px;font-weight:700;color:${light.text};" class="t-text">Biblioteca Total</td>
+    <td style="padding-left:10px;font-family:${font};font-size:15px;font-weight:700;color:${light.text};" class="t-text">Arsenal IA</td>
   </tr>
 </table>`;
 
@@ -120,8 +120,8 @@ const page = (t) => `<!doctype html>
         </tr>
         <tr>
           <td align="center" class="t-text3" style="padding:22px 8px 0;font-family:${font};font-size:12px;line-height:1.5;color:${light.text3};">
-            Biblioteca Total · <a class="t-link" href="{{ .SiteURL }}" target="_blank" style="color:${light.primary};text-decoration:none;">Acessar o site</a><br>
-            Você recebeu este e-mail porque ele foi usado na Biblioteca Total.
+            Arsenal IA · <a class="t-link" href="{{ .SiteURL }}" target="_blank" style="color:${light.primary};text-decoration:none;">Acessar o site</a><br>
+            Você recebeu este e-mail porque ele foi usado no Arsenal IA.
           </td>
         </tr>
       </table>

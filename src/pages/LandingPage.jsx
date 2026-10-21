@@ -30,11 +30,11 @@ const goalChips = ["Quero criar um site", "Automatizar tarefas", "Editar vídeos
 
 // Perguntas com respostas factuais; o que depende de política comercial está sinalizado.
 const faq = [
-  { q: "O que é a Biblioteca Total?", a: "Uma plataforma que organiza recursos para trabalhar com IA: Agent Skills de repositórios públicos, ferramentas e referências, e guias próprios, com busca por objetivo, coleções e páginas de consulta." },
+  { q: "O que é o Arsenal IA?", a: "Uma plataforma que organiza recursos para trabalhar com IA: Agent Skills de repositórios públicos, ferramentas e referências, e guias próprios, com busca por objetivo, coleções e páginas de consulta." },
   { q: "Como funciona o acesso vitalício?", a: "Você paga uma vez pela edição e mantém o acesso aos recursos e funcionalidades incluídos nela, sem mensalidade nem renovação." },
-  { q: "Como é o pagamento?", a: "Pagamento único por Pix ou cartão de crédito, no ambiente seguro do Asaas. A Biblioteca Total não armazena dados do cartão. O acesso é liberado quando o Asaas confirma o pagamento." },
+  { q: "Como é o pagamento?", a: "Pagamento único por Pix ou cartão de crédito, no ambiente seguro do Asaas. O Arsenal IA não armazena dados do cartão. O acesso é liberado quando o Asaas confirma o pagamento." },
   { q: "O que acontece quando sair uma nova edição?", a: "Novas edições podem trazer recursos extras. O upgrade é opcional: você paga só a diferença de preço e, se preferir não atualizar, continua com a edição que comprou." },
-  { q: "O conteúdo das skills é exclusivo?", a: "Não. As Agent Skills vêm de repositórios públicos e cada página aponta para a fonte original. O valor da Biblioteca está na curadoria, na organização, na busca, nos guias próprios e nas ferramentas de organização." },
+  { q: "O conteúdo das skills é exclusivo?", a: "Não. As Agent Skills vêm de repositórios públicos e cada página aponta para a fonte original. O valor do Arsenal está na curadoria, na organização, na busca, nos guias próprios e nas ferramentas de organização." },
   { q: "Posso pedir reembolso?", a: "As regras de reembolso e cancelamento estão na política de compra.", pending: true },
 ];
 
@@ -83,8 +83,8 @@ export default function LandingPage({ account, signedIn, onEnter }) {
           <motion.h1 id="hero-title" {...reveal(reduced, 1)}>Tudo o que você precisa para criar com IA, <span className="hl">em um só lugar.</span></motion.h1>
           <motion.p className="l-lead" {...reveal(reduced, 2)}>Descubra skills, subagentes, ferramentas, guias e referências organizadas para transformar ideias em projetos.</motion.p>
           <motion.div className="l-actions" {...reveal(reduced, 3)}>
-            <button type="button" className="btn btn-secondary" onClick={(event) => scrollTo(event, "demonstracao")}>Conhecer a Biblioteca</button>
-            <button type="button" className="btn btn-primary" onClick={buy} disabled={busy}>{owned ? "Abrir biblioteca" : "Garantir acesso vitalício"}</button>
+            <button type="button" className="btn btn-secondary" onClick={(event) => scrollTo(event, "demonstracao")}>Conhecer o Arsenal</button>
+            <button type="button" className="btn btn-primary" onClick={buy} disabled={busy}>{owned ? "Entrar no Arsenal" : "Garantir acesso vitalício"}</button>
           </motion.div>
           {buyError && <p className="form-error" role="alert">{buyError}</p>}
         </div>
@@ -100,11 +100,11 @@ export default function LandingPage({ account, signedIn, onEnter }) {
         </div>
       </Section>
 
-      <Section id="demonstracao" eyebrow="Demonstração" title="Experimente a busca por objetivo." lead="Uma amostra pública com skills reais do acervo. Na biblioteca completa a busca cobre todo o índice e todos os tipos de recurso.">
+      <Section id="demonstracao" eyebrow="Demonstração" title="Experimente a busca por objetivo." lead="Uma amostra pública com skills reais do acervo. No Arsenal completo a busca cobre todo o índice e todos os tipos de recurso.">
         <DemoSearch demo={demo}/>
       </Section>
 
-      <Section id="conteudo-disponivel" eyebrow="Conteúdo" title="Tipos de recurso na plataforma." lead="A Biblioteca foi feita para crescer. Os números abaixo são os publicados hoje.">
+      <Section id="conteudo-disponivel" eyebrow="Conteúdo" title="Tipos de recurso na plataforma." lead="O Arsenal foi feito para crescer. Os números abaixo são os publicados hoje.">
         <div className="l-types">
           {TYPES.map((type, index) => {
             const count = stats?.byType?.[type.id];
@@ -133,7 +133,7 @@ export default function LandingPage({ account, signedIn, onEnter }) {
       <Section id="acesso" eyebrow="Acesso vitalício" title="Pague uma vez. Use sem mensalidade.">
         <motion.div className="l-offer" initial={reduced ? false : { opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.3 }} transition={{ duration: 0.6, ease: motionTokens.easing.smooth }}>
           <div className="l-offer-main">
-            <p className="eyebrow">{edition ? edition.name : "Biblioteca Total — Edição 1"}</p>
+            <p className="eyebrow">{edition ? edition.name : "Arsenal IA — Edição 1"}</p>
             {edition ? <p className="l-price"><b>{formatPrice(edition.priceCents)}</b><span>pagamento único</span></p> : <p className="l-price-soon">{editions == null ? "Carregando…" : "Vendas em preparação. A compra será aberta em breve."}</p>}
             <ul className="l-offer-list">
               <li>Acesso vitalício aos recursos e funcionalidades da edição adquirida</li>
@@ -142,7 +142,7 @@ export default function LandingPage({ account, signedIn, onEnter }) {
               <li>Upgrades futuros opcionais, pagando só a diferença</li>
               {(edition?.features || []).map((feature) => <li key={feature}>{feature}</li>)}
             </ul>
-            <button type="button" className="btn btn-primary" onClick={buy} disabled={busy || (!edition && !owned)}>{owned ? "Abrir biblioteca" : busy ? "Abrindo pagamento…" : "Garantir acesso"}</button>
+            <button type="button" className="btn btn-primary" onClick={buy} disabled={busy || (!edition && !owned)}>{owned ? "Entrar no Arsenal" : busy ? "Abrindo pagamento…" : "Garantir acesso"}</button>
             {buyError && <p className="form-error" role="alert">{buyError}</p>}
           </div>
           <div className="l-offer-art" aria-hidden="true">{CATEGORIES.map((c) => <CyberpunkCharacter key={c.id} category={c.id}/>)}</div>
@@ -162,7 +162,7 @@ export default function LandingPage({ account, signedIn, onEnter }) {
       <section className="l-final" aria-labelledby="final-title">
         <div className="wrap l-final-inner">
           <h2 id="final-title">Comece a criar com os recursos certos.</h2>
-          <button type="button" className="btn btn-primary" onClick={buy} disabled={busy}>{owned ? "Abrir biblioteca" : "Garantir acesso"}</button>
+          <button type="button" className="btn btn-primary" onClick={buy} disabled={busy}>{owned ? "Entrar no Arsenal" : "Garantir acesso"}</button>
         </div>
       </section>
     </main>
