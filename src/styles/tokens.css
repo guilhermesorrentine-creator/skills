@@ -1,6 +1,6 @@
-/* Biblioteca Total 4.0 — tokens de design (minimalista claro). */
+/* Biblioteca Total 4.0 — tokens de design. Claro por padrão; escuro segue o sistema (prefers-color-scheme). */
 :root {
-  color-scheme: light;
+  color-scheme: light dark;
 
   --bg: #f7f6f2;
   --bg-soft: #ece5fa;
@@ -15,6 +15,19 @@
   --line: #e4e0d8;
   --line-strong: #d2ccc2;
   --focus: #7445c7;
+  --on-primary: #ffffff;
+  --surface-sunken: #f2f0eb;
+  --surface-glass: rgba(255, 255, 255, 0.86);
+  --surface-glass-soft: rgba(255, 255, 255, 0.66);
+  --topbar-bg: rgba(247, 246, 242, 0.9);
+  --line-accent: #cbb9ea;
+  --mark: #f3e6ff;
+  --scrim: rgba(35, 33, 43, 0.35);
+  --code-block-bg: #23212b;
+  --code-block-text: #f3f1ff;
+  --blob-a: #e2d4fb;
+  --blob-b: #fbe4ee;
+  --ground-shadow: rgba(35, 33, 43, 0.12);
 
   /* Cores auxiliares por área/tipo: suaves, sempre com rótulo textual. */
   --tint-software: #ece5fa;
@@ -29,6 +42,10 @@
   --ok: #1f6b4a;
   --warn: #8a4b12;
   --danger: #b4233c;
+  --ok-bg: #e7f5ee;
+  --warn-bg: #fff4e5;
+  --warn-text: #6d3c0d;
+  --danger-bg: #fdecef;
 
   --font-display: "Plus Jakarta Sans Variable", "Plus Jakarta Sans", "Segoe UI", system-ui, sans-serif;
   --font-sans: "Inter Variable", Inter, "Segoe UI", system-ui, sans-serif;
@@ -53,6 +70,7 @@
   --shadow-1: 0 1px 2px rgba(35, 33, 43, 0.06), 0 1px 1px rgba(35, 33, 43, 0.04);
   --shadow-2: 0 10px 30px -12px rgba(35, 33, 43, 0.18), 0 2px 6px rgba(35, 33, 43, 0.05);
   --shadow-3: 0 30px 60px -24px rgba(65, 40, 110, 0.28), 0 8px 18px -10px rgba(35, 33, 43, 0.12);
+  --shadow-primary: 0 6px 16px -6px rgba(116, 69, 199, 0.55);
 
   --page-width: 1200px;
   --gutter: clamp(16px, 4vw, 40px);
@@ -62,6 +80,61 @@
   --dur-fast: 160ms;
   --dur-normal: 360ms;
   --ease-smooth: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Modo noturno: mesma hierarquia, superfícies grafite-violeta. O roxo clareia para manter
+   contraste AA como texto, e o conteúdo sobre ele passa a ser escuro (--on-primary). */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #15131b;
+    --bg-soft: #221c33;
+    --surface: #1d1a25;
+    --surface-muted: #191720;
+    --surface-sunken: #26222f;
+    --surface-glass: rgba(29, 26, 37, 0.86);
+    --surface-glass-soft: rgba(29, 26, 37, 0.7);
+    --topbar-bg: rgba(21, 19, 27, 0.9);
+    --primary: #a589ec;
+    --primary-hover: #b9a2f2;
+    --primary-soft: #2a2240;
+    --on-primary: #15131b;
+    --text: #f2f0f6;
+    --text-2: #c3becd;
+    --text-3: #9e99aa;
+    --line: #2f2b38;
+    --line-strong: #403b4b;
+    --line-accent: #5a4a80;
+    --focus: #b9a2f2;
+    --mark: #3a2c5c;
+    --scrim: rgba(0, 0, 0, 0.55);
+    --code-block-bg: #0f0d14;
+    --code-block-text: #ede9f7;
+    --blob-a: #2b2149;
+    --blob-b: #331d2b;
+    --ground-shadow: rgba(0, 0, 0, 0.35);
+
+    --tint-software: #2a2240;
+    --tint-empreendedorismo: #362717;
+    --tint-conteudo: #371d2a;
+    --tint-ciencia: #16302a;
+    --ink-software: #c9b3f5;
+    --ink-empreendedorismo: #f2be87;
+    --ink-conteudo: #f3a6c8;
+    --ink-ciencia: #8fd9b6;
+
+    --ok: #8fd9b6;
+    --warn: #f2be87;
+    --danger: #f2879b;
+    --ok-bg: #16302a;
+    --warn-bg: #362717;
+    --warn-text: #f2d2ae;
+    --danger-bg: #3a1a22;
+
+    --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.3);
+    --shadow-2: 0 10px 30px -12px rgba(0, 0, 0, 0.6), 0 2px 6px rgba(0, 0, 0, 0.3);
+    --shadow-3: 0 30px 60px -24px rgba(0, 0, 0, 0.7), 0 8px 18px -10px rgba(0, 0, 0, 0.4);
+    --shadow-primary: 0 6px 18px -8px rgba(165, 137, 236, 0.45);
+  }
 }
 
 [data-category="software"] { --tint: var(--tint-software); --ink: var(--ink-software); }

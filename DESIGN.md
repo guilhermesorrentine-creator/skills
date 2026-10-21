@@ -18,6 +18,8 @@ Minimalista, clara, amigável e tecnológica. A personalidade vem dos quatro per
 | Linhas | `--line` / `--line-strong` | `#E4E0D8` / `#D2CCC2` |
 | Áreas (tinta/fundo) | `--tint-*` / `--ink-*` | Software lilás, Empreendedorismo pêssego, Conteúdo rosa, Ciência verde |
 
+**Modo noturno** automático, pela preferência do sistema (`prefers-color-scheme: dark`), na landing e no sistema: os mesmos tokens são redefinidos em `tokens.css` (fundo `#15131B`, superfícies `#1D1A25`, texto `#F2F0F6`). O roxo clareia para `#A589EC` e o conteúdo sobre ele usa `--on-primary` (escuro), mantendo contraste AA. Nenhuma cor fixa fora de `tokens.css`, exceto os sprites dos personagens.
+
 As cores de área sempre acompanham um rótulo textual e não competem com o roxo. Texto secundário mantém contraste AA sobre branco e sobre `--bg`.
 
 ## Tipografia
