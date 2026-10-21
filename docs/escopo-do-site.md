@@ -1,4 +1,4 @@
-# Escopo do site — Arsenal IA
+# Escopo do site — Voxelia
 
 ## Objetivo
 

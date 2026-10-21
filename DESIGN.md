@@ -1,4 +1,4 @@
-# Design system — Arsenal IA 4.0
+# Design system — Voxelia 4.0
 
 Formato DESIGN.md: visão geral, cores, tipografia, layout, componentes, movimento, responsividade e regras.
 

@@ -1,4 +1,4 @@
-// Layout único dos e-mails do Arsenal IA (modelos do Supabase Auth e e-mails enviados pelo servidor).
+// Layout único dos e-mails da Voxelia (modelos do Supabase Auth e e-mails enviados pelo servidor).
 // HTML de e-mail: tabelas e estilos inline; o modo noturno usa prefers-color-scheme com classes
 // e os clientes sem suporte mostram a versão clara. Personagens em PNG (clientes não exibem SVG).
 
@@ -19,7 +19,7 @@ const logo = `<table role="presentation" cellpadding="0" cellspacing="0" border=
         <td valign="bottom" style="padding:0 1px;"><div style="width:4px;height:13px;background:#FFFFFF;border-radius:2px;font-size:0;line-height:0;">&nbsp;</div></td>
       </tr></table>
     </td>
-    <td style="padding-left:10px;font-family:${font};font-size:15px;font-weight:700;color:${light.text};" class="t-text">Arsenal IA</td>
+    <td style="padding-left:10px;font-family:${font};font-size:15px;font-weight:700;color:${light.text};" class="t-text">Voxelia</td>
   </tr>
 </table>`;
 
@@ -81,7 +81,7 @@ export function renderEmail({ subject, preheader, title, body, button, url, note
         <tr>
           <td class="t-card" bgcolor="${light.surface}" style="background:${light.surface};border:1px solid ${light.line};border-radius:20px;overflow:hidden;">
             ${artUrl ? `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td align="center" class="t-soft" bgcolor="${light.soft}" style="background:${light.soft};padding:26px 20px 18px;border-radius:20px 20px 0 0;">
-              <img src="${escapeHtml(artUrl)}" width="300" alt="Os quatro personagens do Arsenal IA: Hacker, Estrategista, Criadora e Pesquisadora" style="display:block;width:300px;max-width:100%;height:auto;border:0;image-rendering:pixelated;">
+              <img src="${escapeHtml(artUrl)}" width="300" alt="Os quatro personagens da Voxelia: Hacker, Estrategista, Criadora e Pesquisadora" style="display:block;width:300px;max-width:100%;height:auto;border:0;image-rendering:pixelated;">
             </td></tr></table>` : ""}
             <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td class="card" style="padding:34px 36px 32px;">
             <h1 class="title t-text" style="margin:0 0 14px;font-family:${font};font-size:29px;line-height:1.15;font-weight:800;letter-spacing:-0.5px;color:${light.text};">${title}</h1>
@@ -102,8 +102,8 @@ export function renderEmail({ subject, preheader, title, body, button, url, note
         </tr>
         <tr>
           <td align="center" class="t-text3" style="padding:22px 8px 0;font-family:${font};font-size:12px;line-height:1.5;color:${light.text3};">
-            Arsenal IA · <a class="t-link" href="${escapeHtml(siteUrl)}" target="_blank" style="color:${light.primary};text-decoration:none;">Acessar o site</a><br>
-            Você recebeu este e-mail porque ele foi usado no Arsenal IA.
+            Voxelia · <a class="t-link" href="${escapeHtml(siteUrl)}" target="_blank" style="color:${light.primary};text-decoration:none;">Acessar o site</a><br>
+            Você recebeu este e-mail porque ele foi usado na Voxelia.
           </td>
         </tr>
       </table>

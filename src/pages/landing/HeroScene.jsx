@@ -14,7 +14,7 @@ const placeholders = {
   ciencia: "Ex.: analisar dados de um experimento",
 };
 
-// Cena do hero: a janela central é a interface real do Arsenal (busca, categorias, cards)
+// Cena do hero: a janela central é a interface real da Voxelia (busca, categorias, cards)
 // com dados de demonstração; os quatro personagens trocam a categoria mostrada.
 // Hover/foco = prévia temporária; clique/toque = fixa a categoria.
 export default function HeroScene({ demo }) {
@@ -62,7 +62,7 @@ export default function HeroScene({ demo }) {
   return <div className="hero-scene" ref={sceneRef} data-category={shown === "todas" ? undefined : shown}>
     <div className="hero-chars hero-chars-left">{CATEGORIES.slice(0, 2).map((c, i) => character(c, "left", i))}</div>
     <motion.div className="hero-window" initial={reduced ? false : { opacity: 0, y: 24, scale: 0.98 }} animate={{ opacity: 1, y: 0, scale: 1 }} transition={{ duration: 0.7, delay: 0.2, ease: motionTokens.easing.smooth }}>
-      <div className="hw-bar" aria-hidden="true"><i/><i/><i/><span>arsenal ia · demonstração</span></div>
+      <div className="hw-bar" aria-hidden="true"><i/><i/><i/><span>voxelia · demonstração</span></div>
       <div className="hw-body">
         <div className="hw-search" aria-hidden="true"><span>⌕</span><AnimatePresence mode="wait" initial={false}><motion.span key={shown} initial={reduced ? false : { opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={reduced ? undefined : { opacity: 0, y: -4 }} transition={{ duration: motionTokens.duration.fast }}>{placeholders[shown]}</motion.span></AnimatePresence><kbd>Ctrl K</kbd></div>
         <div className="hw-tabs" role="group" aria-label="Categoria da demonstração">

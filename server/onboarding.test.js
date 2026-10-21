@@ -58,10 +58,10 @@ test("boas-vindas da compra saem uma única vez por pessoa", async () => {
   const store = seed();
   const mailer = fakeMailer();
   const onboarding = createOnboarding({ store, mailer, config });
-  await onboarding.welcomeBuyer("u1", { name: "Arsenal IA — Edição 1" });
-  await onboarding.welcomeBuyer("u1", { name: "Arsenal IA — Edição 1" });
+  await onboarding.welcomeBuyer("u1", { name: "Voxelia — Edição 1" });
+  await onboarding.welcomeBuyer("u1", { name: "Voxelia — Edição 1" });
   assert.equal(mailer.sent.length, 1);
-  assert.match(mailer.sent[0].html, /Entrar no Arsenal/);
+  assert.match(mailer.sent[0].html, /Entrar na Voxelia/);
 });
 
 test("o e-mail escapa dados da pessoa", () => {
@@ -96,6 +96,6 @@ test("quem já usa a conta recebe só o botão de entrar", async () => {
   const store = seed();
   const mailer = fakeMailer();
   await createOnboarding({ store, mailer, config }).inviteUser({ email: "ja@x.com", reason: "Cortesia autorizada pelo dono", actorId: "adm" });
-  assert.match(mailer.sent[0].html, /Entrar no Arsenal/);
+  assert.match(mailer.sent[0].html, /Entrar na Voxelia/);
   assert.ok(!/criar-senha/.test(mailer.sent[0].html));
 });

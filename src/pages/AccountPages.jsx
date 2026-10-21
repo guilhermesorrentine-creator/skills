@@ -5,13 +5,13 @@ import { formatPrice, purchase } from "../lib/billing-client.js";
 import { categoryLabel, typeLabel } from "../lib/resources.js";
 import { Brand } from "../components/site/SiteNav.jsx";
 
-// Navegação das páginas simples: com sessão, Arsenal/Sair; sem sessão, Entrar/Criar conta.
+// Navegação das páginas simples: com sessão, Voxelia/Sair; sem sessão, Entrar/Criar conta.
 function Shell({ title, eyebrow, children }) {
   const { user, devMode } = useAuth();
   return <main id="conteudo" className="simple">
     <div className="simple-wrap">
       <nav className="simple-nav" aria-label="Conta"><Brand/>{user || devMode
-        ? <span className="row"><Link className="link" to="/app">Arsenal</Link><button type="button" className="link" onClick={async () => { await authActions.signOut(); navigate("/"); }}>Sair</button></span>
+        ? <span className="row"><Link className="link" to="/app">Voxelia</Link><button type="button" className="link" onClick={async () => { await authActions.signOut(); navigate("/"); }}>Sair</button></span>
         : <span className="row"><Link className="btn btn-ghost btn-sm" to="/entrar">Entrar</Link><Link className="btn btn-primary btn-sm" to="/cadastro">Criar conta</Link></span>}</nav>
       {eyebrow && <p className="eyebrow">{eyebrow}</p>}
       <h1>{title}</h1>
@@ -33,7 +33,7 @@ export function CheckoutReturnPage({ account, reload }) {
   }, [confirmed, result, tries, reload]);
   return <Shell eyebrow="Pagamento" title={confirmed ? "Pagamento confirmado" : result === "sucesso" ? "Aguardando confirmação do pagamento" : result === "expirado" ? "O link de pagamento expirou" : "Pagamento não concluído"}>
     <div className="panel stack">
-      {confirmed && <><p>O Asaas confirmou o pagamento. Seu acesso vitalício está ativo.</p><button type="button" className="btn btn-primary" onClick={() => navigate("/app")}>Entrar no Arsenal</button></>}
+      {confirmed && <><p>O Asaas confirmou o pagamento. Seu acesso vitalício está ativo.</p><button type="button" className="btn btn-primary" onClick={() => navigate("/app")}>Entrar na Voxelia</button></>}
       {!confirmed && result === "sucesso" && <><p className="waiting"><span className="spinner" aria-hidden="true"/> Recebemos seu retorno. O acesso é liberado somente quando o Asaas confirma o pagamento — no Pix costuma ser imediato; no cartão, alguns instantes.</p>
         {tries >= 40 && <p>A confirmação ainda não chegou. Você pode fechar esta página: o acesso será liberado automaticamente quando o pagamento for confirmado.</p>}
         <button type="button" className="btn btn-secondary" onClick={() => reload()}>Verificar agora</button></>}
@@ -78,7 +78,7 @@ export function SharedCollectionPage({ token }) {
     {state.error && <p className="muted">{state.error.message}</p>}
     {state.data && <>{state.data.description && <p className="muted">{state.data.description}</p>}
       <ol className="col-items">{state.data.items.map((item) => <li key={item.id} className="col-item"><div className="col-item-main"><b>{item.title}</b><span className="muted small">{typeLabel[item.type]} · {categoryLabel[item.category]}</span></div></li>)}</ol>
-      <p className="small muted">Para abrir os recursos é preciso ter acesso ao Arsenal IA. <Link className="link" to="/">Conheça</Link></p></>}
+      <p className="small muted">Para abrir os recursos é preciso ter acesso à Voxelia. <Link className="link" to="/">Conheça</Link></p></>}
   </Shell>;
 }
 

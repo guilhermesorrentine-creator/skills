@@ -54,7 +54,7 @@ function ResourceCard({ item, query = "", extra = null, index = 0 }) {
     <h3><Link to={resourcePath(item.id)}><Highlight text={item.title} query={query}/></Link></h3>
     <p><Highlight text={item.summary || "Sem descrição na fonte."} query={query}/></p>
     <div className="r-card-foot">
-      <span className="r-card-source" title={item.author ? `${item.source_name}, de ${item.author}` : undefined}>{item.source_name || "Arsenal IA"}{item.author && item.type === "skill" ? <span className="r-card-owner"> · {item.author}</span> : null}</span>
+      <span className="r-card-source" title={item.author ? `${item.source_name}, de ${item.author}` : undefined}>{item.source_name || "Voxelia"}{item.author && item.type === "skill" ? <span className="r-card-owner"> · {item.author}</span> : null}</span>
       <span className="r-card-actions">{extra}<FavoriteToggle id={item.id} title={item.title}/><SaveToCollection id={item.id} title={item.title}/></span>
     </div>
   </motion.article>;
