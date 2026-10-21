@@ -39,3 +39,25 @@ test("marcadores «troque» são destacados e copiados sem as aspas", async () =
   assert.deepEqual(splitPlaceholders("harvey train «https://seu-site.com»"), ["harvey train ", { placeholder: "https://seu-site.com" }]);
   assert.equal(stripPlaceholders("cd «pasta» && «x»"), "cd pasta && x");
 });
+
+test("preferência de movimento: escolha do site vence o sistema", async () => {
+  const { resolveReduced } = await import("./motion-pref-core.js");
+  assert.equal(resolveReduced("system", true), true);
+  assert.equal(resolveReduced("system", false), false);
+  assert.equal(resolveReduced("full", true), false);
+  assert.equal(resolveReduced("reduced", false), true);
+});
+
+test("terminal guiado pelo scroll: começa vazio, digita, conclui e troca de cena", async () => {
+  const { frameAt, sceneAt, SCENARIOS, finalFrame } = await import("../pages/landing/terminal-script.js");
+  const s = SCENARIOS[0];
+  assert.equal(frameAt(s, 0).status, "idle");
+  const mid = frameAt(s, 0.08);
+  assert.ok(mid.typing && mid.typing.text.length > 0 && mid.typing.text.length < s.steps[0].text.length);
+  assert.equal(frameAt(s, 1).status, "done");
+  assert.deepEqual(frameAt(s, 1).lines, finalFrame(s).lines);
+  let last = -1;
+  for (let q = 0; q <= 1; q += 0.01) { const n = frameAt(s, q).lines.length; assert.ok(n >= last); last = n; }
+  assert.deepEqual(sceneAt(0.6, 4).index, 2);
+  assert.equal(sceneAt(1, 4).index, 3);
+});

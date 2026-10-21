@@ -205,3 +205,9 @@
   .auth-card { padding: 22px; }
   .home-search .btn { display: none; }
 }
+
+/* Personagem do início: fica ao lado da busca e reage à digitação. */
+.home-hero { position: relative; }
+.home-hero-char { position: absolute; right: clamp(16px, 4vw, 48px); top: 18px; width: 118px; pointer-events: none; }
+.home-hero-char .pixel-sprite { width: 118px; }
+@media (max-width: 1180px) { .home-hero-char { display: none; } }

@@ -29,6 +29,16 @@
   --blob-b: #fbe4ee;
   --ground-shadow: rgba(35, 33, 43, 0.12);
   --ph-bg: #ffe9a8;
+  /* Terminal da landing: sempre escuro, nos dois temas. */
+  --term-bg: #110f17;
+  --term-bar: #1b1824;
+  --term-line: #2c2738;
+  --term-text: #e9e5f2;
+  --term-dim: #8f89a0;
+  --term-accent: #c9b3f5;
+  --term-prompt: #f3a6c8;
+  --term-ok: #8fd9b6;
+  --term-glow: rgba(165, 137, 236, 0.35);
   --ph-text: #3d2a00;
 
   /* Cores auxiliares por área/tipo: suaves, sempre com rótulo textual. */

@@ -1,4 +1,7 @@
 import { memo, useEffect, useRef, useState } from "react";
+import { motion } from "motion/react";
+import { useReduced } from "../../lib/motion-pref.jsx";
+import { cardReveal } from "../../lib/motion-tokens.js";
 import { Link } from "../../lib/router.jsx";
 import { categoryLabel, resourcePath, typeLabel } from "../../lib/resources.js";
 import { useLibrary } from "../../lib/library-context.jsx";
@@ -44,8 +47,9 @@ export function SaveToCollection({ id, title }) {
   </div>;
 }
 
-function ResourceCard({ item, query = "", extra = null }) {
-  return <article className="r-card" data-category={item.category}>
+function ResourceCard({ item, query = "", extra = null, index = 0 }) {
+  const reduced = useReduced();
+  return <motion.article className="r-card" data-category={item.category} {...cardReveal(reduced, index)}>
     <div className="r-card-top"><span className="badge">{categoryLabel[item.category]}</span><span className="badge badge-type">{typeLabel[item.type]}</span>{item.external && item.type !== "skill" && <span className="badge badge-type">Externo</span>}</div>
     <h3><Link to={resourcePath(item.id)}><Highlight text={item.title} query={query}/></Link></h3>
     <p><Highlight text={item.summary || "Sem descrição na fonte."} query={query}/></p>
@@ -53,7 +57,7 @@ function ResourceCard({ item, query = "", extra = null }) {
       <span className="r-card-source">{item.source_name || "Arsenal IA"}</span>
       <span className="r-card-actions">{extra}<FavoriteToggle id={item.id} title={item.title}/><SaveToCollection id={item.id} title={item.title}/></span>
     </div>
-  </article>;
+  </motion.article>;
 }
 
 export default memo(ResourceCard);

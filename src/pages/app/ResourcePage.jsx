@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
-import { motion, useReducedMotion } from "motion/react";
+import { motion } from "motion/react";
+import { useReduced } from "../../lib/motion-pref.jsx";
 import { apiFetch } from "../../lib/auth.jsx";
 import { Link, navigate } from "../../lib/router.jsx";
 import { useLibrary } from "../../lib/library-context.jsx";
@@ -12,7 +13,7 @@ import { CompareToggle } from "./ListPages.jsx";
 
 // Página "Aprender e utilizar": mostra só as seções que têm conteúdo real.
 export default function ResourcePage({ id }) {
-  const reduced = useReducedMotion();
+  const reduced = useReduced();
   const { actions, library, byId } = useLibrary();
   const [state, setState] = useState({ loading: true });
   useEffect(() => {

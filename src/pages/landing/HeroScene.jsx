@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { AnimatePresence, motion, useReducedMotion } from "motion/react";
+import { AnimatePresence, motion } from "motion/react";
+import { useReduced } from "../../lib/motion-pref.jsx";
 import CyberpunkCharacter from "../../components/categories/CyberpunkCharacter.jsx";
+import { useFidgets, useLooks } from "../../components/categories/alive.js";
 import { CATEGORIES, categoryLabel, typeLabel } from "../../lib/resources.js";
 import { motionTokens } from "../../lib/motion-tokens.js";
 
@@ -16,12 +18,16 @@ const placeholders = {
 // com dados de demonstração; os quatro personagens trocam a categoria mostrada.
 // Hover/foco = prévia temporária; clique/toque = fixa a categoria.
 export default function HeroScene({ demo }) {
-  const reduced = useReducedMotion();
+  const reduced = useReduced();
   const [fixed, setFixed] = useState("todas");
   const [preview, setPreview] = useState(null);
   const [acting, setActing] = useState(null);
   const timer = useRef(0);
+  const sceneRef = useRef(null);
   useEffect(() => () => window.clearTimeout(timer.current), []);
+  // Personagens vivos: gestos aleatórios enquanto a cena está na tela e olhar que segue o cursor.
+  const fidgets = useFidgets(CATEGORIES.map((c) => c.id), { enabled: !reduced, rootRef: sceneRef, busy: acting });
+  const [looks, lookRef] = useLooks(!reduced);
   const shown = preview || fixed;
 
   const items = useMemo(() => {
@@ -37,8 +43,8 @@ export default function HeroScene({ demo }) {
   };
   const choose = (id) => { setFixed((current) => (current === id ? "todas" : id)); setPreview(null); act(id); };
 
-  const character = (category, side) => {
-    const active = acting === category.id || preview === category.id;
+  const character = (category, side, order) => {
+    const active = acting === category.id || preview === category.id || fidgets[category.id] === "act";
     const selected = fixed === category.id;
     return <button key={category.id} type="button" className={`hero-char hero-char-${side} ${selected ? "is-selected" : ""}`} data-category={category.id}
       aria-pressed={selected} aria-label={`${category.label}: mostrar recursos de ${category.label.toLowerCase()} na demonstração`}
@@ -47,13 +53,14 @@ export default function HeroScene({ demo }) {
       onFocus={(event) => { if (event.target.matches(":focus-visible")) { setPreview(category.id); setActing(category.id); } }}
       onBlur={() => { setPreview(null); setActing(null); }}
       onClick={() => choose(category.id)}>
-      <span className="hero-char-stage" aria-hidden="true"><span className="hero-char-shadow"/><CyberpunkCharacter category={category.id} active={active}/></span>
+      <span className="hero-char-stage" aria-hidden="true" style={{ "--i": order }} ref={lookRef(category.id)}><span className="hero-char-shadow"/>
+        <CyberpunkCharacter category={category.id} active={active} fidget={fidgets[category.id] === "hop" ? "hop" : null} look={looks[category.id]}/></span>
       <span className="hero-char-label">{category.label}</span>
     </button>;
   };
 
-  return <div className="hero-scene" data-category={shown === "todas" ? undefined : shown}>
-    <div className="hero-chars hero-chars-left">{CATEGORIES.slice(0, 2).map((c) => character(c, "left"))}</div>
+  return <div className="hero-scene" ref={sceneRef} data-category={shown === "todas" ? undefined : shown}>
+    <div className="hero-chars hero-chars-left">{CATEGORIES.slice(0, 2).map((c, i) => character(c, "left", i))}</div>
     <motion.div className="hero-window" initial={reduced ? false : { opacity: 0, y: 24, scale: 0.98 }} animate={{ opacity: 1, y: 0, scale: 1 }} transition={{ duration: 0.7, delay: 0.2, ease: motionTokens.easing.smooth }}>
       <div className="hw-bar" aria-hidden="true"><i/><i/><i/><span>arsenal ia · demonstração</span></div>
       <div className="hw-body">
@@ -79,6 +86,6 @@ export default function HeroScene({ demo }) {
         </div>
       </div>
     </motion.div>
-    <div className="hero-chars hero-chars-right">{CATEGORIES.slice(2).map((c) => character(c, "right"))}</div>
+    <div className="hero-chars hero-chars-right">{CATEGORIES.slice(2).map((c, i) => character(c, "right", i + 2))}</div>
   </div>;
 }

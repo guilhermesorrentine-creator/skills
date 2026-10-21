@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { motion, useReducedMotion } from "motion/react";
+import { motion } from "motion/react";
+import { useReduced } from "../lib/motion-pref.jsx";
 import { authActions, authConfigured, useAuth } from "../lib/auth.jsx";
 import { Link, navigate, safeNext } from "../lib/router.jsx";
 import { purchase } from "../lib/billing-client.js";
@@ -15,7 +16,7 @@ const copy = {
 
 // Login, cadastro, recuperação e redefinição de senha (Supabase Auth).
 export default function AuthPage({ mode, account, onAuthenticated }) {
-  const reduced = useReducedMotion();
+  const reduced = useReduced();
   const { user } = useAuth();
   const params = new URLSearchParams(location.search);
   const next = safeNext(params.get("next"));

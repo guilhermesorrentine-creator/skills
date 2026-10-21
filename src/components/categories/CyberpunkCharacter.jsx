@@ -249,12 +249,19 @@ function toRects(rows, palette, x0, y0, sprite, keyPrefix) {
 }
 
 // Personagem pixel-art em SVG; `shape-rendering` mantém as bordas nítidas em qualquer escala.
-function CyberpunkCharacter({ category, active = false, className = "" }) {
+// Cabeça (linhas 0-11) separada do tronco: respira e acompanha o olhar (`look`, em pixels do sprite).
+// `fidget` dispara um gesto curto ("hop"); a pose de ação vem de `active`.
+const HEAD_ROWS = 12;
+function CyberpunkCharacter({ category, active = false, fidget = null, look = null, className = "" }) {
   const sprite = characters[category];
   if (!sprite) return null;
   const { Extras } = sprite;
-  return <svg className={`pixel-sprite sprite-${category} ${className}`} data-active={active || undefined} viewBox="-5 -2 30 29" shapeRendering="crispEdges" aria-hidden="true" focusable="false">
-    <g className="sprite-body pose-idle">{toRects(sprite.body, sprite.palette, 0, 0, sprite, "b")}</g>
+  const style = look ? { "--lx": look.x, "--ly": look.y } : undefined;
+  return <svg className={`pixel-sprite sprite-${category} ${className}`} data-active={active || undefined} data-fidget={fidget || undefined} style={style} viewBox="-5 -2 30 29" shapeRendering="crispEdges" aria-hidden="true" focusable="false">
+    <g className="sprite-body pose-idle">
+      <g className="sprite-torso">{toRects(sprite.body.slice(HEAD_ROWS), sprite.palette, 0, HEAD_ROWS, sprite, "bt")}</g>
+      <g className="sprite-look"><g className="sprite-head">{toRects(sprite.body.slice(0, HEAD_ROWS), sprite.palette, 0, 0, sprite, "bh")}</g></g>
+    </g>
     {sprite.poses.map((pose, index) => <g key={index} className={`pose-act ${sprite.poses.length > 1 ? `f2-${index}` : ""}`}>{toRects(pose, sprite.palette, 0, 0, sprite, `p${index}`)}</g>)}
     {sprite.layers.map((layer, index) => <g key={index} className={`sprite-layer when-${layer.when || "always"} ${layer.frame || ""} ${layer.className || ""}`}>{toRects(layer.rows, sprite.palette, layer.x, layer.y, sprite, `l${index}`)}</g>)}
     <Extras palette={sprite.palette}/>

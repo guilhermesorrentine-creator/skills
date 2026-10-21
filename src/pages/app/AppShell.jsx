@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { AnimatePresence, motion, useReducedMotion } from "motion/react";
+import { AnimatePresence, motion } from "motion/react";
+import { useReduced } from "../../lib/motion-pref.jsx";
 import { Link, navigate } from "../../lib/router.jsx";
 import { Brand } from "../../components/site/SiteNav.jsx";
 import { authActions } from "../../lib/auth.jsx";
@@ -78,7 +79,7 @@ export default function AppShell({ path, account, children }) {
 
 // Busca global (Ctrl/Cmd + K) sobre o índice autorizado.
 function SearchPalette({ onClose }) {
-  const reduced = useReducedMotion();
+  const reduced = useReduced();
   const { index } = useLibrary();
   const [query, setQuery] = useState("");
   const [active, setActive] = useState(0);

@@ -1,19 +1,29 @@
-import { useMemo, useState } from "react";
-import { motion, useReducedMotion } from "motion/react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { motion } from "motion/react";
+import { useReduced } from "../../lib/motion-pref.jsx";
 import { Link, navigate } from "../../lib/router.jsx";
 import { useLibrary } from "../../lib/library-context.jsx";
 import { resolveFeatured } from "../../lib/featured.js";
 import { categoryLabel, resourcePath, SECTIONS, typeLabel } from "../../lib/resources.js";
 import ResourceCard from "../../components/app/ResourceCard.jsx";
+import CyberpunkCharacter from "../../components/categories/CyberpunkCharacter.jsx";
+import { useFidgets } from "../../components/categories/alive.js";
 import { LoadError } from "./ListPages.jsx";
 
 const goals = ["Quero criar um site", "Automatizar tarefas", "Editar vídeos", "Analisar dados"];
 
 // Início autenticado: busca destacada, continuar de onde parou, coleções, seleção e favoritos.
 export default function AppHome({ account }) {
-  const reduced = useReducedMotion();
+  const reduced = useReduced();
   const { index, byId, me, loading, error } = useLibrary();
   const [query, setQuery] = useState("");
+  // O Hacker acompanha a busca: olha para o campo e digita junto enquanto você escreve.
+  const [typing, setTyping] = useState(false);
+  const typingTimer = useRef(0);
+  const heroRef = useRef(null);
+  useEffect(() => () => window.clearTimeout(typingTimer.current), []);
+  const onType = (value) => { setQuery(value); setTyping(true); window.clearTimeout(typingTimer.current); typingTimer.current = window.setTimeout(() => setTyping(false), 900); };
+  const fidgets = useFidgets(["software"], { enabled: !reduced && !typing, rootRef: heroRef, every: 4200 });
   const featured = useMemo(() => {
     const guides = index.filter((item) => item.type === "guide").slice(0, 2);
     const skills = resolveFeatured(index.filter((item) => item.type === "skill").map((item) => ({ ...item, description: item.summary })), { count: 4 });
@@ -26,12 +36,13 @@ export default function AppHome({ account }) {
 
   if (error) return <LoadError error={error}/>;
   return <div className="page home">
-    <motion.section className="home-hero" initial={reduced ? false : { opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35 }}>
+    <motion.section ref={heroRef} className="home-hero" initial={reduced ? false : { opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35 }}>
+      <span className="home-hero-char" aria-hidden="true"><CyberpunkCharacter category="software" active={typing || fidgets.software === "act"} fidget={fidgets.software === "hop" ? "hop" : null} look={typing ? { x: -1, y: 1 } : null}/></span>
       <p className="muted">Olá{account?.email ? `, ${account.email.split("@")[0]}` : ""}.</p>
       <h1>O que você quer criar hoje?</h1>
       <form className="home-search" onSubmit={(event) => { event.preventDefault(); navigate(`/app/buscar?q=${encodeURIComponent(query)}`); }}>
         <span aria-hidden="true">⌕</span><label className="sr-only" htmlFor="home-q">Buscar</label>
-        <input id="home-q" className="input" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Busque por nome, tecnologia ou objetivo"/>
+        <input id="home-q" className="input" value={query} onChange={(e) => onType(e.target.value)} placeholder="Busque por nome, tecnologia ou objetivo"/>
         <button type="submit" className="btn btn-primary btn-sm">Buscar</button>
       </form>
       <div className="chip-row">{goals.map((goal) => <button key={goal} type="button" className="chip" onClick={() => navigate(`/app/buscar?q=${encodeURIComponent(goal)}`)}>{goal}</button>)}</div>
@@ -47,14 +58,14 @@ export default function AppHome({ account }) {
     </section>
 
     <section className="home-block"><h2>Seleção do Arsenal</h2>
-      {loading ? <p className="muted">Carregando…</p> : <div className="r-grid">{featured.map((item) => <ResourceCard key={item.id} item={item}/>)}</div>}
+      {loading ? <p className="muted">Carregando…</p> : <div className="r-grid">{featured.map((item, i) => <ResourceCard key={item.id} index={i} item={item}/>)}</div>}
     </section>
 
     <section className="home-block"><h2>Explorar por tipo</h2>
       <div className="type-tiles">{SECTIONS.map((s) => <Link key={s.route} to={`/app/${s.route}`} className="type-tile"><b>{s.label}</b><span className="muted small">{counts[s.route] ? `${counts[s.route].toLocaleString("pt-BR")} na sua edição` : "em curadoria"}</span></Link>)}</div>
     </section>
 
-    {favorites.length > 0 && <section className="home-block"><div className="home-block-head"><h2>Favoritos</h2><Link className="link" to="/app/favoritos">Ver todos</Link></div><div className="r-grid">{favorites.map((item) => <ResourceCard key={item.id} item={item}/>)}</div></section>}
-    {recent.length > 0 && <section className="home-block"><div className="home-block-head"><h2>Vistos recentemente</h2><Link className="link" to="/app/recentes">Histórico</Link></div><div className="r-grid">{recent.map((item) => <ResourceCard key={item.id} item={item}/>)}</div></section>}
+    {favorites.length > 0 && <section className="home-block"><div className="home-block-head"><h2>Favoritos</h2><Link className="link" to="/app/favoritos">Ver todos</Link></div><div className="r-grid">{favorites.map((item, i) => <ResourceCard key={item.id} index={i} item={item}/>)}</div></section>}
+    {recent.length > 0 && <section className="home-block"><div className="home-block-head"><h2>Vistos recentemente</h2><Link className="link" to="/app/recentes">Histórico</Link></div><div className="r-grid">{recent.map((item, i) => <ResourceCard key={item.id} index={i} item={item}/>)}</div></section>}
   </div>;
 }

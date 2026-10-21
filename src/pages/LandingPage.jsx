@@ -1,10 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { motion, useReducedMotion, useScroll, useTransform } from "motion/react";
+import { motion, useScroll, useTransform } from "motion/react";
+import { useReduced } from "../lib/motion-pref.jsx";
 import SiteNav from "../components/site/SiteNav.jsx";
 import SiteFooter from "../components/site/SiteFooter.jsx";
 import HeroScene from "./landing/HeroScene.jsx";
+import TerminalScene from "./landing/TerminalScene.jsx";
+import { useFidgets } from "../components/categories/alive.js";
 import CyberpunkCharacter from "../components/categories/CyberpunkCharacter.jsx";
-import { motionTokens, reveal } from "../lib/motion-tokens.js";
+import { cardReveal, motionTokens, reveal } from "../lib/motion-tokens.js";
 import { CATEGORIES, categoryLabel, TYPES } from "../lib/resources.js";
 import { buildResourceIndex, searchResources } from "../lib/search.js";
 import { formatPrice, purchase } from "../lib/billing-client.js";
@@ -39,13 +42,18 @@ const faq = [
 ];
 
 export default function LandingPage({ account, signedIn, onEnter }) {
-  const reduced = useReducedMotion();
+  const reduced = useReduced();
   const [demo, setDemo] = useState(null);
   const [stats, setStats] = useState(null);
   const [editions, setEditions] = useState(null);
   const [buyError, setBuyError] = useState("");
   const [busy, setBusy] = useState(false);
   const heroRef = useRef(null);
+  const areasRef = useRef(null);
+  const offerRef = useRef(null);
+  const ids = CATEGORIES.map((c) => c.id);
+  const areaFidgets = useFidgets(ids, { enabled: !reduced, rootRef: areasRef, every: 3000 });
+  const offerFidgets = useFidgets(ids, { enabled: !reduced, rootRef: offerRef, every: 2400 });
   const { scrollYProgress } = useScroll({ target: heroRef, offset: ["start start", "end start"] });
   const blobY = useTransform(scrollYProgress, [0, 1], [0, 140]);
   const blobY2 = useTransform(scrollYProgress, [0, 1], [0, -90]);
@@ -91,6 +99,10 @@ export default function LandingPage({ account, signedIn, onEnter }) {
         <div className="wrap"><HeroScene demo={demo}/></div>
       </section>
 
+      <Section id="funcionando" eyebrow="Veja funcionando" title="Um comando. O agente trabalha." lead="Cada personagem mostra uma skill do acervo em ação, com o comando que está no guia.">
+        <TerminalScene/>
+      </Section>
+
       <Section id="recursos" eyebrow="Benefícios" title="Menos tempo procurando, mais tempo criando.">
         <div className="l-benefits">
           {benefits.map((item, index) => <Reveal key={item.title} index={index} className="l-benefit">
@@ -116,8 +128,8 @@ export default function LandingPage({ account, signedIn, onEnter }) {
             </Reveal>;
           })}
         </div>
-        <div className="l-areas">
-          {CATEGORIES.map((category, index) => <AreaTile key={category.id} category={category} count={demo?.stats.byArea[category.id]} index={index}/>)}
+        <div className="l-areas" ref={areasRef}>
+          {CATEGORIES.map((category, index) => <AreaTile key={category.id} category={category} count={demo?.stats.byArea[category.id]} index={index} fidget={areaFidgets[category.id]}/>)}
         </div>
       </Section>
 
@@ -131,7 +143,8 @@ export default function LandingPage({ account, signedIn, onEnter }) {
       </Section>
 
       <Section id="acesso" eyebrow="Acesso vitalício" title="Pague uma vez. Use sem mensalidade.">
-        <motion.div className="l-offer" initial={reduced ? false : { opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.3 }} transition={{ duration: 0.6, ease: motionTokens.easing.smooth }}>
+        <motion.div className="l-offer" initial={reduced ? false : { opacity: 0, y: 60, scale: 1.06, filter: "blur(10px)" }} whileInView={{ opacity: 1, y: 0, scale: 1, filter: "blur(0px)" }} viewport={{ once: true, amount: 0.3 }}
+          transition={{ default: { duration: 0.75, ease: motionTokens.easing.snapSettle }, opacity: { duration: 0.2 } }}>
           <div className="l-offer-main">
             <p className="eyebrow">{edition ? edition.name : "Arsenal IA — Edição 1"}</p>
             {edition ? <p className="l-price"><b>{formatPrice(edition.priceCents)}</b><span>pagamento único</span></p> : <p className="l-price-soon">{editions == null ? "Carregando…" : "Vendas em preparação. A compra será aberta em breve."}</p>}
@@ -145,17 +158,17 @@ export default function LandingPage({ account, signedIn, onEnter }) {
             <button type="button" className="btn btn-primary" onClick={buy} disabled={busy || (!edition && !owned)}>{owned ? "Entrar no Arsenal" : busy ? "Abrindo pagamento…" : "Garantir acesso"}</button>
             {buyError && <p className="form-error" role="alert">{buyError}</p>}
           </div>
-          <div className="l-offer-art" aria-hidden="true">{CATEGORIES.map((c) => <CyberpunkCharacter key={c.id} category={c.id}/>)}</div>
+          <div className="l-offer-art" aria-hidden="true" ref={offerRef}>{CATEGORIES.map((c) => <CyberpunkCharacter key={c.id} category={c.id} active={offerFidgets[c.id] === "act"} fidget={offerFidgets[c.id] === "hop" ? "hop" : null}/>)}</div>
         </motion.div>
       </Section>
 
       <Section id="faq" eyebrow="Perguntas frequentes" title="Antes de garantir o seu acesso.">
         <div className="l-faq">
-          {faq.map((item) => <details key={item.q} className="l-faq-item">
+          {faq.map((item, index) => <motion.details key={item.q} className="l-faq-item" {...cardReveal(reduced, index, 0.6)}>
             <summary>{item.q}</summary>
             <p>{item.a}</p>
             {item.pending && <p className="pending-note">Política pendente de aprovação do proprietário antes da publicação.</p>}
-          </details>)}
+          </motion.details>)}
         </div>
       </Section>
 
@@ -180,10 +193,11 @@ const typeText = {
 };
 
 function Section({ id, eyebrow, title, lead, children }) {
-  const reduced = useReducedMotion();
+  const reduced = useReduced();
   return <section className="l-section" id={id} aria-labelledby={`${id}-title`}>
     <div className="wrap">
-      <motion.div className="l-head" initial={reduced ? false : { opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.6 }} transition={{ duration: motionTokens.duration.normal, ease: motionTokens.easing.smooth }}>
+      <motion.div className="l-head" initial={reduced ? false : { opacity: 0, y: 34, filter: "blur(8px)" }} whileInView={{ opacity: 1, y: 0, filter: "blur(0px)" }} viewport={{ once: true, amount: 0.6 }}
+        transition={{ default: { duration: 0.6, ease: motionTokens.easing.softLand }, opacity: { duration: 0.2 }, filter: { duration: 0.3 } }}>
         <p className="eyebrow">{eyebrow}</p>
         <h2 id={`${id}-title`}>{title}</h2>
         {lead && <p className="l-lead-sm">{lead}</p>}
@@ -194,19 +208,18 @@ function Section({ id, eyebrow, title, lead, children }) {
 }
 
 function Reveal({ as = "div", index = 0, className, children }) {
-  const reduced = useReducedMotion();
+  const reduced = useReduced();
   const Tag = motion[as];
-  return <Tag className={className} initial={reduced ? false : { opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.3 }}
-    transition={{ duration: motionTokens.duration.normal, delay: (index % 4) * 0.07, ease: motionTokens.easing.smooth }}>{children}</Tag>;
+  return <Tag className={className} {...cardReveal(reduced, index)}>{children}</Tag>;
 }
 
-function AreaTile({ category, count, index }) {
+function AreaTile({ category, count, index, fidget }) {
   const [active, setActive] = useState(false);
   return <Reveal index={index} className="l-area">
     <button type="button" className="l-area-btn" data-category={category.id} aria-label={`${category.label}: ${count ?? "…"} skills. Ver animação`}
       onPointerEnter={() => setActive(true)} onPointerLeave={() => setActive(false)} onFocus={() => setActive(true)} onBlur={() => setActive(false)}
       onClick={() => setActive((value) => !value)}>
-      <span className="l-area-art" aria-hidden="true"><CyberpunkCharacter category={category.id} active={active}/></span>
+      <span className="l-area-art" aria-hidden="true"><CyberpunkCharacter category={category.id} active={active || fidget === "act"} fidget={fidget === "hop" ? "hop" : null}/></span>
       <span className="l-area-name">{category.label}</span>
       <span className="tag-mono">{count == null ? "…" : `${count.toLocaleString("pt-BR")} skills`}</span>
     </button>
@@ -214,7 +227,7 @@ function AreaTile({ category, count, index }) {
 }
 
 function DemoSearch({ demo }) {
-  const reduced = useReducedMotion();
+  const reduced = useReduced();
   const [query, setQuery] = useState("Quero criar um site");
   const records = useMemo(() => buildResourceIndex((demo?.skills || []).map((s) => ({ id: s.id, type: "skill", category: s.category, title: s.name, summary: s.description, source_name: s.repoName }))), [demo]);
   const results = useMemo(() => searchResources(records, query).slice(0, 6), [records, query]);

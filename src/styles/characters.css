@@ -2,13 +2,26 @@
    A ação só roda no cartão ativo (hover, foco ou toque), nunca nos quatro ao mesmo tempo. */
 .pixel-sprite { position: relative; width: 132px; height: auto; image-rendering: pixelated; filter: drop-shadow(0 8px 0 rgba(4, 1, 10, 0.35)); overflow: visible; }
 .pixel-sprite rect { transform-box: fill-box; }
-.pose-idle { animation: sprite-idle 3.2s steps(2, end) infinite; }
-.px-blink { animation: px-blink 2.8s steps(1, end) infinite; }
+/* Vida em repouso: a cabeça respira 1 pixel, olha na direção do cursor e as piscadas têm ritmo
+   próprio por personagem (nunca os quatro em sincronia). */
+.pixel-sprite { --lx: 0; --ly: 0; transform-origin: 50% 100%; }
+.sprite-look { transform: translate(calc(var(--lx) * 1px), calc(var(--ly) * 1px)); transition: transform 0.14s steps(1, end); }
+.sprite-head { animation: px-breath 2.6s steps(1, end) infinite; }
+.px-blink { animation: px-blink 4.4s steps(1, end) infinite; }
+.sprite-empreendedorismo .sprite-head { animation-duration: 3.1s; animation-delay: -0.7s; }
+.sprite-conteudo .sprite-head { animation-duration: 2.3s; animation-delay: -1.2s; }
+.sprite-ciencia .sprite-head { animation-duration: 2.9s; animation-delay: -0.4s; }
+.sprite-empreendedorismo .px-blink { animation-duration: 5.3s; animation-delay: -2s; }
+.sprite-conteudo .px-blink { animation-duration: 3.8s; animation-delay: -1s; }
+.sprite-ciencia .px-blink { animation-duration: 4.9s; animation-delay: -3.1s; }
+
+/* Gesto curto: agacha, pula, pousa com amortecimento (quadros discretos, como pixel art). */
+.pixel-sprite[data-fidget="hop"] { animation: px-hop 0.86s steps(10, end) both; }
 .pose-act, .when-active, .sprite-extra { opacity: 0; }
 .sprite-extra { transition: opacity var(--dur-normal) var(--ease-smooth); }
 .when-idle { transition: opacity var(--dur-fast); }
 
-.pixel-sprite[data-active] .pose-idle, .pixel-sprite[data-active] .when-idle { opacity: 0; animation: none; }
+.pixel-sprite[data-active] .pose-idle, .pixel-sprite[data-active] .when-idle { opacity: 0; }
 .pixel-sprite[data-active] .pose-act, .pixel-sprite[data-active] .when-active, .pixel-sprite[data-active] .sprite-extra { opacity: 1; }
 .pixel-sprite[data-active] .f2-0 { animation: frame-2a 0.36s steps(1, end) infinite; }
 .pixel-sprite[data-active] .f2-1 { animation: frame-2b 0.36s steps(1, end) infinite; }
@@ -50,8 +63,17 @@
 [data-active] .spark.s3 { animation-delay: 0.8s; }
 [data-active] .spark.s4 { animation-delay: 1.2s; }
 
-@keyframes sprite-idle { 50% { transform: translateY(-1px); } }
-@keyframes px-blink { 0%, 86% { opacity: 1; } 88%, 94% { opacity: 0.15; } }
+@keyframes px-breath { 0%, 55% { transform: translateY(0); } 56%, 100% { transform: translateY(1px); } }
+@keyframes px-blink { 0%, 83% { opacity: 1; } 84%, 86% { opacity: 0.1; } 87%, 92% { opacity: 1; } 93%, 95% { opacity: 0.1; } 96%, 100% { opacity: 1; } }
+@keyframes px-hop {
+  0% { transform: translateY(0) scale(1, 1); }
+  14% { transform: translateY(0) scale(1.08, 0.88); }
+  38% { transform: translateY(-16%) scale(0.94, 1.08); }
+  58% { transform: translateY(-19%) scale(1, 1); }
+  78% { transform: translateY(0) scale(1.1, 0.86); }
+  90% { transform: translateY(0) scale(0.97, 1.03); }
+  100% { transform: translateY(0) scale(1, 1); }
+}
 @keyframes px-glow { 50% { opacity: 0.25; } }
 @keyframes frame-2a { 0% { opacity: 1; } 50% { opacity: 0; } }
 @keyframes frame-2b { 0% { opacity: 0; } 50% { opacity: 1; } }
@@ -64,9 +86,10 @@
 @keyframes lens-focus { 0% { transform: scale(1.6); opacity: 0.3; } 100% { transform: scale(1); opacity: 1; } }
 @keyframes spark-drift { 0% { transform: translate(0, 1px); opacity: 0; } 50% { opacity: 1; } 100% { transform: translate(0, -3px); opacity: 0; } }
 
-/* Movimento reduzido: pose de ação e objetos aparecem parados no estado final. */
+/* Movimento reduzido (sistema ou escolha no site): pose de ação e objetos aparecem parados. */
 @media (prefers-reduced-motion: reduce) {
-  .pixel-sprite *, .pixel-sprite { animation: none !important; transition: none !important; }
-  .pixel-sprite[data-active] .f2-1, .pixel-sprite[data-active] .f3-1, .pixel-sprite[data-active] .f3-2 { opacity: 0; }
-  .pixel-sprite[data-active] .spark { opacity: 1; }
+  :root:not([data-motion="full"]) .pixel-sprite, :root:not([data-motion="full"]) .pixel-sprite * { animation: none !important; transition: none !important; }
 }
+:root[data-motion="reduced"] .pixel-sprite, :root[data-motion="reduced"] .pixel-sprite * { animation: none !important; transition: none !important; }
+:root[data-motion="reduced"] .pixel-sprite[data-active] .f2-1, :root[data-motion="reduced"] .pixel-sprite[data-active] .f3-1, :root[data-motion="reduced"] .pixel-sprite[data-active] .f3-2 { opacity: 0; }
+:root[data-motion="reduced"] .pixel-sprite[data-active] .spark { opacity: 1; }

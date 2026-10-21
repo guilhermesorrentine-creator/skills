@@ -90,7 +90,7 @@ export function ResourceListPage({ section }) {
     {compare.length > 0 && <div className="compare-bar" role="status"><span>{compare.length}/3 skills na comparação</span><button type="button" className="btn btn-primary btn-sm" onClick={() => navigate("/app/comparar")}>Comparar</button></div>}
     <GoalPaths paths={paths}/>
     {!loading && !results.length && <div className="empty"><h3>Nada por aqui ainda.</h3><p>{state.q ? "Tente termos mais curtos, em inglês, ou remova os filtros." : `Ainda não há ${title.toLowerCase()} publicados nesta edição.`}</p>{(state.q || state.area !== "todas" || state.fonte !== "todas") && <button type="button" className="btn btn-secondary btn-sm" onClick={() => update({ q: "", area: "todas", fonte: "todas" })}>Limpar busca e filtros</button>}</div>}
-    <div className="r-grid">{results.slice(0, limit).map((item) => <ResourceCard key={item.id} item={item} query={state.q} extra={<CompareToggle item={item}/>}/>)}</div>
+    <div className="r-grid">{results.slice(0, limit).map((item, i) => <ResourceCard key={item.id} index={i} item={item} query={state.q} extra={<CompareToggle item={item}/>}/>)}</div>
     {results.length > limit && <div className="load-more"><span className="muted small">Mostrando {limit} de {results.length.toLocaleString("pt-BR")}</span><button type="button" className="btn btn-secondary" onClick={() => setLimit((n) => n + PAGE)}>Carregar mais</button></div>}
   </div>;
 }
@@ -104,7 +104,7 @@ export function FavoritesPage() {
   const items = me.favorites.map((id) => byId.get(id)).filter(Boolean);
   return <div className="page"><header className="page-head"><h1>Favoritos</h1><p className="muted">{loading ? "Carregando…" : `${items.length} favorito(s), salvos na sua conta.`}</p></header>
     {!loading && !items.length && <div className="empty"><h3>Nenhum favorito ainda.</h3><p>Use a estrela nos cards ou na página do recurso para salvar.</p><Link className="btn btn-secondary btn-sm" to="/app/skills">Explorar skills</Link></div>}
-    <div className="r-grid">{items.map((item) => <ResourceCard key={item.id} item={item}/>)}</div>
+    <div className="r-grid">{items.map((item, i) => <ResourceCard key={item.id} index={i} item={item}/>)}</div>
   </div>;
 }
 
@@ -113,7 +113,7 @@ export function RecentPage() {
   const items = me.recent.map((row) => byId.get(row.id)).filter(Boolean);
   return <div className="page"><header className="page-head page-head-row"><div><h1>Recentes</h1><p className="muted">Os últimos 30 recursos abertos.</p></div>{items.length > 0 && <button type="button" className="btn btn-secondary btn-sm" onClick={() => actions.clearRecent().catch(() => {})}>Limpar histórico</button>}</header>
     {!loading && !items.length && <div className="empty"><h3>Seu histórico está vazio.</h3><p>Os recursos que você abrir aparecem aqui.</p></div>}
-    <div className="r-grid">{items.map((item) => <ResourceCard key={item.id} item={item}/>)}</div>
+    <div className="r-grid">{items.map((item, i) => <ResourceCard key={item.id} index={i} item={item}/>)}</div>
   </div>;
 }
 
