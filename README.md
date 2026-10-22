@@ -45,6 +45,10 @@ Backend em `server/`, publicado por uma única Vercel Function (`api/index.js` +
 
 Sem Supabase, é possível ver o sistema localmente com `BT_DEV_BYPASS=1` em `.env.development.local` (ignorado na Vercel e em produção).
 
+## Idiomas
+
+Português, inglês e espanhol, pelo idioma do navegador ou pelo seletor do rodapé. Ver `docs/i18n.md`.
+
 ## Fontes e direção visual
 
 - O escopo, áreas e critérios estão em [`docs/escopo-do-site.md`](docs/escopo-do-site.md).

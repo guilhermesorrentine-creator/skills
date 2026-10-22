@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { MotionConfig } from "motion/react";
 import { resolveReduced } from "./motion-pref-core.js";
+import { useT } from "../i18n/index.js";
 
 export { resolveReduced };
 
@@ -42,9 +43,10 @@ export const useReduced = () => useContext(MotionContext).reduced;
 // Aviso discreto quando o sistema pede menos movimento: a pessoa pode ver as animações mesmo assim.
 export function MotionToggle({ className = "" }) {
   const { reduced, systemReduced, choice, setChoice } = useMotionPreference();
+  const { t } = useT();
   if (!systemReduced && choice === "system") return null;
-  return <div className={`motion-toggle ${className}`} role="group" aria-label="Animações">
-    <span>{reduced ? "Animações reduzidas" : "Animações ligadas"}</span>
-    <button type="button" className="link" onClick={() => setChoice(reduced ? "full" : systemReduced ? "system" : "reduced")}>{reduced ? "Ver animações" : "Reduzir"}</button>
+  return <div className={`motion-toggle ${className}`} role="group" aria-label={t("motion.group")}>
+    <span>{reduced ? t("motion.reduced") : t("motion.on")}</span>
+    <button type="button" className="link" onClick={() => setChoice(reduced ? "full" : systemReduced ? "system" : "reduced")}>{reduced ? t("motion.show") : t("motion.reduce")}</button>
   </div>;
 }
