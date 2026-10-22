@@ -23,6 +23,8 @@ export function createAsaasClient({ baseUrl, apiKey, fetchImpl = fetch }) {
     createCustomer: (body) => call("POST", "/customers", body),
     createPayment: (body) => call("POST", "/payments", body),
     pixQrCode: (paymentId) => call("GET", `/payments/${encodeURIComponent(paymentId)}/pixQrCode`),
+    // Estorno integral (garantia). Exige saldo na conta Asaas; sem saldo, o Asaas recusa.
+    refundPayment: (paymentId, body) => call("POST", `/payments/${encodeURIComponent(paymentId)}/refund`, body),
   };
 }
 

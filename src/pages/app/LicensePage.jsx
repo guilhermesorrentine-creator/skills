@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { formatPrice, purchase } from "../../lib/billing-client.js";
+import { apiFetch } from "../../lib/auth.jsx";
 
 const when = (value) => (value ? new Date(value).toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" }) : "—");
 const kinds = { activated: "Licença ativada", upgraded: "Upgrade", refunded: "Estorno", disputed: "Contestação de pagamento", reconciled: "Confirmada por conciliação", admin_active: "Restaurada pela administração", admin_revoked: "Revogada pela administração", upgrade_without_charge: "Upgrade sem cobrança" };
@@ -9,11 +10,24 @@ const orderStatus = { pending: "Aguardando pagamento", paid: "Pago", canceled: "
 export default function LicensePage({ account }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const [asking, setAsking] = useState(false);
+  const [reason, setReason] = useState("");
+  const [refundMsg, setRefundMsg] = useState("");
   if (!account) return <div className="page"><p className="muted">Carregando…</p></div>;
   const paid = account.orders.filter((order) => order.status === "paid");
   const upgrade = async () => {
     setBusy(true); setError("");
     try { await purchase(account.upgrade.edition.code, { signedIn: true }); } catch (e) { setError(e.message); setBusy(false); }
+  };
+  const refund = async () => {
+    setBusy(true); setError("");
+    try {
+      const data = await apiFetch("/api/account/refund", { method: "POST", body: { reason } });
+      if (data.refunded) { setRefundMsg("Reembolso feito. O valor volta pelo mesmo meio de pagamento (Pix na hora; cartão na próxima fatura)."); window.setTimeout(() => window.location.assign("/"), 4000); }
+      else setRefundMsg("Pedido de reembolso registrado. O estorno será concluído em até 2 dias úteis.");
+      setAsking(false);
+    } catch (e) { setError(e.message); }
+    finally { setBusy(false); }
   };
   return <div className="page">
     <header className="page-head"><h1>Minha licença</h1></header>
@@ -45,6 +59,19 @@ export default function LicensePage({ account }) {
       {account.orders.length === 0 ? <p className="muted">Nenhum pedido.</p> : <div className="table-wrap"><table className="table"><thead><tr><th scope="col">Data</th><th scope="col">Edição</th><th scope="col">Tipo</th><th scope="col">Valor</th><th scope="col">Situação</th></tr></thead>
         <tbody>{account.orders.map((order) => <tr key={order.id}><td>{when(order.createdAt)}</td><td>{order.edition?.name}</td><td>{order.kind === "upgrade" ? `Upgrade (crédito ${formatPrice(order.creditCents)})` : "Compra"}</td><td>{formatPrice(order.amountCents)}</td><td>{orderStatus[order.status] || order.status}</td></tr>)}</tbody></table></div>}
     </section>
+    {account.refund && <section className="panel"><h2>Garantia de 15 dias</h2>
+      {refundMsg ? <p className="form-ok" role="status">{refundMsg}</p>
+        : account.refund.requested ? <p>Seu pedido de reembolso foi registrado e está sendo processado.</p>
+        : !asking ? <><p>Até {when(account.refund.until)} você pode pedir o reembolso integral de {formatPrice(account.refund.amountCents)}, sem burocracia.</p>
+          <button type="button" className="btn btn-ghost" onClick={() => setAsking(true)}>Pedir reembolso</button></>
+        : <div className="stack">
+          <label htmlFor="refund-reason">O que faltou para você? <span className="muted small">(opcional, nos ajuda a melhorar)</span></label>
+          <textarea id="refund-reason" className="input" rows={3} maxLength={300} value={reason} onChange={(e) => setReason(e.target.value)}/>
+          <p className="small muted">O valor é devolvido pelo mesmo meio de pagamento e o acesso à Voxelia é encerrado.</p>
+          <div className="row"><button type="button" className="btn btn-primary" onClick={refund} disabled={busy}>{busy ? "Processando…" : "Confirmar reembolso"}</button><button type="button" className="link" onClick={() => setAsking(false)}>Voltar</button></div>
+        </div>}
+      {error && <p className="form-error" role="alert">{error}</p>}
+    </section>}
     {account.history.length > 0 && <section className="panel"><h2>Histórico da licença</h2><ul className="timeline">{account.history.map((event, i) => <li key={i}><b>{kinds[event.kind] || event.kind}</b>{event.to && <> · {event.to}</>}<span className="muted small"> · {when(event.createdAt)}</span></li>)}</ul></section>}
   </div>;
 }

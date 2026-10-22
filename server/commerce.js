@@ -5,6 +5,8 @@ import { checkoutUrl } from "./asaas.js";
 const httpError = (status, code, message) => Object.assign(new Error(message), { status, code });
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const DAY = 86400000;
+const GUARANTEE_DAYS = 15;
+const REFUND_REQUESTED = "Reembolso pedido";
 const PAID_PAYMENT = new Set(["PAYMENT_CONFIRMED", "PAYMENT_RECEIVED"]);
 const DISPUTE = new Set(["PAYMENT_CHARGEBACK_REQUESTED", "PAYMENT_CHARGEBACK_DISPUTE", "PAYMENT_AWAITING_CHARGEBACK_REVERSAL"]);
 
@@ -42,7 +44,63 @@ export function createCommerce({ store, asaas, config, onboarding = null, conver
       latestEdition: latest ? publicEdition(latest) : null,
       upgrade: upgrade && !upgrade.error ? { edition: publicEdition(latest), ...upgrade } : null,
       pendingOrder: open?.checkout_url ? { url: open.checkout_url, expiresAt: open.expires_at } : null,
+      refund: refundState(orders),
     };
+  }
+
+  // Garantia: o último pedido pago pode ser reembolsado até 15 dias depois do pagamento.
+  function refundable(orders) {
+    const order = orders.find((item) => item.status === "paid" && !item.refunded_at && item.amount_cents > 0);
+    if (!order?.paid_at) return null;
+    const until = new Date(new Date(order.paid_at).getTime() + GUARANTEE_DAYS * DAY);
+    return until > now() ? { order, until } : null;
+  }
+  function refundState(orders) {
+    const found = refundable(orders);
+    if (!found) return null;
+    return { orderId: found.order.id, until: found.until.toISOString(), amountCents: found.order.amount_cents, requested: String(found.order.error || "").startsWith(REFUND_REQUESTED) };
+  }
+
+  // Cobrança do Asaas que pagou o pedido: a registrada para ele ou, se faltar, a do cliente com o mesmo valor.
+  async function paidPaymentId(order) {
+    const local = await store.findPaymentByOrder(order.id);
+    if (local?.asaas_payment_id) return local.asaas_payment_id;
+    const customer = order.asaas_customer_id || (await store.getProfile(order.user_id))?.asaas_customer_id;
+    if (!customer) return null;
+    const remote = await asaas.listCustomerPayments(customer);
+    return (remote?.data || []).find((payment) => ["RECEIVED", "CONFIRMED"].includes(payment.status) && Math.round(Number(payment.value) * 100) === order.amount_cents && (!payment.externalReference || payment.externalReference === order.id))?.id || null;
+  }
+
+  // Estorna no Asaas, marca o pedido e recalcula a licença (sem pedido pago válido, o acesso termina).
+  async function refundOrder(order, reason, actorId) {
+    const paymentId = await paidPaymentId(order);
+    if (!paymentId) throw httpError(404, "payment_not_found", "Cobrança do pedido não encontrada no Asaas.");
+    await asaas.refundPayment(paymentId, { description: `Garantia Voxelia${reason ? `: ${reason}` : ""}`.slice(0, 500) });
+    await store.updateOrder(order.id, { status: "refunded", refunded_at: now().toISOString(), error: null });
+    await recomputeLicense(order.user_id, "refunded");
+    await store.insertAudit({ actor_id: actorId, action: "refund", target_user_id: order.user_id, details: { order_id: order.id, payment: paymentId, reason } });
+    return { refunded: true };
+  }
+
+  // Pedido de reembolso do cliente, dentro da garantia: estorno automático. Se o Asaas recusar
+  // (por exemplo, sem saldo), o pedido fica marcado para a administração estornar pelo painel.
+  async function requestRefund(user, reason) {
+    const found = refundable(await store.listOrders(user.id));
+    if (!found) throw httpError(422, "refund_unavailable", `O prazo de ${GUARANTEE_DAYS} dias da garantia terminou ou não há pagamento para reembolsar.`);
+    const why = String(reason || "").trim().slice(0, 300);
+    try {
+      return await refundOrder(found.order, why, user.id);
+    } catch (error) {
+      await store.updateOrder(found.order.id, { error: `${REFUND_REQUESTED} em ${now().toISOString().slice(0, 10)}${why ? `: ${why}` : ""} | ${String(error.message).slice(0, 200)}` });
+      await store.insertAudit({ actor_id: user.id, action: "refund_requested", target_user_id: user.id, details: { order_id: found.order.id, reason: why, error: String(error.message).slice(0, 200) } });
+      return { refunded: false, requested: true };
+    }
+  }
+
+  async function adminRefund(orderId, actorId) {
+    const order = await store.getOrder(String(orderId || ""));
+    if (!order || order.status !== "paid") throw httpError(404, "not_found", "Pedido pago não encontrado.");
+    return refundOrder(order, "pela administração", actorId);
   }
 
   // Chave do retorno da compra sem cadastro: só quem iniciou o pagamento a recebe (vai na URL de sucesso).
@@ -351,7 +409,7 @@ export function createCommerce({ store, asaas, config, onboarding = null, conver
     return { status };
   }
 
-  return { userEntitlement, accountState, startCheckout, guestCheckout, claimAccess, receiveWebhook, processEvent, reconcileOrder, setLicenseStatus, verifyWebhookToken };
+  return { userEntitlement, accountState, startCheckout, guestCheckout, claimAccess, requestRefund, adminRefund, receiveWebhook, processEvent, reconcileOrder, setLicenseStatus, verifyWebhookToken };
 }
 
 export function publicEdition(edition) {

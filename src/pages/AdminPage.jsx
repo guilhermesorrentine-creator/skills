@@ -44,8 +44,9 @@ export default function AdminPage() {
           {tab === "caminhos" && <PathsTab data={data} act={act}/>}
           {tab === "relacoes" && <RelationsTab data={data} act={act}/>}
           {tab === "edicoes" && <EditionsTab data={data} act={act}/>}
-          {tab === "pedidos" && <Table head={["Data", "Usuário", "Edição", "Tipo", "Valor", "Situação", ""]} rows={data.orders.map((o) => [when(o.created_at), emailOf(o.user_id), editionName(o.edition_id), o.kind, formatPrice(o.amount_cents), o.status,
-            o.status === "pending" ? <button key="r" type="button" className="link" onClick={() => act("/api/admin/orders/reconcile", { orderId: o.id }, "Conciliação executada.")}>Conciliar</button> : "—"])}/>}
+          {tab === "pedidos" && <Table head={["Data", "Usuário", "Edição", "Tipo", "Valor", "Situação", ""]} rows={data.orders.map((o) => [when(o.created_at), emailOf(o.user_id), editionName(o.edition_id), o.kind, formatPrice(o.amount_cents), o.error ? `${o.status} · ${o.error}` : o.status,
+            o.status === "pending" ? <button key="r" type="button" className="link" onClick={() => act("/api/admin/orders/reconcile", { orderId: o.id }, "Conciliação executada.")}>Conciliar</button>
+              : o.status === "paid" ? <button key="e" type="button" className="link" onClick={() => window.confirm(`Estornar ${formatPrice(o.amount_cents)} de ${emailOf(o.user_id)}? O acesso é encerrado.`) && act("/api/admin/orders/refund", { orderId: o.id }, "Estorno feito.")}>Estornar</button> : "—"])}/>}
           {tab === "licencas" && <LicensesTab data={data} act={act} emailOf={emailOf} editionName={editionName}/>}
           {tab === "eventos" && <Table head={["Recebido", "Evento", "Status", "Nota", ""]} rows={data.events.map((e) => [when(e.received_at), e.event, e.status, e.note || "—",
             e.status !== "processed" ? <button key="p" type="button" className="link" onClick={() => act("/api/admin/events/reprocess", { id: e.id }, "Evento reprocessado.")}>Reprocessar</button> : "—"])}/>}

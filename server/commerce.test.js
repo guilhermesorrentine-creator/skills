@@ -288,6 +288,32 @@ test("compra direta: nome e CPF geram o QR do Pix na página e o retorno confirm
   assert.ok(ctx.store.db.licenses.some((l) => l.status === "active"));
 });
 
+test("garantia: reembolso automático encerra o acesso; recusa do Asaas vira pedido para o admin", async () => {
+  const ctx = setup();
+  await ctx.pay("tok-u1");
+  const order = ctx.store.db.orders.at(-1);
+  const refunds = [];
+  Object.assign(ctx.asaas, {
+    listCustomerPayments: async () => ({ data: [{ id: "pay_c", status: "RECEIVED", value: 97.9 }] }),
+    refundPayment: async (id, body) => { if (refunds.fail) throw Object.assign(new Error("Saldo insuficiente"), { status: 502 }); refunds.push(id); return {}; },
+  });
+  assert.equal((await ctx.call("GET", "/api/account", { token: "tok-u1" })).data.refund.orderId, order.id);
+
+  refunds.fail = true;
+  const pending = await ctx.call("POST", "/api/account/refund", { token: "tok-u1", body: { reason: "não usei" } });
+  assert.deepEqual(pending.data, { refunded: false, requested: true });
+  assert.equal((await ctx.call("GET", "/api/account", { token: "tok-u1" })).data.refund.requested, true);
+  assert.equal((await ctx.call("GET", "/api/account", { token: "tok-u1" })).data.access, true, "acesso segue até o estorno sair");
+
+  refunds.fail = false;
+  assert.equal((await ctx.call("POST", "/api/admin/orders/refund", { token: "tok-adm", body: { orderId: order.id } })).data.refunded, true);
+  assert.deepEqual([...refunds], ["pay_c"]);
+  const after = (await ctx.call("GET", "/api/account", { token: "tok-u1" })).data;
+  assert.equal(after.access, false);
+  assert.equal(after.refund, null);
+  assert.equal((await ctx.call("POST", "/api/account/refund", { token: "tok-u1", body: {} })).status, 422);
+});
+
 test("compra sem cadastro recusa e-mail de conta já usada", async () => {
   const ctx = setup();
   ctx.store.db.profiles.find((item) => item.id === "u1").last_sign_in_at = "2026-10-01T00:00:00Z";
