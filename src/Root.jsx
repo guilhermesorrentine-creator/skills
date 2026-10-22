@@ -10,6 +10,7 @@ const AppRoutes = lazy(() => import("./pages/app/AppRoutes.jsx"));
 const AdminPage = lazy(() => import("./pages/AdminPage.jsx"));
 const RepoPage = lazy(() => import("./pages/RepoPage.jsx"));
 const BuyPage = lazy(() => import("./pages/BuyPage.jsx"));
+const ConnectPage = lazy(() => import("./pages/ConnectPage.jsx"));
 const KitPage = lazy(() => import("./pages/KitPage.jsx"));
 const LinksPage = lazy(() => import("./pages/KitPage.jsx").then((m) => ({ default: m.LinksPage })));
 const authModes = { "/entrar": "login", "/cadastro": "signup", "/recuperar-senha": "recover", "/redefinir-senha": "reset", "/criar-senha": "invite" };
@@ -65,6 +66,7 @@ function Routes() {
 
   if (path === "/") return <LandingPage account={signedIn ? account : null} signedIn={signedIn} onEnter={enter}/>;
   if (authModes[path]) return <AuthPage key={path} mode={authModes[path]} account={account} onAuthenticated={afterLogin}/>;
+  if (path === "/conecta") return <Suspense fallback={<Loading/>}><ConnectPage onEnter={enter}/></Suspense>;
   if (path === "/comprar") return <Suspense fallback={<Loading/>}><BuyPage signedIn={signedIn} onEnter={enter}/></Suspense>;
   // Retorno do Asaas: compra sem cadastro (pedido + chave) não exige sessão; a compra logada sim.
   if (path === "/checkout/retorno") return claimFrom(location.search) ? <CheckoutReturnPage account={signedIn ? account : null} reload={reload}/> : requireSession(() => <CheckoutReturnPage account={account} reload={reload}/>);

@@ -29,6 +29,12 @@ export function createApi({ store, commerce, onboarding = null, library, me, mcp
     if (rank < 1) throw httpError(402, "no_license", "Sua conta ainda não tem uma licença ativa.");
     return { user, rank };
   }
+  // Conexão com IAs (MCP): parte do Voxelia Pro, válida por 12 meses.
+  async function requireMcp(request) {
+    const user = await requireUser(request);
+    if (!devUser && !(await commerce.mcpStatus(user.id)).active) throw httpError(402, "no_mcp", "A conexão com IAs faz parte do Voxelia Pro.");
+    return user;
+  }
   async function requireAdmin(request) {
     const user = await requireUser(request);
     const profile = await store.getProfile(user.id);
@@ -52,12 +58,12 @@ export function createApi({ store, commerce, onboarding = null, library, me, mcp
       if (devUser) return ok({ email: user.email, access: true, accessReason: "dev", rank: 99, isAdmin: false, edition: null, license: null, orders: [], history: [] });
       return ok(await commerce.accountState(user));
     },
-    "POST /api/checkout": async (request) => { const input = await body(request); return ok(await commerce.startCheckout(await requireUser(request), input.editionCode, readTracking(input.tracking, request))); },
+    "POST /api/checkout": async (request) => { const input = await body(request); return ok(await commerce.accountCheckout(await requireUser(request), input.editionCode, readTracking(input.tracking, request), input.name || input.document ? { name: input.name, document: input.document } : null, input.method === "card" ? "card" : "pix")); },
     // Compra sem cadastro (só e-mail) e retorno com link para criar a senha.
-    "POST /api/checkout/guest": async (request) => { const input = await body(request); return ok(await commerce.guestCheckout(input.email, input.editionCode, readTracking(input.tracking, request), input.name || input.document ? { name: input.name, document: input.document } : null)); },
+    "POST /api/checkout/guest": async (request) => { const input = await body(request); return ok(await commerce.guestCheckout(input.email, input.editionCode, readTracking(input.tracking, request), input.name || input.document ? { name: input.name, document: input.document } : null, input.method === "card" ? "card" : "pix")); },
     // Conexão com IAs (MCP): só para quem tem licença ativa.
-    "GET /api/account/mcp": async (request) => { const { user } = await requireAccess(request); return ok({ url: await mcp.connectionUrl(user.id) }); },
-    "POST /api/account/mcp/rotate": async (request) => { const { user } = await requireAccess(request); return ok({ url: await mcp.rotate(user.id) }); },
+    "GET /api/account/mcp": async (request) => { const user = await requireMcp(request); return ok({ url: await mcp.connectionUrl(user.id) }); },
+    "POST /api/account/mcp/rotate": async (request) => { const user = await requireMcp(request); return ok({ url: await mcp.rotate(user.id) }); },
     "POST /api/account/refund": async (request) => ok(await commerce.requestRefund(await requireUser(request), (await body(request)).reason)),
     "POST /api/checkout/claim": async (request) => { const input = await body(request); return ok(await commerce.claimAccess(input.order, input.key)); },
 

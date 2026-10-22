@@ -46,11 +46,14 @@ export default function LicensePage({ account }) {
 
     {account.edition?.features?.length > 0 && <section className="panel"><h2>Incluído na sua edição</h2><ul className="check-list">{account.edition.features.map((f) => <li key={f}>{f}</li>)}</ul></section>}
 
-    {account.access && account.license && <AiConnect/>}
+    {account.mcp?.active && <AiConnect until={account.mcp.until}/>}
 
-    {account.upgrade && <section className="panel upgrade-panel"><h2>{account.upgrade.edition.name} disponível</h2>
-      <p>Preço da edição: {formatPrice(account.upgrade.listPrice)} · Crédito já pago: {formatPrice(account.upgrade.credit)}</p>
-      <p className="upgrade-amount">Upgrade por <b>{formatPrice(account.upgrade.amount)}</b></p>
+    {account.upgrade && <section className="panel upgrade-panel">{account.upgrade.edition.mcp
+      ? <><h2>Conecte a Voxelia na sua IA</h2>
+        <p>É como dar superpoderes a ela: no Claude, no ChatGPT ou no Claude Code, a IA consulta o acervo e usa a skill certa. Menos resposta genérica, menos token desperdiçado. Por 12 meses, no {account.upgrade.edition.name}.</p></>
+      : <h2>{account.upgrade.edition.name} disponível</h2>}
+      <p>Preço: {formatPrice(account.upgrade.listPrice)} · Crédito do que você já pagou: {formatPrice(account.upgrade.credit)}</p>
+      <p className="upgrade-amount">Upgrade por <b>{formatPrice(account.upgrade.amount)}</b>{account.upgrade.edition.installments > 1 && <> ou {account.upgrade.edition.installments}x de {formatPrice(Math.round(account.upgrade.amount / account.upgrade.edition.installments))} no cartão</>}</p>
       <p className="small muted">Opcional. Se não atualizar, você continua com a edição atual.</p>
       <button type="button" className="btn btn-primary" onClick={upgrade} disabled={busy}>{busy ? "Abrindo pagamento…" : "Fazer upgrade"}</button>
       {error && <p className="form-error" role="alert">{error}</p>}

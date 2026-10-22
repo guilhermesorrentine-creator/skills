@@ -323,10 +323,14 @@ test("garantia: reembolso automático encerra o acesso; recusa do Asaas vira ped
   assert.equal((await ctx.call("POST", "/api/account/refund", { token: "tok-u1", body: {} })).status, 422);
 });
 
-test("MCP: só comprador recebe o link; busca, detalhe, troca de link e estorno encerram o acesso", async () => {
+test("MCP: só o Pro recebe o link; busca, detalhe, troca de link e estorno encerram o acesso", async () => {
   const ctx = setup();
   assert.equal((await ctx.call("GET", "/api/account/mcp", { token: "tok-u1" })).status, 402);
   await ctx.pay("tok-u1");
+  assert.equal((await ctx.call("GET", "/api/account/mcp", { token: "tok-u1" })).status, 402, "vitalício sem Pro não tem MCP");
+  ctx.store.db.editions.push({ id: "ep", code: "pro-anual", name: "Voxelia Pro", rank: 4, price_cents: 59880, on_sale: true, features: [] });
+  ctx.store.db.orders.push({ id: "opro", user_id: "u1", edition_id: "ep", kind: "upgrade", status: "paid", amount_cents: 50090, list_price_cents: 59880, credit_cents: 9790, paid_at: new Date().toISOString(), created_at: new Date().toISOString(), asaas_customer_id: "cus_tok-u1" });
+  assert.equal((await ctx.call("GET", "/api/account", { token: "tok-u1" })).data.mcp.active, true);
   const { url } = (await ctx.call("GET", "/api/account/mcp", { token: "tok-u1" })).data;
   assert.match(url, /^https:\/\/bt\.example\/api\/mcp\/u1\.1\.[\w-]{32}$/);
   const path = new URL(url).pathname;
@@ -347,9 +351,38 @@ test("MCP: só comprador recebe o link; busca, detalhe, troca de link e estorno 
   const rotated = (await ctx.call("POST", "/api/account/mcp/rotate", { token: "tok-u1" })).data.url;
   assert.equal((await rpc(path, "tools/list", {})).status, 401, "link antigo deixa de funcionar");
   const fresh = new URL(rotated).pathname;
-  await ctx.hook({ id: "rf-mcp", event: "PAYMENT_REFUNDED", payment: { id: "pay_x", customer: "cus_tok-u1", value: 97.9, status: "REFUNDED" } });
+  await ctx.hook({ id: "rf-mcp", event: "PAYMENT_REFUNDED", payment: { id: "pay_x", customer: "cus_tok-u1", value: 41.74, status: "REFUNDED", externalReference: "opro", installment: "ins_1" } });
   const after = (await rpc(fresh, "tools/call", { name: "buscar_skills", arguments: { objetivo: "site" } })).data.result;
   assert.equal(after.isError, true);
+});
+
+test("Pro: 12x no cartão, troca para Pix cancela o parcelamento e a parcela paga confirma o pedido", async () => {
+  const ctx = setup();
+  ctx.store.db.editions.push({ id: "ep", code: "pro-anual", name: "Voxelia Pro", rank: 4, price_cents: 59880, on_sale: true, features: [] });
+  const created = []; const deleted = []; const remote = [];
+  Object.assign(ctx.asaas, {
+    createCustomer: async () => ({ id: "cus_pro" }),
+    createPayment: async (body) => { created.push(body); const id = `pay_${created.length}`; return { id, status: "PENDING", billingType: body.billingType, value: body.value ?? body.totalValue / body.installmentCount, invoiceUrl: `https://www.asaas.com/i/${id}`, ...(body.installmentCount && { installment: "ins_1" }) }; },
+    getPayment: async (id) => (id === "pay_1" ? { id, installment: "ins_1" } : { id }),
+    deleteInstallment: async (id) => { deleted.push(id); return {}; },
+    deletePayment: async (id) => { deleted.push(id); return {}; },
+    pixQrCode: async () => ({ encodedImage: "img", payload: "000201" }),
+    listCustomerPayments: async () => ({ data: remote }),
+  });
+  const input = { email: "pro@exemplo.com", editionCode: "pro-anual", name: "Ana Souza", document: "529.982.247-25" };
+  const card = (await ctx.call("POST", "/api/checkout/guest", { body: { ...input, method: "card" } })).data;
+  assert.equal(created[0].billingType, "CREDIT_CARD");
+  assert.equal(created[0].installmentCount, 12);
+  assert.equal(created[0].totalValue, 598.8);
+  assert.equal(card.installments, 12);
+  assert.equal(card.pix, null);
+  const pix = (await ctx.call("POST", "/api/checkout/guest", { body: { ...input, method: "pix" } })).data;
+  assert.deepEqual(deleted, ["ins_1"], "parcelamento anterior cancelado");
+  assert.equal(pix.order, card.order, "mesmo pedido");
+  assert.equal(pix.pix.payload, "000201");
+  assert.equal((await ctx.call("GET", "/api/editions")).data.editions.find((e) => e.code === "pro-anual").installments, 12);
+  remote.push({ id: "pay_x", status: "CONFIRMED", value: 49.9, externalReference: pix.order });
+  assert.equal((await ctx.call("POST", "/api/checkout/claim", { body: { order: pix.order, key: pix.key } })).data.status, "paid");
 });
 
 test("compra sem cadastro recusa e-mail de conta já usada", async () => {

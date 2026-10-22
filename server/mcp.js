@@ -131,8 +131,8 @@ export function createMcp({ store, commerce, library, loadCatalog, config }) {
     if (method === "tools/call") {
       const tool = tools[params.name];
       if (!tool) return failure(id, -32602, `Ferramenta desconhecida: ${params.name}`);
-      const { rank } = await commerce.userEntitlement(userId);
-      if (rank < 1) return reply(id, text("A licença da Voxelia desta conta não está ativa. Veja em Minha licença no site.", true));
+      const [{ rank }, status] = await Promise.all([commerce.userEntitlement(userId), commerce.mcpStatus(userId)]);
+      if (rank < 1 || !status.active) return reply(id, text("A conexão da Voxelia com IAs faz parte do Voxelia Pro e não está ativa nesta conta. Veja em Minha licença no site.", true));
       try { return reply(id, await tool(params.arguments || {}, rank)); }
       catch (error) { console.error("[mcp]", error); return reply(id, text("Erro ao consultar a Voxelia. Tente de novo em instantes.", true)); }
     }

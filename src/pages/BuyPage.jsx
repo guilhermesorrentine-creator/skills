@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Brand } from "../components/site/SiteNav.jsx";
 import { Link, navigate } from "../lib/router.jsx";
 import { formatPrice } from "../lib/billing-client.js";
+import { apiFetch } from "../lib/auth.jsx";
 import { track, trackingForCheckout } from "../lib/meta-pixel.js";
 
 const isAsaas = (value) => {
@@ -9,13 +10,25 @@ const isAsaas = (value) => {
 };
 const maskCpf = (value) => value.replace(/\D/g, "").slice(0, 11).replace(/(\d{3})(\d)/, "$1.$2").replace(/(\d{3})(\d)/, "$1.$2").replace(/(\d{3})(\d{1,2})$/, "$1-$2");
 
-// Compra sem cadastro: e-mail, nome e CPF (exigidos pelo Asaas para o Pix). O QR aparece aqui mesmo;
-// cartão abre a fatura do Asaas em outra aba. Esta página confirma sozinha e leva para criar a senha.
-export default function BuyPage({ signedIn, onEnter }) {
+// Texto de venda por produto: vitalício (acervo) ou Pro (acervo + conexão com a IA por 12 meses).
+const COPY = {
+  pro: {
+    title: "Dê superpoderes à sua IA",
+    points: ["Conecte a Voxelia no Claude, no ChatGPT e no Claude Code (12 meses)", "Menos resposta genérica e menos token desperdiçado: a IA usa a skill certa", "2 mil skills com guias em português, com acesso vitalício", "15 dias de garantia"],
+  },
+  lifetime: {
+    title: "Garanta seu acesso",
+    points: ["2 mil skills organizadas por objetivo", "Guias passo a passo em português", "15 dias de garantia"],
+  },
+};
+
+// Compra direta: e-mail (sem login), nome e CPF (exigidos pelo Asaas). Pix mostra o QR aqui; cartão abre a
+// fatura do Asaas em outra aba (o Pro parcela em 12x). Esta página confirma sozinha o pagamento.
+export default function BuyPage({ signedIn }) {
   const code = new URLSearchParams(location.search).get("edicao") || "edicao-1";
   const [edition, setEdition] = useState(null);
   const [form, setForm] = useState({ email: "", name: "", document: "" });
-  const [busy, setBusy] = useState(false);
+  const [busy, setBusy] = useState("");
   const [error, setError] = useState("");
   const [exists, setExists] = useState(false);
   const [charge, setCharge] = useState(null);
@@ -24,69 +37,95 @@ export default function BuyPage({ signedIn, onEnter }) {
   useEffect(() => {
     fetch("/api/editions").then((r) => (r.ok ? r.json() : { editions: [] })).then((d) => setEdition(d.editions.find((e) => e.code === code) || d.editions[0] || null)).catch(() => setEdition(null));
   }, [code]);
-  useEffect(() => { if (signedIn) onEnter(`/acesso-pendente`); }, [signedIn, onEnter]);
 
-  // Enquanto o QR está na tela, consulta o pedido; pago, segue para criar a senha.
+  // Enquanto a cobrança está aberta, consulta o pedido; pago, segue para criar a senha (ou para a licença).
   useEffect(() => {
     if (!charge) return undefined;
     const id = window.setInterval(async () => {
       try {
         const response = await fetch("/api/checkout/claim", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ order: charge.order, key: charge.key }) });
         const data = await response.json();
-        if (data.status === "paid") navigate(`/checkout/retorno?resultado=sucesso&pedido=${encodeURIComponent(charge.order)}&chave=${encodeURIComponent(charge.key)}`);
+        if (data.status !== "paid") return;
+        if (signedIn) location.assign("/app/minha-licenca");
+        else navigate(`/checkout/retorno?resultado=sucesso&pedido=${encodeURIComponent(charge.order)}&chave=${encodeURIComponent(charge.key)}`);
       } catch { /* tenta de novo */ }
     }, 4000);
     return () => window.clearInterval(id);
-  }, [charge]);
+  }, [charge, signedIn]);
 
   const field = (name) => (event) => setForm((f) => ({ ...f, [name]: name === "document" ? maskCpf(event.target.value) : event.target.value }));
+  const installments = edition?.installments || 1;
+  const copy = edition?.mcp ? COPY.pro : COPY.lifetime;
+  const perMonth = edition ? Math.round(edition.priceCents / installments) : 0;
 
-  const submit = async (event) => {
-    event.preventDefault();
-    setBusy(true); setError(""); setExists(false);
+  const pay = async (method, event) => {
+    event?.preventDefault();
+    const form_ = document.getElementById("buy-form");
+    if (form_ && !form_.reportValidity()) return;
+    setBusy(method); setError(""); setExists(false);
     try {
-      track("InitiateCheckout", { currency: "BRL", content_ids: [code], content_type: "product" });
-      const response = await fetch("/api/checkout/guest", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ ...form, editionCode: code, tracking: trackingForCheckout() }) });
-      const data = await response.json();
-      if (!response.ok) { setExists(data.error === "account_exists"); throw new Error(data.message || "Não foi possível iniciar o pagamento."); }
+      track("InitiateCheckout", { currency: "BRL", value: (edition?.priceCents || 0) / 100, content_ids: [code], content_type: "product" });
+      const payload = { name: form.name, document: form.document, editionCode: code, method, tracking: trackingForCheckout() };
+      let data;
+      if (signedIn) data = await apiFetch("/api/checkout", { method: "POST", body: payload });
+      else {
+        const response = await fetch("/api/checkout/guest", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ ...payload, email: form.email }) });
+        data = await response.json();
+        if (!response.ok) { setExists(data.error === "account_exists"); throw new Error(data.message || "Não foi possível iniciar o pagamento."); }
+      }
       try { localStorage.setItem("vx-claim", JSON.stringify({ order: data.order, key: data.key })); } catch { /* sem armazenamento: o retorno usa a URL */ }
-      if (data.pix || isAsaas(data.url)) { setCharge(data); setBusy(false); return; }
+      if (data.pix || isAsaas(data.url)) { setCharge(data); setBusy(""); return; }
       throw new Error("Endereço de pagamento inesperado.");
-    } catch (cause) { setError(cause.message); setBusy(false); }
+    } catch (cause) { setError(cause.message); setBusy(""); }
   };
 
-  const copy = async () => {
+  const copyPix = async () => {
     try { await navigator.clipboard.writeText(charge.pix.payload); setCopied(true); window.setTimeout(() => setCopied(false), 2500); } catch { /* o código fica visível para copiar à mão */ }
   };
 
+  const cardCharge = charge && !charge.pix && charge.installments > 1;
   return <main id="conteudo" className="auth-view">
     <div className="auth-card buy-card">
       <Brand/>
       {!charge ? <>
-        <h1>Garanta seu acesso</h1>
-        <p className="buy-price">{edition ? <><b>{formatPrice(edition.priceCents)}</b> pagamento único · acesso vitalício</> : "Carregando…"}</p>
-        <ul className="buy-points"><li>2 mil skills organizadas por objetivo</li><li>Guias passo a passo em português</li><li>15 dias de garantia</li></ul>
-        <form onSubmit={submit} className="stack">
-          <label htmlFor="buy-email">Seu e-mail <span className="muted small">(é o seu login)</span></label>
-          <input id="buy-email" className="input buy-input" type="email" inputMode="email" autoComplete="email" required value={form.email} onChange={field("email")} placeholder="voce@email.com"/>
+        <h1>{copy.title}</h1>
+        <p className="buy-price">{!edition ? "Carregando…" : installments > 1
+          ? <><b>{installments}x de {formatPrice(perMonth)}</b> no cartão · ou {formatPrice(edition.priceCents)} à vista no Pix</>
+          : <><b>{formatPrice(edition.priceCents)}</b> pagamento único · acesso vitalício</>}</p>
+        {edition?.mcp && signedIn && <p className="small muted">Já tem o acesso vitalício? O valor que você pagou é descontado.</p>}
+        <ul className="buy-points">{copy.points.map((p) => <li key={p}>{p}</li>)}</ul>
+        <form id="buy-form" onSubmit={(e) => pay(installments > 1 ? "card" : "pix", e)} className="stack">
+          {!signedIn && <><label htmlFor="buy-email">Seu e-mail <span className="muted small">(é o seu login)</span></label>
+            <input id="buy-email" className="input buy-input" type="email" inputMode="email" autoComplete="email" required value={form.email} onChange={field("email")} placeholder="voce@email.com"/></>}
           <label htmlFor="buy-name">Nome completo</label>
           <input id="buy-name" className="input buy-input" autoComplete="name" required minLength={3} value={form.name} onChange={field("name")}/>
-          <label htmlFor="buy-cpf">CPF <span className="muted small">(exigido para o Pix)</span></label>
+          <label htmlFor="buy-cpf">CPF <span className="muted small">(exigido pelo meio de pagamento)</span></label>
           <input id="buy-cpf" className="input buy-input" inputMode="numeric" autoComplete="off" required value={form.document} onChange={field("document")} placeholder="000.000.000-00"/>
-          {error && <p className="notice" role="alert">{error} {exists && <Link className="link" to={`/entrar?next=${encodeURIComponent("/acesso-pendente")}`}>Entrar</Link>}</p>}
-          <button type="submit" className="btn btn-primary buy-submit" disabled={busy || !edition}>{busy ? "Gerando pagamento…" : "Pagar com Pix ou cartão"}</button>
+          {error && <p className="notice" role="alert">{error} {exists && <Link className="link" to={`/entrar?next=${encodeURIComponent(`/comprar?edicao=${code}`)}`}>Entrar</Link>}</p>}
+          {installments > 1 ? <>
+            <button type="submit" className="btn btn-primary buy-submit" disabled={Boolean(busy) || !edition}>{busy === "card" ? "Gerando pagamento…" : `Pagar ${installments}x de ${formatPrice(perMonth)} no cartão`}</button>
+            <button type="button" className="btn btn-ghost buy-submit" disabled={Boolean(busy) || !edition} onClick={(e) => pay("pix", e)}>{busy === "pix" ? "Gerando Pix…" : `Pagar à vista no Pix (${formatPrice(edition.priceCents)})`}</button>
+          </> : <button type="submit" className="btn btn-primary buy-submit" disabled={Boolean(busy) || !edition}>{busy ? "Gerando pagamento…" : "Pagar com Pix ou cartão"}</button>}
         </form>
-        <p className="small muted">Pagamento seguro pelo Asaas. Depois do pagamento você cria sua senha na hora, sem esperar e-mail.</p>
+        <p className="small muted">Pagamento seguro pelo Asaas. {signedIn ? "A liberação é automática." : "Depois do pagamento você cria sua senha na hora, sem esperar e-mail."}</p>
         <button type="button" className="link small" onClick={() => navigate("/")}>← Conhecer a Voxelia</button>
+      </> : cardCharge ? <>
+        <h1>Finalize no cartão</h1>
+        <p className="buy-price"><b>{charge.installments}x de {formatPrice(Math.round(charge.amountCents / charge.installments))}</b> · total {formatPrice(charge.amountCents)}</p>
+        <a className="btn btn-primary buy-submit" href={charge.url} target="_blank" rel="noopener noreferrer">Abrir pagamento no cartão</a>
+        <p className="waiting small"><span className="spinner" aria-hidden="true"/> Aguardando o pagamento. Esta página avança sozinha.</p>
+        <button type="button" className="link small" onClick={() => pay("pix")}>Prefiro pagar à vista no Pix</button>
       </> : <>
         <h1>Pague com Pix</h1>
         <p className="buy-price"><b>{formatPrice(charge.amountCents || edition?.priceCents || 0)}</b> · abra o app do banco e escaneie</p>
         {charge.pix ? <>
           <img className="buy-qr" src={`data:image/png;base64,${charge.pix.image}`} alt="QR Code do Pix" width="220" height="220"/>
-          <button type="button" className="btn btn-primary buy-submit" onClick={copy}>{copied ? "Código copiado!" : "Copiar código Pix (copia e cola)"}</button>
+          <button type="button" className="btn btn-primary buy-submit" onClick={copyPix}>{copied ? "Código copiado!" : "Copiar código Pix (copia e cola)"}</button>
         </> : <p className="notice">O QR não carregou. Use o botão abaixo para pagar pela fatura.</p>}
         <p className="waiting small"><span className="spinner" aria-hidden="true"/> Aguardando o pagamento. Esta página avança sozinha.</p>
-        {isAsaas(charge.url) && <a className="btn btn-ghost buy-submit" href={charge.url} target="_blank" rel="noopener noreferrer">Prefiro pagar no cartão de crédito</a>}
+        {installments > 1
+          ? <button type="button" className="btn btn-ghost buy-submit" onClick={() => pay("card")}>Prefiro {installments}x no cartão</button>
+          : isAsaas(charge.url) && <a className="btn btn-ghost buy-submit" href={charge.url} target="_blank" rel="noopener noreferrer">Prefiro pagar no cartão de crédito</a>}
         <p className="small muted">Pagou no cartão em outra aba? Volte para esta página: ela confirma sozinha.</p>
       </>}
     </div>

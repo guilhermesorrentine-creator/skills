@@ -48,6 +48,7 @@
     { "source": "/r/:name", "destination": "/r/:name/index.html" },
     { "source": "/kit/:slug", "destination": "/kit/:slug/index.html" },
     { "source": "/links", "destination": "/links/index.html" },
+    { "source": "/conecta", "destination": "/conecta/index.html" },
     {
       "source": "/((?!api/|data/|assets/|favicon.svg|robots.txt|sitemap.xml|llms.txt).*)",
       "destination": "/index.html"

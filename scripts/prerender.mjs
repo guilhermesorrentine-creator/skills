@@ -73,6 +73,11 @@ for (const k of KITS) {
   await emit(path, page({ path, title: `Voxelia para ${k.name}: skills de IA para o Claude`, description: k.promise, body, jsonld: [product(`Voxelia para ${k.name}`, k.promise)] }));
 }
 
+// Voxelia Pro (destino dos anúncios)
+await emit("/conecta", page({ path: "/conecta", title: "Voxelia Pro: conecte na sua IA e dê superpoderes a ela", description: `Conecte a Voxelia no Claude, no ChatGPT e no Claude Code: a IA passa a usar ${skills} skills com o passo a passo certo. 12x no cartão ou Pix, 15 dias de garantia.`,
+  body: `<h1>Conecte na sua IA. É como dar superpoderes a ela.</h1><p>Menos texto genérico, menos resposta incompleta e menos token desperdiçado: a IA consulta ${skills} skills da Voxelia e usa a certa.</p><p>${link("/comprar?edicao=pro-anual", "Quero o Voxelia Pro")}</p>`,
+  jsonld: [{ ...product("Voxelia Pro", "Conexão da Voxelia com a sua IA (MCP) por 12 meses e acervo vitalício"), offers: { ...offer, price: "598.80", url: `${BASE}/conecta` } }] }));
+
 // Bio e início
 const kitLinks = ul(KITS.map((k) => link(`/kit/${k.slug}`, `Voxelia para ${k.name}`)));
 await emit("/links", page({ path: "/links", title: "Voxelia · links", description: `${skills} skills de IA organizadas, com passo a passo em português.`, body: `<h1>Voxelia</h1><p>${link("/comprar", "Garantir meu acesso")}</p>${kitLinks}` }));
