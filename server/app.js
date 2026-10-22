@@ -5,6 +5,7 @@ import { createAsaasClient } from "./asaas.js";
 import { createCommerce } from "./commerce.js";
 import { createLibrary } from "./library.js";
 import { createMe } from "./me.js";
+import { createMcp } from "./mcp.js";
 import { createMailer } from "./email.js";
 import { createOnboarding } from "./onboarding.js";
 import { createConversions } from "./meta.js";
@@ -20,7 +21,9 @@ const loadCatalog = async () => (catalogCache ||= JSON.parse(await readFile(new 
 function assemble(store, asaas, config, extra = {}) {
   const library = createLibrary({ store, loadCatalog });
   const onboarding = createOnboarding({ store, mailer: createMailer(config.email), config });
-  return createApi({ store, commerce: createCommerce({ store, asaas, config, onboarding, conversions: createConversions(config.meta) }), onboarding, library, me: createMe({ store, library }), ...extra });
+  const commerce = createCommerce({ store, asaas, config, onboarding, conversions: createConversions(config.meta) });
+  const mcp = createMcp({ store, commerce, library, loadCatalog, config });
+  return createApi({ store, commerce, onboarding, library, me: createMe({ store, library }), mcp, ...extra });
 }
 
 function build() {

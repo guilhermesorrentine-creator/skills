@@ -23,6 +23,8 @@ export function createMemoryStore(seed = {}) {
       return { userId: id, actionUrl: `${redirectTo}#convite-local-${id}` };
     },
     createPasswordLink: async (email, redirectTo) => `${redirectTo}#novo-link-local-${encodeURIComponent(email)}`,
+    getMcpVersion: async (userId) => { const profile = db.profiles.find((item) => item.id === userId); return profile ? profile.mcp_v || 1 : 0; },
+    setMcpVersion: async (userId, version) => { const profile = db.profiles.find((item) => item.id === userId); if (profile) profile.mcp_v = version; },
     hasSignedIn: async (userId) => Boolean(db.profiles.find((item) => item.id === userId)?.last_sign_in_at),
     findProfileByCustomer: async (customer) => clone(db.profiles.find((item) => item.asaas_customer_id === customer)),
     setCustomerId: async (id, customer) => { const profile = db.profiles.find((item) => item.id === id); if (profile) profile.asaas_customer_id = customer; },

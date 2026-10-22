@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { formatPrice, purchase } from "../../lib/billing-client.js";
 import { apiFetch } from "../../lib/auth.jsx";
+import AiConnect from "./AiConnect.jsx";
 
 const when = (value) => (value ? new Date(value).toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" }) : "—");
 const kinds = { activated: "Licença ativada", upgraded: "Upgrade", refunded: "Estorno", disputed: "Contestação de pagamento", reconciled: "Confirmada por conciliação", admin_active: "Restaurada pela administração", admin_revoked: "Revogada pela administração", upgrade_without_charge: "Upgrade sem cobrança" };
@@ -44,6 +45,8 @@ export default function LicensePage({ account }) {
     </section>
 
     {account.edition?.features?.length > 0 && <section className="panel"><h2>Incluído na sua edição</h2><ul className="check-list">{account.edition.features.map((f) => <li key={f}>{f}</li>)}</ul></section>}
+
+    {account.access && account.license && <AiConnect/>}
 
     {account.upgrade && <section className="panel upgrade-panel"><h2>{account.upgrade.edition.name} disponível</h2>
       <p>Preço da edição: {formatPrice(account.upgrade.listPrice)} · Crédito já pago: {formatPrice(account.upgrade.credit)}</p>

@@ -4,6 +4,7 @@ import { eligibleCredit, entitlement, quote, canAccessResource } from "./licensi
 import { createCommerce } from "./commerce.js";
 import { createLibrary, validateResource } from "./library.js";
 import { createMe } from "./me.js";
+import { createMcp } from "./mcp.js";
 import { createApi } from "./routes.js";
 import { createMemoryStore } from "./store-memory.js";
 import { readConfig } from "./config.js";
@@ -35,7 +36,8 @@ function setup() {
   const library = createLibrary({ store, loadCatalog: async () => catalog });
   const me = createMe({ store, library });
   const users = { "tok-u1": { id: "u1", email: "a@x.com" }, "tok-u2": { id: "u2", email: "b@x.com" }, "tok-adm": { id: "adm", email: "adm@x.com" } };
-  const api = createApi({ store, commerce, library, me, verifyToken: async (token) => users[token] || null });
+  const mcp = createMcp({ store, commerce, library, loadCatalog: async () => catalog, config });
+  const api = createApi({ store, commerce, library, me, mcp, verifyToken: async (token) => users[token] || null });
   const call = async (method, path, { token, body, headers = {} } = {}) => {
     const response = await api(new Request(`https://bt.example${path}`, { method, headers: { ...(token ? { authorization: `Bearer ${token}` } : {}), "content-type": "application/json", ...headers }, body: body ? JSON.stringify(body) : undefined }));
     return { status: response.status, data: await response.json() };
@@ -46,7 +48,7 @@ function setup() {
     const order = store.db.orders.at(-1);
     return hook({ id: `evt_paid_${n}`, event: "CHECKOUT_PAID", checkout: { id: order.asaas_checkout_id, customer: `cus_${user}`, items: [{ value: (amount ?? order.amount_cents) / 100, quantity: 1 }] } });
   };
-  return { store, asaas, calls, call, hook, pay };
+  return { store, asaas, calls, call, hook, pay, api };
 }
 
 test("cálculo de upgrade em centavos com crédito elegível", () => {
@@ -319,6 +321,35 @@ test("garantia: reembolso automático encerra o acesso; recusa do Asaas vira ped
   assert.equal(after.access, false);
   assert.equal(after.refund, null);
   assert.equal((await ctx.call("POST", "/api/account/refund", { token: "tok-u1", body: {} })).status, 422);
+});
+
+test("MCP: só comprador recebe o link; busca, detalhe, troca de link e estorno encerram o acesso", async () => {
+  const ctx = setup();
+  assert.equal((await ctx.call("GET", "/api/account/mcp", { token: "tok-u1" })).status, 402);
+  await ctx.pay("tok-u1");
+  const { url } = (await ctx.call("GET", "/api/account/mcp", { token: "tok-u1" })).data;
+  assert.match(url, /^https:\/\/bt\.example\/api\/mcp\/u1\.1\.[\w-]{32}$/);
+  const path = new URL(url).pathname;
+  const rpc = async (target, method, params, id = 1) => {
+    const response = await ctx.api(new Request(`https://bt.example${target}`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ jsonrpc: "2.0", ...(id !== null && { id }), method, params }) }));
+    return { status: response.status, data: response.status === 202 ? null : await response.json() };
+  };
+  const init = await rpc(path, "initialize", { protocolVersion: "2025-03-26", capabilities: {}, clientInfo: { name: "t", version: "1" } });
+  assert.equal(init.data.result.protocolVersion, "2025-03-26");
+  assert.equal((await rpc(path, "notifications/initialized", {}, null)).status, 202);
+  assert.deepEqual((await rpc(path, "tools/list", {})).data.result.tools.map((t) => t.name), ["buscar_skills", "detalhar_recurso", "listar_repositorios"]);
+  const search = (await rpc(path, "tools/call", { name: "buscar_skills", arguments: { objetivo: "criar landing page" } })).data.result;
+  assert.match(search.content[0].text, /landing-page[\s\S]*id: repo-a::skills\/landing\/SKILL\.md/);
+  const detail = (await rpc(path, "tools/call", { name: "detalhar_recurso", arguments: { id: "repo-a::skills/landing/SKILL.md" } })).data.result;
+  assert.match(detail.content[0].text, /Como instalar: copie a pasta `skills\/landing`/);
+  assert.equal((await rpc("/api/mcp/u1.1.xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx", "tools/list", {})).status, 401);
+
+  const rotated = (await ctx.call("POST", "/api/account/mcp/rotate", { token: "tok-u1" })).data.url;
+  assert.equal((await rpc(path, "tools/list", {})).status, 401, "link antigo deixa de funcionar");
+  const fresh = new URL(rotated).pathname;
+  await ctx.hook({ id: "rf-mcp", event: "PAYMENT_REFUNDED", payment: { id: "pay_x", customer: "cus_tok-u1", value: 97.9, status: "REFUNDED" } });
+  const after = (await rpc(fresh, "tools/call", { name: "buscar_skills", arguments: { objetivo: "site" } })).data.result;
+  assert.equal(after.isError, true);
 });
 
 test("compra sem cadastro recusa e-mail de conta já usada", async () => {
