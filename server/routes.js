@@ -57,7 +57,7 @@ export function createApi({ store, commerce, onboarding = null, library, me, mcp
       if (!FUNNEL_EVENTS.has(input.name) || !/^[a-z0-9]{8,40}$/.test(String(input.sid || ""))) return json(400, { error: "invalid_event" });
       await store.insertFunnelEvent({ sid: input.sid, name: input.name, path: text(input.path, 200), source: text(input.source), campaign: text(input.campaign), content: text(input.content),
         order_id: /^[0-9a-f-]{36}$/i.test(String(input.order || "")) ? input.order : null });
-      return new Response(null, { status: 204 });
+      return ok();
     },
     "POST /api/webhooks/asaas": async (request) => ok({ received: true, ...(await commerce.receiveWebhook(request.headers.get("asaas-access-token"), await body(request))) }),
 

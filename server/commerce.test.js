@@ -385,6 +385,22 @@ test("Pro: 12x no cartão, troca para Pix cancela o parcelamento e a parcela pag
   assert.equal((await ctx.call("POST", "/api/checkout/claim", { body: { order: pix.order, key: pix.key } })).data.status, "paid");
 });
 
+test("funil: grava só eventos válidos e agrega vendas por criativo", async () => {
+  const ctx = setup();
+  const send = (b) => ctx.call("POST", "/api/funnel", { body: b });
+  assert.equal((await send({ name: "hack", sid: "abcdef12" })).status, 400);
+  await send({ name: "view", sid: "abcdef12", path: "/conecta", source: "meta", campaign: "teste1", content: "A" });
+  await send({ name: "buy_click", sid: "abcdef12", path: "/conecta", source: "meta", campaign: "teste1", content: "A" });
+  await ctx.pay("tok-u1");
+  const order = ctx.store.db.orders.at(-1);
+  await send({ name: "checkout", sid: "abcdef12", path: "/comprar", source: "meta", campaign: "teste1", content: "A", order: order.id });
+  await send({ name: "view", sid: "zzzzzz99", path: "/", source: "direto" });
+  assert.equal((await ctx.call("GET", "/api/admin/funnel", { token: "tok-u1" })).status, 403);
+  const { rows } = (await ctx.call("GET", "/api/admin/funnel", { token: "tok-adm" })).data;
+  const a = rows.find((r) => r.origin === "meta · teste1 · A");
+  assert.deepEqual([a.views, a.buyClicks, a.checkouts, a.sales, a.revenueCents], [1, 1, 1, 1, 9790]);
+});
+
 test("compra sem cadastro recusa e-mail de conta já usada", async () => {
   const ctx = setup();
   ctx.store.db.profiles.find((item) => item.id === "u1").last_sign_in_at = "2026-10-01T00:00:00Z";
