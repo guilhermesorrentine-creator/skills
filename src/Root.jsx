@@ -10,6 +10,8 @@ const AppRoutes = lazy(() => import("./pages/app/AppRoutes.jsx"));
 const AdminPage = lazy(() => import("./pages/AdminPage.jsx"));
 const RepoPage = lazy(() => import("./pages/RepoPage.jsx"));
 const BuyPage = lazy(() => import("./pages/BuyPage.jsx"));
+const KitPage = lazy(() => import("./pages/KitPage.jsx"));
+const LinksPage = lazy(() => import("./pages/KitPage.jsx").then((m) => ({ default: m.LinksPage })));
 const authModes = { "/entrar": "login", "/cadastro": "signup", "/recuperar-senha": "recover", "/redefinir-senha": "reset", "/criar-senha": "invite" };
 const legalSlugs = ["termos", "privacidade", "compra-e-reembolso"];
 const Loading = () => <main className="loading-line" role="status">Verificando acesso…</main>;
@@ -73,6 +75,9 @@ function Routes() {
     return <Suspense fallback={<Loading/>}><AppRoutes path={path} account={account}/></Suspense>;
   });
   if (path === "/admin") return requireSession(() => <Suspense fallback={<Loading/>}><AdminPage/></Suspense>);
+  const kit = matchPath("/kit/:slug", path);
+  if (kit) return <Suspense fallback={<Loading/>}><KitPage slug={kit.slug} onEnter={enter}/></Suspense>;
+  if (path === "/links") return <Suspense fallback={<Loading/>}><LinksPage/></Suspense>;
   const repo = matchPath("/r/:name", path);
   if (repo) return <Suspense fallback={<Loading/>}><RepoPage name={repo.name} account={signedIn ? account : null} onEnter={enter}/></Suspense>;
   const shared = matchPath("/c/:token", path);
