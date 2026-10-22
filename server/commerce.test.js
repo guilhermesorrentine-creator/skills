@@ -1,0 +1,234 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import { eligibleCredit, entitlement, quote, canAccessResource } from "./licensing.js";
+import { createCommerce } from "./commerce.js";
+import { createLibrary, validateResource } from "./library.js";
+import { createMe } from "./me.js";
+import { createApi } from "./routes.js";
+import { createMemoryStore } from "./store-memory.js";
+import { readConfig } from "./config.js";
+
+const TOKEN = "whk_test_token_123";
+const config = readConfig({ ASAAS_WEBHOOK_TOKEN: TOKEN, ASAAS_API_KEY: "x", APP_URL: "https://bt.example" });
+const E1 = { id: "e1", code: "edicao-1", name: "Edição 1", rank: 1, price_cents: 9790, on_sale: true, features: [] };
+const E2 = { id: "e2", code: "edicao-2", name: "Edição 2", rank: 2, price_cents: 14790, on_sale: false, features: [] };
+const E3 = { id: "e3", code: "edicao-3", name: "Edição 3", rank: 3, price_cents: 19790, on_sale: false, features: [] };
+const catalog = [{ name: "repo-a", category: "software", summary: "Ferramentas", url: "https://github.com/acme/repo-a", skills: [
+  { name: "landing-page", description: "Cria landing pages", path: "skills/landing/SKILL.md" },
+  { name: "security-audit", description: "Auditoria", path: "skills/security/SKILL.md" },
+] }];
+const guide = { id: "guia-subagente", type: "guide", category: "software", title: "Criar um subagente", summary: "Passo a passo", body_md: "## Passo 1\nTexto", instructions: "", tags: [], visibility: "edition", min_edition_rank: 2, status: "published" };
+const tool = { id: "21st-dev", type: "reference", category: "software", title: "21st.dev", summary: "Componentes React", body_md: "", instructions: "", tags: ["react"], source_url: "https://21st.dev", visibility: "demo", min_edition_rank: 1, status: "published" };
+const draft = { ...tool, id: "rascunho", status: "draft" };
+
+function setup() {
+  const store = createMemoryStore({
+    profiles: [{ id: "u1", email: "a@x.com" }, { id: "u2", email: "b@x.com" }, { id: "adm", email: "adm@x.com", is_admin: true }],
+    editions: [E1, E2, E3], resources: [guide, tool, draft],
+  });
+  const calls = [];
+  const asaas = {
+    createCheckout: async (body) => { calls.push(body); return { id: `chk_${calls.length}`, link: "https://evil.example/x" }; },
+    listCustomerPayments: async () => ({ data: [] }),
+  };
+  const commerce = createCommerce({ store, asaas, config });
+  const library = createLibrary({ store, loadCatalog: async () => catalog });
+  const me = createMe({ store, library });
+  const users = { "tok-u1": { id: "u1", email: "a@x.com" }, "tok-u2": { id: "u2", email: "b@x.com" }, "tok-adm": { id: "adm", email: "adm@x.com" } };
+  const api = createApi({ store, commerce, library, me, verifyToken: async (token) => users[token] || null });
+  const call = async (method, path, { token, body, headers = {} } = {}) => {
+    const response = await api(new Request(`https://bt.example${path}`, { method, headers: { ...(token ? { authorization: `Bearer ${token}` } : {}), "content-type": "application/json", ...headers }, body: body ? JSON.stringify(body) : undefined }));
+    return { status: response.status, data: await response.json() };
+  };
+  const hook = (payload, token = TOKEN) => call("POST", "/api/webhooks/asaas", { body: payload, headers: { "asaas-access-token": token } });
+  const pay = async (user = "tok-u1", n = 1, amount) => {
+    await call("POST", "/api/checkout", { token: user, body: { editionCode: "edicao-1" } });
+    const order = store.db.orders.at(-1);
+    return hook({ id: `evt_paid_${n}`, event: "CHECKOUT_PAID", checkout: { id: order.asaas_checkout_id, customer: `cus_${user}`, items: [{ value: (amount ?? order.amount_cents) / 100, quantity: 1 }] } });
+  };
+  return { store, calls, call, hook, pay };
+}
+
+test("cálculo de upgrade em centavos com crédito elegível", () => {
+  const license = { status: "active", edition_id: "e1" };
+  const paid = [{ status: "paid", amount_cents: 9790 }, { status: "pending", amount_cents: 5000 }, { status: "paid", amount_cents: 1000, refunded_at: "x" }];
+  assert.equal(eligibleCredit(paid), 9790);
+  assert.deepEqual(quote({ target: E2, license, editions: [E1, E2, E3], orders: paid }), { kind: "upgrade", listPrice: 14790, credit: 9790, amount: 5000 });
+  assert.equal(quote({ target: E3, license, editions: [E1, E2, E3], orders: paid }).amount, 10000, "1 → 3 direto: R$ 100,00");
+  assert.equal(quote({ target: E3, license: { status: "active", edition_id: "e2" }, editions: [E1, E2, E3], orders: [{ status: "paid", amount_cents: 9790 }, { status: "paid", amount_cents: 5000 }] }).amount, 5000);
+  assert.equal(quote({ target: E1, license, editions: [E1], orders: paid }).error, "already_owned");
+  assert.deepEqual(quote({ target: E1, license: null, editions: [E1], orders: [] }), { kind: "purchase", listPrice: 9790, credit: 0, amount: 9790 });
+  assert.equal(quote({ target: { ...E2, price_cents: 9000 }, license, editions: [E1, E2], orders: paid }).amount, 0, "nunca negativo");
+});
+
+test("licença vitalícia não expira; disputa mantém acesso; estorno remove", () => {
+  const editions = [E1, E2];
+  const far = new Date("2090-01-01");
+  assert.equal(entitlement({ license: { status: "active", edition_id: "e1" }, editions, now: far }).rank, 1);
+  assert.equal(entitlement({ license: { status: "disputed", edition_id: "e2" }, editions }).rank, 2);
+  assert.equal(entitlement({ license: { status: "refunded", edition_id: "e2" }, editions }).access, false);
+  assert.equal(entitlement({ license: null, grants: [{ starts_at: "2020-01-01", edition_id: "e1" }], editions }).reason, "grant");
+  assert.equal(canAccessResource(guide, 1), false);
+  assert.equal(canAccessResource(tool, 0), true);
+});
+
+test("compra avulsa: Pix e cartão, DETACHED, preço do servidor, sem duplicar checkout", async () => {
+  const ctx = setup();
+  assert.equal((await ctx.call("POST", "/api/checkout", { body: { editionCode: "edicao-1" } })).status, 401);
+  assert.equal((await ctx.call("POST", "/api/checkout", { token: "tok-u1", body: { editionCode: "edicao-2" } })).status, 404, "edição fora de venda");
+  const first = await ctx.call("POST", "/api/checkout", { token: "tok-u1", body: { editionCode: "edicao-1", priceCents: 1 } });
+  const second = await ctx.call("POST", "/api/checkout", { token: "tok-u1", body: { editionCode: "edicao-1" } });
+  assert.equal(ctx.calls.length, 1);
+  assert.equal(second.data.reused, true);
+  assert.match(first.data.url, /^https:\/\/sandbox\.asaas\.com\/checkoutSession\/show\?id=chk_1$/);
+  const body = ctx.calls[0];
+  assert.deepEqual(body.chargeTypes, ["DETACHED"]);
+  assert.deepEqual(body.billingTypes, ["PIX", "CREDIT_CARD"]);
+  assert.equal(body.items[0].value, 97.9);
+  assert.equal(body.externalReference, ctx.store.db.orders[0].id);
+  assert.equal("subscription" in body, false);
+});
+
+test("retorno do navegador não libera; webhook inválido é rejeitado; CHECKOUT_PAID ativa uma vez", async () => {
+  const ctx = setup();
+  await ctx.call("POST", "/api/checkout", { token: "tok-u1", body: { editionCode: "edicao-1" } });
+  assert.equal((await ctx.call("GET", "/api/account", { token: "tok-u1" })).data.access, false);
+  assert.equal((await ctx.call("GET", "/api/library", { token: "tok-u1" })).status, 402);
+  assert.equal((await ctx.hook({ id: "x", event: "CHECKOUT_PAID" }, "errado")).status, 401);
+  const order = ctx.store.db.orders[0];
+  const paid = { id: "evt_1", event: "CHECKOUT_PAID", checkout: { id: order.asaas_checkout_id, customer: "cus_1", items: [{ value: 97.9, quantity: 1 }] } };
+  assert.equal((await ctx.hook(paid)).data.status, "processed");
+  const replay = await ctx.hook(paid);
+  assert.equal(replay.data.duplicate, true);
+  assert.equal(ctx.store.db.licenses.length, 1);
+  assert.equal(ctx.store.db.licenseEvents.length, 1);
+  const account = (await ctx.call("GET", "/api/account", { token: "tok-u1" })).data;
+  assert.equal(account.access, true);
+  assert.equal(account.edition.code, "edicao-1");
+  assert.equal(account.license.status, "active");
+  assert.equal((await ctx.call("GET", "/api/library", { token: "tok-u1" })).status, 200);
+  assert.equal((await ctx.call("POST", "/api/checkout", { token: "tok-u1", body: { editionCode: "edicao-1" } })).status, 409, "não cobra de novo");
+});
+
+test("valor divergente não concede licença", async () => {
+  const ctx = setup();
+  const result = await ctx.pay("tok-u1", 1, 100);
+  assert.equal(result.data.status, "failed");
+  assert.equal(ctx.store.db.licenses.length, 0);
+});
+
+test("estorno recalcula; contestação mantém acesso até decisão auditada", async () => {
+  const ctx = setup();
+  await ctx.pay("tok-u1", 1);
+  await ctx.hook({ id: "cb", event: "PAYMENT_CHARGEBACK_REQUESTED", payment: { id: "pay_1", customer: "cus_tok-u1", value: 97.9, status: "CHARGEBACK_REQUESTED" } });
+  let account = (await ctx.call("GET", "/api/account", { token: "tok-u1" })).data;
+  assert.equal(account.license.status, "disputed");
+  assert.equal(account.access, true);
+  assert.equal((await ctx.call("POST", "/api/admin/licenses/status", { token: "tok-adm", body: { userId: "u1", status: "revoked", reason: "curto" } })).status, 400);
+  assert.equal((await ctx.call("POST", "/api/admin/licenses/status", { token: "tok-adm", body: { userId: "u1", status: "active", reason: "Contestação encerrada a favor do vendedor" } })).status, 200);
+  await ctx.hook({ id: "rf", event: "PAYMENT_REFUNDED", payment: { id: "pay_1", customer: "cus_tok-u1", value: 97.9, status: "REFUNDED" } });
+  account = (await ctx.call("GET", "/api/account", { token: "tok-u1" })).data;
+  assert.equal(account.license.status, "refunded");
+  assert.equal(account.access, false);
+});
+
+test("upgrade cobra a diferença e amplia direitos sem apagar os anteriores", async () => {
+  const ctx = setup();
+  await ctx.pay("tok-u1", 1);
+  ctx.store.db.editions.find((e) => e.code === "edicao-2").on_sale = true;
+  const before = (await ctx.call("GET", "/api/account", { token: "tok-u1" })).data;
+  assert.equal(before.upgrade.amount, 5000);
+  await ctx.call("POST", "/api/checkout", { token: "tok-u1", body: { editionCode: "edicao-2" } });
+  const order = ctx.store.db.orders.at(-1);
+  assert.equal(order.kind, "upgrade");
+  assert.equal(order.amount_cents, 5000);
+  assert.equal(order.credit_cents, 9790);
+  await ctx.hook({ id: "evt_up", event: "CHECKOUT_PAID", checkout: { id: order.asaas_checkout_id, customer: "cus_tok-u1", items: [{ value: 50, quantity: 1 }] } });
+  const after = (await ctx.call("GET", "/api/account", { token: "tok-u1" })).data;
+  assert.equal(after.edition.code, "edicao-2");
+  assert.equal(after.orders.filter((o) => o.status === "paid").length, 2);
+  const lib = (await ctx.call("GET", "/api/library", { token: "tok-u1" })).data;
+  assert.ok(lib.resources.some((r) => r.id === "guia-subagente"), "Edição 2 libera o guia");
+});
+
+test("mudança de preço não altera pedidos e direitos já adquiridos", async () => {
+  const ctx = setup();
+  await ctx.pay("tok-u1", 1);
+  ctx.store.db.editions.find((e) => e.code === "edicao-1").price_cents = 12990;
+  const account = (await ctx.call("GET", "/api/account", { token: "tok-u1" })).data;
+  assert.equal(account.orders[0].amountCents, 9790);
+  assert.equal(account.access, true);
+});
+
+test("catálogo autorizado por edição: rascunho oculto, guia bloqueado na Edição 1, sem corpo no índice", async () => {
+  const ctx = setup();
+  await ctx.pay("tok-u1", 1);
+  const lib = (await ctx.call("GET", "/api/library", { token: "tok-u1" })).data;
+  const ids = lib.resources.map((r) => r.id);
+  assert.ok(ids.includes("repo-a::skills/landing/SKILL.md"));
+  assert.ok(ids.includes("21st-dev"));
+  assert.ok(!ids.includes("rascunho"));
+  assert.ok(!ids.includes("guia-subagente"));
+  assert.ok(lib.resources.every((r) => !("body_md" in r)));
+  const locked = (await ctx.call("GET", "/api/resource?id=guia-subagente", { token: "tok-u1" })).data;
+  assert.equal(locked.locked, true);
+  assert.equal(locked.resource.body_md, undefined, "conteúdo protegido não vaza por URL direta");
+  assert.equal((await ctx.call("GET", "/api/resource?id=rascunho", { token: "tok-u1" })).status, 404);
+});
+
+test("coleções: privadas, sem IDOR, link de visualização revogável que não libera conteúdo", async () => {
+  const ctx = setup();
+  await ctx.pay("tok-u1", 1);
+  await ctx.pay("tok-u2", 2);
+  const { collection } = (await ctx.call("POST", "/api/collections", { token: "tok-u1", body: { name: "Sites" } })).data;
+  await ctx.call("POST", "/api/collections/item", { token: "tok-u1", body: { id: collection.id, resourceId: "21st-dev" } });
+  await ctx.call("POST", "/api/collections/item", { token: "tok-u1", body: { id: collection.id, resourceId: "repo-a::skills/landing/SKILL.md" } });
+  assert.equal((await ctx.call("POST", "/api/collections/item", { token: "tok-u1", body: { id: collection.id, resourceId: "inexistente" } })).status, 400);
+  assert.equal((await ctx.call("POST", "/api/collections/item", { token: "tok-u2", body: { id: collection.id, resourceId: "21st-dev" } })).status, 404, "outro usuário não altera");
+  assert.equal((await ctx.call("POST", "/api/collections/delete", { token: "tok-u2", body: { id: collection.id } })).status, 404);
+  await ctx.call("POST", "/api/collections/reorder", { token: "tok-u1", body: { id: collection.id, order: ["repo-a::skills/landing/SKILL.md", "21st-dev"] } });
+  const mine = (await ctx.call("GET", "/api/me", { token: "tok-u1" })).data.collections[0];
+  assert.deepEqual(mine.items, ["repo-a::skills/landing/SKILL.md", "21st-dev"]);
+  assert.equal((await ctx.call("GET", "/api/me", { token: "tok-u2" })).data.collections.length, 0);
+  const { shareToken } = (await ctx.call("POST", "/api/collections/share", { token: "tok-u1", body: { id: collection.id, enabled: true } })).data;
+  assert.ok(shareToken.length >= 20);
+  const shared = await ctx.call("GET", `/api/shared?token=${shareToken}`);
+  assert.equal(shared.data.name, "Sites");
+  assert.deepEqual(Object.keys(shared.data.items[0]).sort(), ["category", "id", "title", "type"]);
+  assert.equal(JSON.stringify(shared.data).includes("a@x.com"), false);
+  await ctx.call("POST", "/api/collections/share", { token: "tok-u1", body: { id: collection.id, enabled: false } });
+  assert.equal((await ctx.call("GET", `/api/shared?token=${shareToken}`)).status, 404, "revogado");
+});
+
+test("favoritos e histórico sincronizam do navegador sem duplicar e ignoram IDs inválidos", async () => {
+  const ctx = setup();
+  await ctx.pay("tok-u1", 1);
+  const local = { favorites: ["21st-dev", "21st-dev", "nao-existe"], recent: [{ id: "repo-a::skills/landing/SKILL.md", visitedAt: "2026-10-01T00:00:00Z" }] };
+  await ctx.call("POST", "/api/me/import", { token: "tok-u1", body: local });
+  await ctx.call("POST", "/api/me/import", { token: "tok-u1", body: local });
+  const state = (await ctx.call("GET", "/api/me", { token: "tok-u1" })).data;
+  assert.deepEqual(state.favorites, ["21st-dev"]);
+  assert.equal(state.recent.length, 1);
+});
+
+test("administração restrita e validada; caminhos exigem recursos reais e justificativa", async () => {
+  const ctx = setup();
+  assert.equal((await ctx.call("GET", "/api/admin/overview", { token: "tok-u1" })).status, 403);
+  assert.equal((await ctx.call("POST", "/api/admin/resources", { token: "tok-adm", body: { id: "X Y", type: "tool", category: "software", title: "a" } })).status, 400);
+  assert.equal((await ctx.call("POST", "/api/admin/resources", { token: "tok-adm", body: { id: "ok-tool", type: "tool", category: "software", title: "Ferramenta", source_url: "javascript:alert(1)" } })).status, 400);
+  assert.equal((await ctx.call("POST", "/api/admin/paths", { token: "tok-adm", body: { goal: "Criar site", steps: [{ resource_id: "nao-existe", reason: "x" }] } })).status, 400);
+  assert.equal((await ctx.call("POST", "/api/admin/paths", { token: "tok-adm", body: { goal: "Criar site", steps: [{ resource_id: "21st-dev" }] } })).status, 400);
+  assert.equal((await ctx.call("POST", "/api/admin/paths", { token: "tok-adm", body: { goal: "Criar site", keywords: "site", status: "published", steps: [{ resource_id: "21st-dev", reason: "Componentes prontos" }] } })).status, 200);
+  assert.equal((await ctx.call("POST", "/api/admin/editions", { token: "tok-adm", body: { code: "edicao-1", priceCents: 9790, rank: 1, onSale: true } })).status, 200);
+  assert.equal(ctx.store.db.audit.length, 2);
+  assert.throws(() => validateResource({ id: "a1", type: "skill", category: "software", title: "x" }));
+});
+
+test("produção do Asaas exige duas chaves explícitas", () => {
+  assert.equal(readConfig({ ASAAS_ENV: "production" }).asaas.env, "sandbox");
+  assert.equal(readConfig({ ASAAS_ENV: "production", ASAAS_ALLOW_PRODUCTION: "true" }).asaas.baseUrl, "https://api.asaas.com/v3");
+  assert.equal(readConfig({ BT_DEV_BYPASS: "1", VERCEL: "1" }).devBypass, false);
+  // Retorno do checkout: o preview volta para si mesmo; produção usa APP_URL.
+  assert.equal(readConfig({ APP_URL: "https://prod.example", VERCEL_ENV: "preview", VERCEL_BRANCH_URL: "app-git-x.vercel.app" }).appUrl, "https://app-git-x.vercel.app");
+  assert.equal(readConfig({ APP_URL: "https://prod.example/", VERCEL_ENV: "production", VERCEL_BRANCH_URL: "app-git-main.vercel.app" }).appUrl, "https://prod.example");
+});

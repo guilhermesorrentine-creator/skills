@@ -1,0 +1,89 @@
+{
+  "repo": "scientific-agent-skills",
+  "char": "ciencia",
+  "accent": "#5fd3a0",
+  "lines": [
+    {
+      "scene": "orbita",
+      "say": "Imagina um assistente de pesquisa que entende de biologia, química, medicina e física.",
+      "key": "assistente de pesquisa",
+      "p": {
+        "items": [
+          "biologia",
+          "química",
+          "medicina",
+          "física",
+          "dados",
+          "astronomia"
+        ]
+      }
+    },
+    {
+      "scene": "contador",
+      "say": "Alguém juntou cento e setenta e sete skills científicas, de graça, pro seu agente de IA.",
+      "show": "Alguém juntou 177 skills científicas, de graça, pro seu agente de IA.",
+      "key": "177",
+      "p": {
+        "to": 177,
+        "label": "skills científicas"
+      }
+    },
+    {
+      "scene": "lab",
+      "say": "Ele analisa sequências genéticas, faz triagem de moléculas e trabalha com dados de ensaios clínicos.",
+      "key": "moléculas",
+      "p": {
+        "labels": [
+          "genômica",
+          "moléculas",
+          "ensaios"
+        ]
+      }
+    },
+    {
+      "scene": "citacoes",
+      "say": "Faz revisão de literatura, com cada afirmação ligada à fonte.",
+      "key": "revisão de literatura",
+      "p": {
+        "title": "Revisão"
+      }
+    },
+    {
+      "scene": "grafico",
+      "say": "E gera gráficos prontos pra publicação.",
+      "key": "gráficos",
+      "p": {
+        "title": "Resultados"
+      }
+    },
+    {
+      "scene": "plano",
+      "say": "Lembrando: é ferramenta de pesquisa, não de decisão sobre paciente.",
+      "key": "pesquisa",
+      "p": {
+        "title": "Uso indicado",
+        "stamp": "PESQUISA"
+      }
+    },
+    {
+      "scene": "voxelia",
+      "say": "Chama Saientífic Ejent Skils. É de código aberto, e a gente explica cada passo em português.",
+      "show": "Chama Scientific Agent Skills. É de código aberto, e a gente explica cada passo em português.",
+      "key": "Scientific Agent Skills",
+      "p": {
+        "query": "pesquisa científica com IA",
+        "tagline": "177 skills para pesquisa científica",
+        "chips": [
+          "Ciência",
+          "177 skills",
+          "Código aberto"
+        ]
+      }
+    },
+    {
+      "scene": "cta",
+      "say": "O passo a passo completo tá no nosso site. Link no comentário fixado.",
+      "key": "comentário fixado"
+    }
+  ]
+}

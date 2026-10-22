@@ -1,0 +1,267 @@
+import { timingSafeEqual } from "node:crypto";
+import { entitlement, licenseLabels, quote } from "./licensing.js";
+import { checkoutUrl } from "./asaas.js";
+
+const httpError = (status, code, message) => Object.assign(new Error(message), { status, code });
+const PAID_PAYMENT = new Set(["PAYMENT_CONFIRMED", "PAYMENT_RECEIVED"]);
+const DISPUTE = new Set(["PAYMENT_CHARGEBACK_REQUESTED", "PAYMENT_CHARGEBACK_DISPUTE", "PAYMENT_AWAITING_CHARGEBACK_REVERSAL"]);
+
+// Pagamento único por edição (Asaas Checkout avulso) e licença vitalícia.
+export function createCommerce({ store, asaas, config, onboarding = null, conversions = null, now = () => new Date() }) {
+  async function userEntitlement(userId) {
+    const [license, grants, editions] = await Promise.all([store.getLicense(userId), store.listGrants(userId), store.listEditions({ onSaleOnly: false })]);
+    return { license, grants, editions, ...entitlement({ license, grants, editions, now: now() }) };
+  }
+
+  async function accountState(user) {
+    const [ent, profile, orders, open] = await Promise.all([userEntitlement(user.id), store.getProfile(user.id), store.listOrders(user.id), store.getOpenOrder(user.id, now())]);
+    const forSale = ent.editions.filter((edition) => edition.on_sale).sort((a, b) => a.rank - b.rank);
+    const latest = forSale.at(-1) || null;
+    const upgrade = latest && ent.rank > 0 && latest.rank > ent.rank ? quote({ target: latest, license: ent.license, editions: ent.editions, orders }) : null;
+    const events = ent.license ? await store.listLicenseEvents(user.id) : [];
+    return {
+      email: user.email,
+      isAdmin: Boolean(profile?.is_admin),
+      access: ent.access,
+      accessReason: ent.reason,
+      rank: ent.rank,
+      edition: ent.edition ? publicEdition(ent.edition) : null,
+      license: ent.license ? {
+        status: ent.license.status,
+        statusLabel: licenseLabels[ent.license.status],
+        activatedAt: ent.license.activated_at,
+      } : null,
+      orders: orders.filter((order) => order.status !== "creating").map((order) => ({
+        id: order.id, kind: order.kind, status: order.status, amountCents: order.amount_cents, listPriceCents: order.list_price_cents,
+        creditCents: order.credit_cents, createdAt: order.created_at, paidAt: order.paid_at,
+        edition: publicEdition(ent.editions.find((edition) => edition.id === order.edition_id)),
+      })),
+      history: events.map((event) => ({ kind: event.kind, createdAt: event.created_at, to: ent.editions.find((edition) => edition.id === event.to_edition_id)?.name || null })),
+      latestEdition: latest ? publicEdition(latest) : null,
+      upgrade: upgrade && !upgrade.error ? { edition: publicEdition(latest), ...upgrade } : null,
+      pendingOrder: open?.checkout_url ? { url: open.checkout_url, expiresAt: open.expires_at } : null,
+    };
+  }
+
+  // Cria (ou reaproveita) o pedido e o Checkout avulso no Asaas. Preço sempre do servidor.
+  async function startCheckout(user, editionCode, tracking = null) {
+    const target = await store.getEditionByCode(String(editionCode || ""));
+    if (!target || !target.on_sale) throw httpError(404, "edition_not_found", "Edição indisponível para compra.");
+    const open = await store.getOpenOrder(user.id, now());
+    if (open?.checkout_url && open.edition_id === target.id) return { url: open.checkout_url, reused: true };
+    if (open) throw httpError(409, "order_in_progress", "Você já tem um pagamento em andamento. Conclua ou aguarde ele expirar.");
+
+    const [ent, orders] = await Promise.all([userEntitlement(user.id), store.listOrders(user.id)]);
+    const price = quote({ target, license: ent.license, editions: ent.editions, orders });
+    if (price.error === "already_owned") throw httpError(409, "already_owned", "Sua licença já inclui esta edição.");
+    const expiresAt = new Date(now().getTime() + config.asaas.checkoutMinutes * 60000).toISOString();
+    const base = { user_id: user.id, edition_id: target.id, kind: price.kind, list_price_cents: price.listPrice, credit_cents: price.credit, amount_cents: price.amount };
+
+    if (price.amount === 0) {
+      const order = await store.insertOrder({ ...base, status: "paid", paid_at: now().toISOString() });
+      if (!order) throw httpError(409, "order_in_progress", "Já existe um pedido em andamento.");
+      await activateLicense(user.id, order, "upgrade_without_charge");
+      return { url: null, activated: true };
+    }
+    if (price.amount < 500) throw httpError(422, "amount_below_minimum", "O valor da diferença é menor que o mínimo aceito pelo meio de pagamento. Fale com o suporte.");
+
+    // O índice único parcial impede dois pedidos em aberto simultâneos.
+    const order = await store.insertOrder({ ...base, status: "creating", expires_at: expiresAt });
+    if (!order) return startCheckout(user, editionCode, tracking);
+    if (tracking) await saveTracking(order.id, tracking);
+    try {
+      const checkout = await asaas.createCheckout({
+        billingTypes: ["PIX", "CREDIT_CARD"],
+        chargeTypes: ["DETACHED"],
+        minutesToExpire: config.asaas.checkoutMinutes,
+        externalReference: order.id,
+        callback: {
+          successUrl: `${config.appUrl}/checkout/retorno?resultado=sucesso`,
+          cancelUrl: `${config.appUrl}/checkout/retorno?resultado=cancelado`,
+          expiredUrl: `${config.appUrl}/checkout/retorno?resultado=expirado`,
+        },
+        items: [{ name: target.name, description: price.kind === "upgrade" ? `Upgrade para ${target.name}` : target.name, quantity: 1, value: price.amount / 100 }],
+      });
+      const url = checkoutUrl(checkout, config.asaas.checkoutHost);
+      await store.updateOrder(order.id, { status: "pending", asaas_checkout_id: checkout.id, checkout_url: url });
+      return { url, reused: false };
+    } catch (error) {
+      await store.updateOrder(order.id, { status: "failed", error: String(error.message).slice(0, 500) });
+      throw error.status ? error : httpError(502, "asaas_error", "Não foi possível iniciar o pagamento.");
+    }
+  }
+
+  // Dados de anúncio (com consentimento) ficam no pedido; falha aqui não impede a compra.
+  async function saveTracking(orderId, tracking) {
+    try { await store.updateOrder(orderId, { ad_tracking: tracking }); } catch (error) { console.error("[meta] rastreio não salvo:", error.message); }
+  }
+
+  // Purchase para a API de Conversões, uma vez por pedido (só na transição para pago).
+  async function reportPurchase(order) {
+    if (!conversions || !order.ad_tracking || order.amount_cents <= 0) return;
+    try {
+      const [profile, editions] = await Promise.all([store.getProfile(order.user_id), store.listEditions({ onSaleOnly: false })]);
+      await conversions.purchase({ order, email: profile?.email, editionCode: editions.find((edition) => edition.id === order.edition_id)?.code, eventTime: now() });
+    } catch (error) {
+      console.error("[meta] Purchase não enviado:", error.message);
+    }
+  }
+
+  async function activateLicense(userId, order, kind = "activated") {
+    const editions = await store.listEditions({ onSaleOnly: false });
+    const target = editions.find((edition) => edition.id === order.edition_id);
+    const license = await store.getLicense(userId);
+    if (!license) {
+      const created = await store.insertLicense({ user_id: userId, edition_id: target.id, status: "active", origin_order_id: order.id, activated_at: now().toISOString() });
+      await store.insertLicenseEvent({ license_id: created.id, user_id: userId, kind, to_edition_id: target.id, order_id: order.id });
+      await onboarding?.welcomeBuyer(userId, target);
+      return;
+    }
+    const currentRank = editions.find((edition) => edition.id === license.edition_id)?.rank || 0;
+    const patch = { status: "active" };
+    if (target.rank > currentRank || ["refunded", "revoked"].includes(license.status)) patch.edition_id = target.rank >= currentRank ? target.id : license.edition_id;
+    if (!(await store.updateLicense(license.id, patch, license.version))) throw new Error("Licença alterada em paralelo; reprocessar.");
+    await store.insertLicenseEvent({ license_id: license.id, user_id: userId, kind: order.kind === "upgrade" ? "upgraded" : kind, from_edition_id: license.edition_id, to_edition_id: patch.edition_id || license.edition_id, order_id: order.id });
+  }
+
+  // Recalcula a edição a partir dos pedidos pagos restantes (após estorno).
+  async function recomputeLicense(userId, reason) {
+    const [license, orders, editions] = await Promise.all([store.getLicense(userId), store.listOrders(userId), store.listEditions({ onSaleOnly: false })]);
+    if (!license) return;
+    const valid = orders.filter((order) => order.status === "paid" && !order.refunded_at);
+    const best = valid.map((order) => editions.find((edition) => edition.id === order.edition_id)).sort((a, b) => b.rank - a.rank)[0];
+    const patch = best ? { edition_id: best.id } : { status: "refunded" };
+    await store.updateLicense(license.id, patch, license.version);
+    await store.insertLicenseEvent({ license_id: license.id, user_id: userId, kind: reason, from_edition_id: license.edition_id, to_edition_id: best?.id || null });
+  }
+
+  function verifyWebhookToken(received) {
+    const expected = Buffer.from(config.asaas.webhookToken || "");
+    const given = Buffer.from(String(received || ""));
+    return expected.length > 0 && expected.length === given.length && timingSafeEqual(expected, given);
+  }
+
+  async function receiveWebhook(token, payload) {
+    if (!verifyWebhookToken(token)) throw httpError(401, "invalid_token", "Token do webhook inválido.");
+    if (!payload?.id || !payload?.event) throw httpError(400, "invalid_event", "Evento sem identificador.");
+    const { inserted, event } = await store.insertEvent({ id: String(payload.id), event: String(payload.event), payload, status: "received" });
+    if (!inserted && event?.status === "processed") return { duplicate: true, status: "processed" };
+    return { duplicate: !inserted, ...(await processEvent(event || { id: payload.id, event: payload.event, payload })) };
+  }
+
+  async function finish(row, status, note = null) {
+    await store.updateEvent(row.id, { status, note, processed_at: status === "processed" ? now().toISOString() : null, attempts: (row.attempts || 0) + 1 });
+    return { status, note };
+  }
+
+  async function processEvent(row) {
+    const payload = row.payload;
+    try {
+      if (payload.event.startsWith("CHECKOUT_")) return await handleCheckout(row, payload);
+      if (!payload.payment) return finish(row, "processed", "Evento sem cobrança; apenas registrado.");
+      return await handlePayment(row, payload);
+    } catch (error) {
+      return finish(row, "failed", String(error.message).slice(0, 500));
+    }
+  }
+
+  async function handleCheckout(row, payload) {
+    const checkout = payload.checkout || {};
+    const order = (checkout.id && await store.findOrderByCheckout(checkout.id)) || (checkout.externalReference && await store.getOrder(checkout.externalReference));
+    if (!order) return finish(row, "unlinked", "Checkout sem pedido correspondente.");
+    if (payload.event === "CHECKOUT_PAID") {
+      if (order.status === "paid") return finish(row, "processed", "Pedido já pago.");
+      if (Array.isArray(checkout.items) && checkout.items.length) {
+        const total = Math.round(checkout.items.reduce((sum, item) => sum + Number(item.value || 0) * Number(item.quantity || 1), 0) * 100);
+        if (total !== order.amount_cents) return finish(row, "failed", `Valor divergente: checkout ${total}, pedido ${order.amount_cents}.`);
+      }
+      await store.updateOrder(order.id, { status: "paid", paid_at: now().toISOString(), asaas_customer_id: checkout.customer || order.asaas_customer_id || null });
+      if (checkout.customer) await store.setCustomerId(order.user_id, checkout.customer);
+      await activateLicense(order.user_id, { ...order, status: "paid" }, order.kind === "upgrade" ? "upgraded" : "activated");
+      await reportPurchase(order);
+      for (const pending of await store.listEvents({ status: "unlinked", limit: 50 })) if (pending.id !== row.id) await processEvent(pending);
+      return finish(row, "processed", "Licença ativada.");
+    }
+    const statusByEvent = { CHECKOUT_CANCELED: "canceled", CHECKOUT_EXPIRED: "expired" };
+    if (statusByEvent[payload.event] && ["creating", "pending"].includes(order.status)) await store.updateOrder(order.id, { status: statusByEvent[payload.event] });
+    return finish(row, "processed");
+  }
+
+  async function handlePayment(row, payload) {
+    const payment = payload.payment;
+    const profile = payment.customer ? await store.findProfileByCustomer(payment.customer) : null;
+    if (!profile) return finish(row, "unlinked", "Cliente ainda não vinculado a uma conta.");
+    const valueCents = Math.round(Number(payment.value || 0) * 100);
+    const existing = await store.getPayment(payment.id);
+    const orders = await store.listOrders(profile.id);
+    const order = (existing?.order_id && orders.find((item) => item.id === existing.order_id))
+      || orders.find((item) => ["paid", "refunded"].includes(item.status) && item.amount_cents === valueCents && item.asaas_customer_id === payment.customer)
+      || orders.find((item) => item.status === "pending" && item.amount_cents === valueCents && item.asaas_customer_id === payment.customer);
+    await store.upsertPayment({
+      asaas_payment_id: payment.id, order_id: order?.id || null, user_id: profile.id, asaas_customer_id: payment.customer,
+      status: payment.status, value_cents: valueCents, billing_type: payment.billingType || null,
+      confirmed_at: payment.confirmedDate || payment.paymentDate || null, invoice_url: safeAsaasUrl(payment.invoiceUrl),
+    });
+    if (PAID_PAYMENT.has(payload.event) && order?.status === "pending") {
+      await store.updateOrder(order.id, { status: "paid", paid_at: now().toISOString() });
+      await activateLicense(profile.id, { ...order, status: "paid" });
+      await reportPurchase(order);
+      return finish(row, "processed", "Licença ativada pela confirmação da cobrança.");
+    }
+    if (payload.event === "PAYMENT_REFUNDED" && order?.status === "paid") {
+      await store.updateOrder(order.id, { status: "refunded", refunded_at: now().toISOString() });
+      await recomputeLicense(profile.id, "refunded");
+      return finish(row, "processed", "Pedido estornado; licença recalculada.");
+    }
+    if (DISPUTE.has(payload.event)) {
+      const license = await store.getLicense(profile.id);
+      if (license?.status === "active") {
+        await store.updateLicense(license.id, { status: "disputed" }, license.version);
+        await store.insertLicenseEvent({ license_id: license.id, user_id: profile.id, kind: "disputed", order_id: order?.id || null, details: { event: payload.event } });
+      }
+      return finish(row, "processed", "Contestação registrada; acesso mantido até a decisão administrativa.");
+    }
+    return finish(row, "processed", order ? null : "Cobrança sem pedido correspondente.");
+  }
+
+  // Reconciliação de um pedido pendente: procura cobranças pagas do cliente no Asaas.
+  async function reconcileOrder(orderId, actorId) {
+    const order = await store.getOrder(orderId);
+    if (!order) throw httpError(404, "not_found", "Pedido não encontrado.");
+    const customer = order.asaas_customer_id || (await store.getProfile(order.user_id))?.asaas_customer_id;
+    if (!customer) return { changed: false, reason: "Cliente Asaas ainda desconhecido para este pedido." };
+    const remote = await asaas.listCustomerPayments(customer);
+    const paid = (remote?.data || []).find((payment) => ["RECEIVED", "CONFIRMED"].includes(payment.status) && Math.round(Number(payment.value) * 100) === order.amount_cents);
+    if (!paid || order.status === "paid") return { changed: false, reason: order.status === "paid" ? "Pedido já pago." : "Nenhuma cobrança paga correspondente." };
+    await store.updateOrder(order.id, { status: "paid", paid_at: now().toISOString(), asaas_customer_id: customer });
+    await activateLicense(order.user_id, { ...order, status: "paid" }, "reconciled");
+    await store.insertAudit({ actor_id: actorId, action: "reconcile_order", target_user_id: order.user_id, details: { order_id: order.id, payment: paid.id } });
+    return { changed: true };
+  }
+
+  // Decisão administrativa sobre uma licença (contestação, revogação, restauração), auditada.
+  async function setLicenseStatus(userId, status, reason, actorId) {
+    if (!["active", "revoked"].includes(status)) throw httpError(400, "invalid_status", "Situação inválida.");
+    if (String(reason || "").trim().length < 10) throw httpError(400, "invalid_reason", "Justificativa obrigatória (mínimo 10 caracteres).");
+    const license = await store.getLicense(userId);
+    if (!license) throw httpError(404, "not_found", "Licença não encontrada.");
+    await store.updateLicense(license.id, { status }, license.version);
+    await store.insertLicenseEvent({ license_id: license.id, user_id: userId, kind: `admin_${status}`, details: { reason } });
+    await store.insertAudit({ actor_id: actorId, action: "license_status", target_user_id: userId, details: { from: license.status, to: status, reason } });
+    return { status };
+  }
+
+  return { userEntitlement, accountState, startCheckout, receiveWebhook, processEvent, reconcileOrder, setLicenseStatus, verifyWebhookToken };
+}
+
+export function publicEdition(edition) {
+  if (!edition) return null;
+  return { code: edition.code, name: edition.name, rank: edition.rank, priceCents: edition.price_cents, description: edition.description, features: edition.features || [], onSale: edition.on_sale };
+}
+
+function safeAsaasUrl(value) {
+  try {
+    const url = new URL(value);
+    return url.protocol === "https:" && (url.hostname === "asaas.com" || url.hostname.endsWith(".asaas.com")) ? url.toString() : null;
+  } catch { return null; }
+}

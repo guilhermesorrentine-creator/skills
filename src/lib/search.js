@@ -95,6 +95,13 @@ export function buildSearchIndex(catalog) {
   return { repos, skills };
 }
 
+// Dono do repositório (conta ou organização no GitHub), lido da URL validada: crédito ao criador.
+export function repoOwner(url) {
+  const safe = safeGitHubUrl(url);
+  const owner = safe ? new URL(safe).pathname.split("/").filter(Boolean)[0] : "";
+  return owner ? { name: owner, url: `https://github.com/${owner}` } : null;
+}
+
 export function safeGitHubUrl(value) {
   try {
     const url = new URL(value);
@@ -209,4 +216,39 @@ export function relatedSkills(index, skill, limit = 6) {
   const sameTopic = pick(index.skills.filter((item) => item.repoName !== skill.repoName && item.category === skill.category
     && item.fields.name.split(" ").some((term) => nameTerms.has(term))), "Mesma categoria e termo em comum no nome", limit - sameRepo.length);
   return [...sameRepo, ...sameTopic];
+}
+
+// Índice unificado (skills, subagentes, workflows, guias, ferramentas, referências).
+export function buildResourceIndex(resources = []) {
+  return resources.map((item) => {
+    const fields = {
+      name: normalize(item.title),
+      description: normalize(`${item.summary || ""} ${(item.tags || []).join(" ")}`),
+      path: normalize(item.path || ""),
+      repo: normalize(`${item.source_name || ""} ${item.type} ${item.category}`),
+    };
+    return { ...item, fields, normalized: Object.values(fields).join(" ") };
+  });
+}
+
+// Ordenação estável: relevância, depois título e id.
+export function searchResources(records, query, { types = null, category = "todas", source = "todas" } = {}) {
+  const filtered = records.filter((item) => (!types || types.includes(item.type))
+    && (category === "todas" || item.category === category) && (source === "todas" || item.source_name === source));
+  if (!normalize(query)) return [...filtered].sort((a, b) => a.title.localeCompare(b.title) || a.id.localeCompare(b.id));
+  return filtered.map((item) => ({ item, score: scoreText(query, item.fields) }))
+    .filter(({ score }) => score > 0)
+    .sort((a, b) => b.score - a.score || a.item.title.localeCompare(b.item.title) || a.item.id.localeCompare(b.item.id))
+    .map(({ item, score }) => ({ ...item, score }));
+}
+
+// Caminhos editoriais: correspondem quando todos os termos significativos da busca
+// aparecem no objetivo ou nas palavras-chave cadastradas pela administração.
+export function matchPaths(paths = [], query = "") {
+  const searchTerms = queryTerms(query);
+  if (!normalize(query) || !searchTerms.length) return [];
+  return paths.filter((path) => {
+    const haystack = normalize(`${path.goal} ${(path.keywords || []).join(" ")}`).split(" ");
+    return searchTerms.every((term) => haystack.some((word) => word === term || word.startsWith(term) || (synonyms[term] || []).includes(word)));
+  });
 }

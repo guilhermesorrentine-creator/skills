@@ -1,111 +1,78 @@
 import { memo } from "react";
+import { camera, characters } from "./sprites.js";
 
 // Sprites originais desenhados em grade de pixels. Cada corpo é descrito pela metade esquerda
 // (10 colunas) e espelhado; acessórios assimétricos entram como camadas posicionadas.
-const mirror = (rows) => rows.map((row) => row + [...row].reverse().join(""));
+// Ao ativar (hover, foco ou toque) o corpo troca por poses de ação em quadros (`steps()`) e
+// surgem os objetos próprios de cada personagem — ver `.pixel-sprite[data-active]` em home.css.
+// Objetos animados próprios de cada personagem (só no componente; o e-mail usa a pose de repouso).
 
-const outline = { K: "#170a22", S: "#f2b79b", s: "#c47d6c", D: "#2b1a40", d: "#1d1030", B: "#0f0816" };
+// Terminal holográfico com linhas de código digitadas.
+function SoftwareExtras() {
+  return <g className="sprite-extra x-terminal">
+    <rect x="15" y="-1" width="10" height="8" fill="#170a22" opacity=".85"/>
+    <rect x="15" y="-1" width="10" height="1" fill="#d94cf5"/>
+    <rect x="15" y="6" width="10" height="1" fill="#d94cf5"/>
+    <rect x="15" y="0" width="1" height="6" fill="#d94cf5"/>
+    <rect x="24" y="0" width="1" height="6" fill="#d94cf5"/>
+    <rect className="code-line l1" x="17" y="1" width="5" height="1" fill="#ff7cb9"/>
+    <rect className="code-line l2" x="18" y="2" width="5" height="1" fill="#e88dff"/>
+    <rect className="code-line l3" x="18" y="3" width="3" height="1" fill="#7ef0ff"/>
+    <rect className="code-line l4" x="17" y="4" width="4" height="1" fill="#e88dff"/>
+    <rect className="code-cursor" x="22" y="4" width="1" height="1" fill="#fff0fb"/>
+  </g>;
+}
 
-const legs = [
-  "....KDDDDD",
-  "....KDDDDK",
-  "....KDDdK.",
-  "....KDDdK.",
-  "...KBBBBK.",
-  "...KKKKKK.",
-];
+// Gráfico holográfico com barras de crescimento.
+function StrategistExtras() {
+  return <g className="sprite-extra x-chart">
+    <rect x="16" y="-1" width="9" height="8" fill="#170a22" opacity=".8"/>
+    <rect x="16" y="-1" width="9" height="1" fill="#ff7cb9"/>
+    <rect x="16" y="6" width="9" height="1" fill="#ff7cb9"/>
+    <rect x="16" y="0" width="1" height="6" fill="#ff7cb9"/>
+    <rect x="24" y="0" width="1" height="6" fill="#ff7cb9"/>
+    <rect className="chart-bar b1" x="18" y="4" width="1" height="2" fill="#e88dff"/>
+    <rect className="chart-bar b2" x="20" y="3" width="1" height="3" fill="#e88dff"/>
+    <rect className="chart-bar b3" x="22" y="1" width="1" height="5" fill="#ff4fa5"/>
+    <rect className="chart-spark" x="23" y="0" width="1" height="1" fill="#fff0fb"/>
+  </g>;
+}
 
-export const characters = {
-  software: {
-    title: "Hacker de terminal",
-    palette: { ...outline, H: "#6b34a6", h: "#45206f", V: "#ff4fa5", G: "#fff0fb", P: "#7a3cba", p: "#55288a", Z: "#e88dff", L: "#2a0f3e", g: "#d94cf5", M: "#3b1d57" },
-    body: mirror([
-      "......KKKK", "....KKhhhh", "...KhhHHHH", "..KhHHHHHH", "..KhHHKKKK", "..KhHKSSSS",
-      "..KhHKVVVV", "..KhHKVGVV", "..KhHKSSSS", "..KhHKSSSs", "...KhHKSSS", "...KhHHKKK",
-      "..KhPPPPPP", ".KhPPPPPPZ", ".KPPPpPPPZ", "KPPPPpPPPZ", "KPPPPpPPPZ", "KPSPPpPPPZ",
-      "KKSKPPPPPZ", ".KK.KPPPPP", ...legs,
-    ]),
-    blink: "G",
-    layers: [
-      { x: 4, y: 14, className: "sprite-screen", rows: [
-        "KKKKKKKKKKKK",
-        "KLLLLLLLLLLK",
-        "KLgggLLLLLLK",
-        "KLLLggggLLLK",
-        "KLgLLLLLLLLK",
-        "KKKKKKKKKKKK",
-        "KMMMMMMMMMMK",
-      ] },
-    ],
-  },
-  empreendedorismo: {
-    title: "Estrategista neon",
-    palette: { ...outline, R: "#3a1650", r: "#ff7cb9", J: "#c23c86", j: "#8f2a63", W: "#fff0fb", T: "#d94cf5", E: "#170a22", C: "#ff7cb9", c: "#e88dff", F: "#ff7cb9" },
-    body: mirror([
-      "......KKKK", "....KKRRRR", "...KRRRRrr", "..KRRRRRRR", "..KRRRRRRR", "..KRRSSSSS",
-      "..KRSSSSSS", "..KSSEESSS", "..KSSSSSSS", "..KsSSSSSS", "...KSSSSss", "....KKSSSS",
-      "...KKJJWWT", "..KJJJJWWT", ".KJJJJjWTT", ".KJJJJjWTT", ".KJJJJjWWT", ".KJSJJjJWW",
-      ".KKSKJJJJJ", "...KKJJJJJ", ...legs,
-    ]),
-    blink: "c",
-    layers: [
-      { x: 16, y: -1, className: "sprite-holo", rows: [
-        "FFFFFFF",
-        "F.....F",
-        "F....cF",
-        "F..c.cF",
-        "Fc.c.cF",
-        "Fccc.cF",
-        "FFFFFFF",
-      ] },
-    ],
-  },
-  conteudo: {
-    title: "Criadora audiovisual",
-    palette: { ...outline, A: "#ff4fa5", a: "#b8307a", E: "#2a0f3e", e: "#d94cf5", N: "#5b2a8a", n: "#3d1d63", V: "#170a22", O: "#1b1129", R: "#ff4fa5", c: "#e88dff", L: "#fff0fb" },
-    body: mirror([
-      ".....EEEEE", "...EEKKKKK", "..EKAAAAAA", "..EKAAAAAA", ".eEKAAaaAA", ".eEKASSSSS",
-      ".eEKSSVVSS", ".eEKSSSSSS", "..EKSSSSSS", "...KSSSSss", "...KASSSSS", "....KKSSSS",
-      "...KKNNNNN", "..KNNNNnNN", ".KNNNNnNNN", ".KNNNNnNNN", ".KNNNNnNNN", ".KNSNNnNNN",
-      ".KKSKNNNNN", "...KKNNNNN", ...legs,
-    ]),
-    blink: "R",
-    layers: [
-      { x: 9, y: 13, className: "sprite-camera", rows: [
-        "..KKK....",
-        "KKKKKKKKK",
-        "KOOOOKKOK",
-        "KOcLcKROK",
-        "KOccOKOOK",
-        "KOOOOOOOK",
-        "KKKKKKKKK",
-      ] },
-    ],
-  },
-  ciencia: {
-    title: "Pesquisadora de laboratório",
-    palette: { ...outline, U: "#2a1a52", u: "#4a3380", Y: "#7ef0ff", y: "#3bb7d0", C: "#efe3ff", c: "#b9a6d6", I: "#5b2a8a", M: "#7ef0ff", m: "#e88dff" },
-    body: mirror([
-      "......KKKK", "....KKUUUU", "...KUUUUUU", "..KUUUuuUU", "..KUKKKKKK", "..KUKYyKYY",
-      "..KUKKKKKK", "..KUSSSSSS", "..KUSKKSSS", "..KUSSSSSS", "...KSSSSss", "....KKSSSS",
-      "...KKCCIII", "..KCCCCCII", ".KCCCcCCII", ".KCCCcCCCI", ".KCCCcCCCI", ".KCSCcCCCC",
-      ".KKSKCCCCC", "...KCCCCCC", ...legs,
-    ]),
-    blink: "Y",
-    layers: [
-      { x: -4, y: 0, className: "sprite-molecule", rows: [
-        "..M...",
-        ".mMm..",
-        "..M..M",
-        "...mMm",
-        "..M..M",
-        ".mMm..",
-      ] },
-    ],
-  },
-};
+// Câmera erguida, gravação acesa, foco da lente e marcadores de vídeo.
+function CreatorExtras({ palette }) {
+  return <g className="sprite-extra x-video">
+    <g className="cam-rig">
+      {toRects(camera, palette, 9, 13, null, "cam")}
+      <rect x="8" y="16" width="1" height="2" fill={palette.S}/>
+      <rect x="18" y="16" width="1" height="2" fill={palette.S}/>
+      <rect className="rec-dot" x="15" y="16" width="1" height="1" fill="#ff2d6f"/>
+      <rect className="lens-ring" x="10" y="15" width="3" height="3" fill="none" stroke="#7ef0ff" strokeWidth=".35"/>
+    </g>
+    <g className="vid-ui">
+      <rect x="-5" y="0" width="2" height="1" fill="#ff7cb9"/><rect x="-5" y="1" width="1" height="1" fill="#ff7cb9"/>
+      <rect x="-1" y="0" width="2" height="1" fill="#ff7cb9"/><rect x="0" y="1" width="1" height="1" fill="#ff7cb9"/>
+      <rect x="-5" y="5" width="1" height="1" fill="#ff7cb9"/><rect x="-5" y="6" width="2" height="1" fill="#ff7cb9"/>
+      <rect x="0" y="5" width="1" height="1" fill="#ff7cb9"/><rect x="-1" y="6" width="2" height="1" fill="#ff7cb9"/>
+      <rect x="-3" y="2" width="1" height="3" fill="#fff0fb"/><rect x="-2" y="3" width="1" height="1" fill="#fff0fb"/>
+      <rect className="vid-progress" x="-5" y="8" width="6" height="1" fill="#e88dff"/>
+    </g>
+  </g>;
+}
 
-function toRects(rows, palette, x0, y0, blinkKey, keyPrefix) {
+// Partículas ao redor da projeção científica.
+function ScientistExtras() {
+  return <g className="sprite-extra x-lab">
+    <rect className="beam" x="0" y="5" width="1" height="2" fill="#7ef0ff" opacity=".6"/>
+    <rect className="spark s1" x="-5" y="6" width="1" height="1" fill="#7ef0ff"/>
+    <rect className="spark s2" x="2" y="-1" width="1" height="1" fill="#e88dff"/>
+    <rect className="spark s3" x="-4" y="-2" width="1" height="1" fill="#fff0fb"/>
+    <rect className="spark s4" x="3" y="4" width="1" height="1" fill="#7ef0ff"/>
+  </g>;
+}
+
+const EXTRAS = { software: SoftwareExtras, empreendedorismo: StrategistExtras, conteudo: CreatorExtras, ciencia: ScientistExtras };
+
+function toRects(rows, palette, x0, y0, sprite, keyPrefix) {
   const rects = [];
   rows.forEach((row, y) => {
     let start = 0;
@@ -113,7 +80,8 @@ function toRects(rows, palette, x0, y0, blinkKey, keyPrefix) {
       if (x < row.length && row[x] === row[start]) continue;
       const key = row[start];
       if (key !== "." && palette[key]) {
-        rects.push(<rect key={`${keyPrefix}-${y}-${start}`} x={x0 + start} y={y0 + y} width={x - start} height={1} fill={palette[key]} className={key === blinkKey ? "px-blink" : undefined}/>);
+        const className = key === sprite?.blink ? "px-blink" : sprite?.glow?.includes(key) ? "px-glow" : undefined;
+        rects.push(<rect key={`${keyPrefix}-${y}-${start}`} x={x0 + start} y={y0 + y} width={x - start} height={1} fill={palette[key]} className={className}/>);
       }
       start = x;
     }
@@ -122,12 +90,22 @@ function toRects(rows, palette, x0, y0, blinkKey, keyPrefix) {
 }
 
 // Personagem pixel-art em SVG; `shape-rendering` mantém as bordas nítidas em qualquer escala.
-function CyberpunkCharacter({ category, className = "" }) {
+// Cabeça (linhas 0-11) separada do tronco: respira e acompanha o olhar (`look`, em pixels do sprite).
+// `fidget` dispara um gesto curto ("hop"); a pose de ação vem de `active`.
+const HEAD_ROWS = 12;
+function CyberpunkCharacter({ category, active = false, fidget = null, look = null, className = "" }) {
   const sprite = characters[category];
   if (!sprite) return null;
-  return <svg className={`pixel-sprite sprite-${category} ${className}`} viewBox="-5 -2 30 29" shapeRendering="crispEdges" aria-hidden="true" focusable="false">
-    <g className="sprite-body">{toRects(sprite.body, sprite.palette, 0, 0, sprite.blink, "b")}</g>
-    {sprite.layers.map((layer, index) => <g key={index} className={`sprite-layer ${layer.className}`}>{toRects(layer.rows, sprite.palette, layer.x, layer.y, sprite.blink, `l${index}`)}</g>)}
+  const Extras = EXTRAS[category];
+  const style = look ? { "--lx": look.x, "--ly": look.y } : undefined;
+  return <svg className={`pixel-sprite sprite-${category} ${className}`} data-active={active || undefined} data-fidget={fidget || undefined} style={style} viewBox="-5 -2 30 29" shapeRendering="crispEdges" aria-hidden="true" focusable="false">
+    <g className="sprite-body pose-idle">
+      <g className="sprite-torso">{toRects(sprite.body.slice(HEAD_ROWS), sprite.palette, 0, HEAD_ROWS, sprite, "bt")}</g>
+      <g className="sprite-look"><g className="sprite-head">{toRects(sprite.body.slice(0, HEAD_ROWS), sprite.palette, 0, 0, sprite, "bh")}</g></g>
+    </g>
+    {sprite.poses.map((pose, index) => <g key={index} className={`pose-act ${sprite.poses.length > 1 ? `f2-${index}` : ""}`}>{toRects(pose, sprite.palette, 0, 0, sprite, `p${index}`)}</g>)}
+    {sprite.layers.map((layer, index) => <g key={index} className={`sprite-layer when-${layer.when || "always"} ${layer.frame || ""} ${layer.className || ""}`}>{toRects(layer.rows, sprite.palette, layer.x, layer.y, sprite, `l${index}`)}</g>)}
+    <Extras palette={sprite.palette}/>
   </svg>;
 }
 
