@@ -36,6 +36,7 @@ Meta: 150 vendas × R$ 97,90 ≈ **R$ 14.685**. São **3,3 vendas por dia**, tod
 | **Isca gratuita** ("50 skills para Claude Code grátis", modelo Asimov e HumanAcademy) | Captura quem ainda não compra e vende depois. | As páginas `/r/<repo>` já são uma isca natural; falta captura de e-mail, que depende de SMTP. |
 | **Aula ao vivo gratuita** ("imersão de Claude Code hoje às 20h", modelo Bravy School, no ar desde maio) | O formato mais duradouro do nicho; vende ao fim da aula. | Pode ser uma live no Instagram com oferta no fim. |
 | **Comunidades** (grupos de Facebook e WhatsApp de IA, Claude Code e empreendedorismo) | Gratuito, público já interessado. | Usar os carrosséis e as páginas `/r/` como conteúdo de valor, nunca spam. |
+| **Recomendação em chats de IA (ChatGPT, Claude, Perplexity, Gemini)** | Quem pergunta "qual skill usar para X" recebe a Voxelia como resposta. Tráfego de alta intenção e gratuito, que cresce sozinho. | Páginas legíveis por IA, `llms.txt`, dados estruturados e robôs liberados (PR #7); GPT da Voxelia pronto para a GPT Store e skill pública da Voxelia para o Claude em `marketing/ia-chats/`. Falta você: publicar o GPT, criar o repositório público da skill no GitHub, Bing Webmaster e Google Search Console. |
 | **Tráfego pago (depois, com você)** | É o que realmente escala para 3 vendas por dia. | Criativos no modelo validado em `criativos-modelo-validado.md`; estrutura de campanhas em `plano-instagram-e-anuncios.md`. |
 
 ## 4. Passo a passo para ligar o pagamento real (5 minutos)

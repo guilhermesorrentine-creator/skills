@@ -1,0 +1,85 @@
+{
+  "repo": "kit-criadores",
+  "char": "conteudo",
+  "accent": "#f27aa8",
+  "lines": [
+    {
+      "scene": "flop",
+      "say": "Domingo, onze da noite. Ideia no celular, roteiro pela metade e o vídeo de amanhã nem gravado.",
+      "key": "vídeo",
+      "p": {
+        "views": 37
+      }
+    },
+    {
+      "scene": "varal",
+      "say": "A Voxelia não é pack de prompts: é a equipe de IA de um criador de conteúdo, dentro do Claude.",
+      "key": "não é pack de prompts",
+      "p": {
+        "items": [
+          "roteiro",
+          "ganchos",
+          "legenda",
+          "carrossel",
+          "vídeo",
+          "voz",
+          "edição",
+          "plano"
+        ]
+      }
+    },
+    {
+      "scene": "ganchos",
+      "say": "Ganchos com nota, roteiro, legenda e o vídeo montado, a partir de uma ideia.",
+      "key": "ganchos",
+      "p": {
+        "label": "3 ganchos com nota",
+        "hooks": [
+          {
+            "text": "Ninguém te contou isso sobre…",
+            "score": 58
+          },
+          {
+            "text": "Pare de fazer isso no seu…",
+            "score": 92,
+            "best": true
+          },
+          {
+            "text": "3 erros que travam o seu…",
+            "score": 74
+          }
+        ]
+      }
+    },
+    {
+      "scene": "contador",
+      "say": "São trezentas e doze skills de criação, com passo a passo em português.",
+      "show": "São 312 skills de criação, com passo a passo em português.",
+      "key": "312",
+      "p": {
+        "to": 312,
+        "label": "skills de criação"
+      }
+    },
+    {
+      "scene": "plano",
+      "say": "Pagamento único, acesso imediato e quinze dias de garantia.",
+      "show": "Pagamento único, acesso imediato e 15 dias de garantia.",
+      "key": "garantia",
+      "p": {
+        "title": "Voxelia",
+        "stamp": "15 DIAS DE GARANTIA"
+      }
+    },
+    {
+      "scene": "cta",
+      "say": "Toque no link da bio e escolha o kit para criadores.",
+      "key": "link da bio",
+      "p": {
+        "pre": "Toque no",
+        "key": "link da bio",
+        "sub": "kit para criadores · pagamento único"
+      }
+    }
+  ]
+}

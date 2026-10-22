@@ -170,3 +170,4 @@
       .bad { color: #b33a3a; padding: 0 4px; border-radius: 6px; background-image: linear-gradient(#d94848, #d94848), linear-gradient(transparent, transparent); background-repeat: no-repeat; background-position: 0 55%, 0 0; background-size: 0% 6px, 100% 100%; }
       .after { color: #17151e; font-weight: 700; }
       .phone ~ .you { z-index: 2; }
+      .tl.out.err { color: #ff7a7a; }

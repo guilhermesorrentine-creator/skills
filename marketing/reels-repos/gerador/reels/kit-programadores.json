@@ -1,0 +1,85 @@
+{
+  "repo": "kit-programadores",
+  "char": "software",
+  "accent": "#a589ec",
+  "lines": [
+    {
+      "scene": "terminal",
+      "say": "O agente esqueceu o contexto de novo, e o PR voltou pela terceira vez?",
+      "key": "contexto",
+      "p": {
+        "lines": [
+          {
+            "cmd": "claude"
+          },
+          {
+            "out": "✗ contexto perdido"
+          },
+          {
+            "cmd": "git push"
+          },
+          {
+            "out": "✗ PR reprovado (3ª vez)"
+          }
+        ]
+      }
+    },
+    {
+      "scene": "varal",
+      "say": "A Voxelia não é pack de prompts: é o Claude Code configurado como um time sênior.",
+      "key": "não é pack de prompts",
+      "p": {
+        "items": [
+          "método",
+          "memória",
+          "segurança",
+          "plugins",
+          "revisão",
+          "testes",
+          "tokens",
+          "modelos"
+        ]
+      }
+    },
+    {
+      "scene": "fases",
+      "say": "Método de desenvolvimento, memória entre sessões e auditoria de segurança.",
+      "key": "memória",
+      "p": {
+        "label": "3 camadas",
+        "n": 3,
+        "result": "✓ time configurado"
+      }
+    },
+    {
+      "scene": "contador",
+      "say": "Mil setecentas e sessenta e nove skills de software, com guia em português.",
+      "show": "1.769 skills de software, com guia em português.",
+      "key": "1.769",
+      "p": {
+        "to": 1769,
+        "label": "skills de software"
+      }
+    },
+    {
+      "scene": "plano",
+      "say": "Pagamento único, acesso imediato e quinze dias de garantia.",
+      "show": "Pagamento único, acesso imediato e 15 dias de garantia.",
+      "key": "garantia",
+      "p": {
+        "title": "Voxelia",
+        "stamp": "15 DIAS DE GARANTIA"
+      }
+    },
+    {
+      "scene": "cta",
+      "say": "Toque no link da bio e escolha o kit para programadores.",
+      "key": "link da bio",
+      "p": {
+        "pre": "Toque no",
+        "key": "link da bio",
+        "sub": "kit para programadores · pagamento único"
+      }
+    }
+  ]
+}

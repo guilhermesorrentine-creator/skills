@@ -1,0 +1,73 @@
+{
+  "repo": "kit-pesquisadores",
+  "char": "ciencia",
+  "accent": "#5fd3a0",
+  "lines": [
+    {
+      "scene": "citacoes",
+      "say": "Madrugada de prazo, vinte PDFs abertos e a revisão de literatura no zero?",
+      "key": "revisão",
+      "p": {
+        "title": "Revisão"
+      }
+    },
+    {
+      "scene": "varal",
+      "say": "A Voxelia não é pack de prompts: é um assistente de pesquisa com cento e setenta e sete skills científicas.",
+      "show": "A Voxelia não é pack de prompts: é um assistente de pesquisa com 177 skills científicas.",
+      "key": "não é pack de prompts",
+      "p": {
+        "items": [
+          "literatura",
+          "dados",
+          "figuras",
+          "genômica",
+          "química",
+          "clínica",
+          "escrita",
+          "métodos"
+        ]
+      }
+    },
+    {
+      "scene": "grafico",
+      "say": "Revisão com cada afirmação ligada à fonte, análise de dados e figuras prontas pra publicar.",
+      "key": "figuras",
+      "p": {
+        "title": "Resultados"
+      }
+    },
+    {
+      "scene": "lab",
+      "say": "Do DNA às moléculas e aos ensaios clínicos, com guia em português.",
+      "key": "moléculas",
+      "p": {
+        "labels": [
+          "genômica",
+          "moléculas",
+          "ensaios"
+        ]
+      }
+    },
+    {
+      "scene": "plano",
+      "say": "Pagamento único, acesso imediato e quinze dias de garantia.",
+      "show": "Pagamento único, acesso imediato e 15 dias de garantia.",
+      "key": "garantia",
+      "p": {
+        "title": "Voxelia",
+        "stamp": "15 DIAS DE GARANTIA"
+      }
+    },
+    {
+      "scene": "cta",
+      "say": "Toque no link da bio e escolha o kit para pesquisadores.",
+      "key": "link da bio",
+      "p": {
+        "pre": "Toque no",
+        "key": "link da bio",
+        "sub": "kit para pesquisadores · pagamento único"
+      }
+    }
+  ]
+}

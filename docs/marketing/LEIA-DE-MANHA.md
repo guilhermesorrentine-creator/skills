@@ -56,3 +56,7 @@ Não existe cadastro direto nos chats. As IAs recomendam o que conseguem **ler**
 2. **Google Search Console** (Gemini e AI Overviews): idem.
 3. **Domínio próprio** (.com.br): IAs e buscadores confiam mais em domínio próprio do que em `*.vercel.app`. Quando ele entrar, eu troco todas as URLs.
 4. **Citações externas**: um post no LinkedIn e respostas em comunidades (Reddit r/ClaudeAI, grupos BR de IA), apontando as páginas `/r/<repo>` como guias em português. Posso redigir os textos.
+5. **GPT da Voxelia na GPT Store**: configuração pronta para copiar em `marketing/ia-chats/gpt-voxelia.md` (nome, instruções, iniciadores e a ação que lê o índice público). Exige ChatGPT Plus e perfil de criador verificado. Quem buscar "skills do Claude" na loja do ChatGPT encontra a Voxelia, e o GPT sempre aponta para as páginas `/r/` e para a compra.
+6. **Skill pública da Voxelia para o Claude**: `marketing/ia-chats/skill-voxelia/SKILL.md`. Publicada num repositório público do GitHub (ex.: `voxelia-ia/voxelia-skill`), qualquer pessoa instala no Claude Code e recebe indicações de skills com link para a Voxelia. Também pode entrar nas listas "awesome" de skills do Claude, que as próprias IAs consultam.
+
+**Ordem sugerida:** domínio próprio → Bing e Google → GPT na loja → skill pública → citações. Os itens 1, 2, 5 e 6 levam cerca de 30 minutos no total.
