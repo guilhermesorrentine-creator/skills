@@ -18,7 +18,7 @@ const copy = {
 // Login, cadastro, recuperação e redefinição de senha (Supabase Auth).
 export default function AuthPage({ mode, account, onAuthenticated }) {
   const reduced = useReduced();
-  const { user, loading: authLoading, setInvited } = useAuth();
+  const { user, loading: authLoading, setInvited, setRecovery } = useAuth();
   const setsPassword = mode === "reset" || mode === "invite";
   const params = new URLSearchParams(location.search);
   const next = safeNext(params.get("next"));
@@ -50,7 +50,7 @@ export default function AuthPage({ mode, account, onAuthenticated }) {
       } else if (mode === "recover") { await authActions.recover(email); setDone("Se houver uma conta com este e-mail, o link de recuperação foi enviado."); }
       else if (setsPassword) {
         if (password.length < 8) throw new Error("A senha precisa ter pelo menos 8 caracteres.");
-        await authActions.updatePassword(password); setDone("Senha salva."); setInvited(false); navigate("/app");
+        await authActions.updatePassword(password); setDone("Senha salva."); setInvited(false); setRecovery(false); navigate("/app");
       }
     } catch (cause) { setError(cause.message); }
     finally { setBusy(false); }

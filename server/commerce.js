@@ -4,6 +4,7 @@ import { checkoutUrl } from "./asaas.js";
 
 const httpError = (status, code, message) => Object.assign(new Error(message), { status, code });
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const DAY = 86400000;
 const PAID_PAYMENT = new Set(["PAYMENT_CONFIRMED", "PAYMENT_RECEIVED"]);
 const DISPUTE = new Set(["PAYMENT_CHARGEBACK_REQUESTED", "PAYMENT_CHARGEBACK_DISPUTE", "PAYMENT_AWAITING_CHARGEBACK_REVERSAL"]);
 
@@ -53,17 +54,21 @@ export function createCommerce({ store, asaas, config, onboarding = null, conver
 
   // Cria (ou reaproveita) o pedido e o Checkout avulso no Asaas. Preço sempre do servidor.
   // Com `claim`, o retorno do pagamento leva o pedido e a chave para a pessoa criar a senha sem e-mail.
-  async function startCheckout(user, editionCode, tracking = null, { claim = false } = {}) {
+  // Com `payer` (nome e CPF), cobra direto: devolve o QR do Pix para a nossa página e a fatura para cartão.
+  async function startCheckout(user, editionCode, tracking = null, { claim = false, payer = null } = {}, retried = false) {
     const target = await store.getEditionByCode(String(editionCode || ""));
     if (!target || !target.on_sale) throw httpError(404, "edition_not_found", "Edição indisponível para compra.");
     const open = await store.getOpenOrder(user.id, now());
-    if (open?.checkout_url && open.edition_id === target.id) return withClaim({ url: open.checkout_url, reused: true }, open.id, claim);
+    if (open?.checkout_url && open.edition_id === target.id) {
+      const payment = payer ? await store.findPaymentByOrder(open.id) : null;
+      return withClaim({ url: open.checkout_url, reused: true, ...(payment && { pix: await pixFor(payment.asaas_payment_id), amountCents: open.amount_cents }) }, open.id, claim);
+    }
     if (open) throw httpError(409, "order_in_progress", "Você já tem um pagamento em andamento. Conclua ou aguarde ele expirar.");
 
     const [ent, orders] = await Promise.all([userEntitlement(user.id), store.listOrders(user.id)]);
     const price = quote({ target, license: ent.license, editions: ent.editions, orders });
     if (price.error === "already_owned") throw httpError(409, "already_owned", "Sua licença já inclui esta edição.");
-    const expiresAt = new Date(now().getTime() + config.asaas.checkoutMinutes * 60000).toISOString();
+    const expiresAt = new Date(now().getTime() + (payer ? DAY : config.asaas.checkoutMinutes * 60000)).toISOString();
     const base = { user_id: user.id, edition_id: target.id, kind: price.kind, list_price_cents: price.listPrice, credit_cents: price.credit, amount_cents: price.amount };
 
     if (price.amount === 0) {
@@ -76,8 +81,14 @@ export function createCommerce({ store, asaas, config, onboarding = null, conver
 
     // O índice único parcial impede dois pedidos em aberto simultâneos.
     const order = await store.insertOrder({ ...base, status: "creating", expires_at: expiresAt });
-    if (!order) return startCheckout(user, editionCode, tracking, { claim });
+    if (!order) {
+      // Pedido vencido ainda marcado em aberto (a cobrança direta não tem evento de expiração): encerra e tenta de novo.
+      if (retried) throw httpError(409, "order_in_progress", "Você já tem um pagamento em andamento.");
+      for (const stale of await store.listOrders(user.id)) if (["creating", "pending"].includes(stale.status) && stale.expires_at && new Date(stale.expires_at) <= now()) await store.updateOrder(stale.id, { status: "expired" });
+      return startCheckout(user, editionCode, tracking, { claim, payer }, true);
+    }
     if (tracking) await saveTracking(order.id, tracking);
+    if (payer) return withClaim(await chargeDirect(user, order, target, price, payer), order.id, claim);
     const back = claim ? `&pedido=${order.id}&chave=${claimKey(order.id)}` : "";
     try {
       const checkout = await asaas.createCheckout({
@@ -101,18 +112,54 @@ export function createCommerce({ store, asaas, config, onboarding = null, conver
     }
   }
 
-  // Compra sem cadastro: só o e-mail. A conta nasce sem senha (nenhum e-mail é enviado) e a pessoa
-  // cria a senha no retorno do pagamento. E-mail de conta já usada exige login.
-  async function guestCheckout(email, editionCode, tracking = null) {
+  // Cobrança direta: cliente no Asaas (reaproveitado se a conta já tiver), cobrança Pix ou cartão e o QR.
+  async function chargeDirect(user, order, target, price, payer) {
+    try {
+      let customer = (await store.getProfile(user.id))?.asaas_customer_id;
+      if (!customer) {
+        customer = (await asaas.createCustomer({ name: payer.name, cpfCnpj: payer.document, email: user.email, externalReference: user.id, notificationDisabled: true })).id;
+        await store.setCustomerId(user.id, customer);
+      }
+      const payment = await asaas.createPayment({
+        customer, billingType: "UNDEFINED", value: price.amount / 100, externalReference: order.id,
+        dueDate: new Date(now().getTime() + DAY).toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" }),
+        description: price.kind === "upgrade" ? `Upgrade para ${target.name}` : target.name,
+      });
+      const url = safeAsaasUrl(payment.invoiceUrl);
+      await store.upsertPayment({ asaas_payment_id: payment.id, order_id: order.id, user_id: user.id, asaas_customer_id: customer, status: payment.status, value_cents: price.amount, billing_type: payment.billingType || null, confirmed_at: null, invoice_url: url });
+      await store.updateOrder(order.id, { status: "pending", asaas_customer_id: customer, checkout_url: url });
+      return { url, reused: false, pix: await pixFor(payment.id), amountCents: price.amount };
+    } catch (error) {
+      await store.updateOrder(order.id, { status: "failed", error: String(error.message).slice(0, 500) });
+      // Recusa do Asaas (CPF, nome) volta com a mensagem dele para a pessoa corrigir.
+      throw error.code === "asaas_error" && error.upstreamStatus === 400 ? httpError(422, "asaas_rejected", error.message) : error.status ? error : httpError(502, "asaas_error", "Não foi possível iniciar o pagamento.");
+    }
+  }
+
+  // Sem QR (falha pontual do Asaas), a fatura ainda aceita Pix e cartão.
+  async function pixFor(paymentId) {
+    try {
+      const qr = await asaas.pixQrCode(paymentId);
+      return qr?.encodedImage && qr?.payload ? { image: qr.encodedImage, payload: qr.payload } : null;
+    } catch (error) {
+      console.error("[asaas] QR do Pix indisponível:", error.message);
+      return null;
+    }
+  }
+
+  // Compra sem cadastro: e-mail (e, na cobrança direta, nome e CPF). A conta nasce sem senha (nenhum
+  // e-mail é enviado) e a pessoa cria a senha no retorno do pagamento. E-mail de conta já usada exige login.
+  async function guestCheckout(email, editionCode, tracking = null, payer = null) {
     const address = String(email || "").trim().toLowerCase();
     if (!EMAIL.test(address) || address.length > 254) throw httpError(400, "invalid_email", "Informe um e-mail válido.");
+    const buyer = payer && validPayer(payer);
     let profile = await store.findProfileByEmail(address);
     if (profile && await store.hasSignedIn(profile.id)) throw httpError(409, "account_exists", "Este e-mail já tem conta na Voxelia. Entre para concluir a compra.");
     if (!profile) {
       const invite = await store.createInvitedUser(address, `${config.appUrl}/criar-senha`);
       profile = { id: invite.userId, email: address };
     }
-    return startCheckout({ id: profile.id, email: address }, editionCode, tracking, { claim: true });
+    return startCheckout({ id: profile.id, email: address }, editionCode, tracking, { claim: true, payer: buyer });
   }
 
   // Retorno da compra sem cadastro: com a chave certa e o pedido pago, devolve um link de uso único
@@ -122,8 +169,12 @@ export function createCommerce({ store, asaas, config, onboarding = null, conver
     const given = Buffer.from(String(key || ""));
     const expected = Buffer.from(id ? claimKey(id) : "");
     if (!id || given.length !== expected.length || !timingSafeEqual(given, expected)) throw httpError(403, "invalid_claim", "Link de retorno inválido.");
-    const order = await store.getOrder(id);
+    let order = await store.getOrder(id);
     if (!order) throw httpError(404, "not_found", "Pedido não encontrado.");
+    // Quem paga o Pix fica nesta tela: consulta o Asaas direto, sem depender só do webhook.
+    if (order.status === "pending" && order.asaas_customer_id) {
+      try { if (await settleFromAsaas(order, "activated")) order = { ...order, status: "paid" }; } catch (error) { console.error("[asaas] consulta do pedido:", error.message); }
+    }
     if (order.status !== "paid") return { status: order.status };
     if (await store.hasSignedIn(order.user_id)) return { status: "paid", login: true };
     const profile = await store.getProfile(order.user_id);
@@ -264,17 +315,26 @@ export function createCommerce({ store, asaas, config, onboarding = null, conver
     return finish(row, "processed", order ? null : "Cobrança sem pedido correspondente.");
   }
 
+  // Procura no Asaas uma cobrança paga do pedido e, se houver, marca pago e ativa a licença.
+  async function settleFromAsaas(order, kind) {
+    const customer = order.asaas_customer_id || (await store.getProfile(order.user_id))?.asaas_customer_id;
+    if (!customer) return null;
+    const remote = await asaas.listCustomerPayments(customer);
+    const paid = (remote?.data || []).find((payment) => ["RECEIVED", "CONFIRMED"].includes(payment.status) && Math.round(Number(payment.value) * 100) === order.amount_cents && (!payment.externalReference || payment.externalReference === order.id));
+    if (!paid) return null;
+    await store.updateOrder(order.id, { status: "paid", paid_at: now().toISOString(), asaas_customer_id: customer });
+    await activateLicense(order.user_id, { ...order, status: "paid" }, kind);
+    await reportPurchase(order);
+    return paid;
+  }
+
   // Reconciliação de um pedido pendente: procura cobranças pagas do cliente no Asaas.
   async function reconcileOrder(orderId, actorId) {
     const order = await store.getOrder(orderId);
     if (!order) throw httpError(404, "not_found", "Pedido não encontrado.");
-    const customer = order.asaas_customer_id || (await store.getProfile(order.user_id))?.asaas_customer_id;
-    if (!customer) return { changed: false, reason: "Cliente Asaas ainda desconhecido para este pedido." };
-    const remote = await asaas.listCustomerPayments(customer);
-    const paid = (remote?.data || []).find((payment) => ["RECEIVED", "CONFIRMED"].includes(payment.status) && Math.round(Number(payment.value) * 100) === order.amount_cents);
-    if (!paid || order.status === "paid") return { changed: false, reason: order.status === "paid" ? "Pedido já pago." : "Nenhuma cobrança paga correspondente." };
-    await store.updateOrder(order.id, { status: "paid", paid_at: now().toISOString(), asaas_customer_id: customer });
-    await activateLicense(order.user_id, { ...order, status: "paid" }, "reconciled");
+    if (order.status === "paid") return { changed: false, reason: "Pedido já pago." };
+    const paid = await settleFromAsaas(order, "reconciled");
+    if (!paid) return { changed: false, reason: "Nenhuma cobrança paga correspondente." };
     await store.insertAudit({ actor_id: actorId, action: "reconcile_order", target_user_id: order.user_id, details: { order_id: order.id, payment: paid.id } });
     return { changed: true };
   }
@@ -297,6 +357,21 @@ export function createCommerce({ store, asaas, config, onboarding = null, conver
 export function publicEdition(edition) {
   if (!edition) return null;
   return { code: edition.code, name: edition.name, rank: edition.rank, priceCents: edition.price_cents, description: edition.description, features: edition.features || [], onSale: edition.on_sale };
+}
+
+// Nome e CPF/CNPJ que o Asaas exige para cobrar. Confere os dígitos do CPF para errar aqui, não no banco.
+function validPayer({ name, document }) {
+  const fullName = String(name || "").trim().replace(/\s+/g, " ");
+  const digits = String(document || "").replace(/\D/g, "");
+  if (fullName.length < 3 || fullName.length > 100) throw httpError(400, "invalid_name", "Informe seu nome completo.");
+  if (!(digits.length === 14 || (digits.length === 11 && validCpf(digits)))) throw httpError(400, "invalid_document", "Confira o CPF.");
+  return { name: fullName, document: digits };
+}
+
+function validCpf(cpf) {
+  if (/^(\d)\1{10}$/.test(cpf)) return false;
+  const check = (len) => { const sum = [...cpf.slice(0, len)].reduce((acc, d, i) => acc + Number(d) * (len + 1 - i), 0); return ((sum * 10) % 11) % 10; };
+  return check(9) === Number(cpf[9]) && check(10) === Number(cpf[10]);
 }
 
 function safeAsaasUrl(value) {

@@ -49,6 +49,7 @@ export function createMemoryStore(seed = {}) {
     listOrders: async (userId) => clone(db.orders.filter((item) => !userId || item.user_id === userId).sort(newest("created_at"))),
 
     getPayment: async (id) => clone(db.payments.find((item) => item.asaas_payment_id === id)),
+    findPaymentByOrder: async (orderId) => clone(db.payments.find((item) => item.order_id === orderId)),
     upsertPayment: async (row) => {
       const existing = db.payments.find((item) => item.asaas_payment_id === row.asaas_payment_id);
       if (existing) Object.assign(existing, row, { order_id: row.order_id || existing.order_id }); else db.payments.push({ id: randomUUID(), created_at: stamp(), ...row });

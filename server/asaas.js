@@ -19,6 +19,10 @@ export function createAsaasClient({ baseUrl, apiKey, fetchImpl = fetch }) {
     // Checkout avulso (chargeTypes DETACHED): Pix e cartão de crédito, pagamento único.
     createCheckout: (body) => call("POST", "/checkouts", body),
     listCustomerPayments: (customer) => call("GET", `/payments?customer=${encodeURIComponent(customer)}&limit=50`),
+    // Cobrança direta (compra sem cadastro): cliente, cobrança "UNDEFINED" (Pix ou cartão) e o QR do Pix.
+    createCustomer: (body) => call("POST", "/customers", body),
+    createPayment: (body) => call("POST", "/payments", body),
+    pixQrCode: (paymentId) => call("GET", `/payments/${encodeURIComponent(paymentId)}/pixQrCode`),
   };
 }
 
