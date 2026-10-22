@@ -53,6 +53,9 @@ export function createApi({ store, commerce, onboarding = null, library, me, ver
       return ok(await commerce.accountState(user));
     },
     "POST /api/checkout": async (request) => { const input = await body(request); return ok(await commerce.startCheckout(await requireUser(request), input.editionCode, readTracking(input.tracking, request))); },
+    // Compra sem cadastro (só e-mail) e retorno com link para criar a senha.
+    "POST /api/checkout/guest": async (request) => { const input = await body(request); return ok(await commerce.guestCheckout(input.email, input.editionCode, readTracking(input.tracking, request))); },
+    "POST /api/checkout/claim": async (request) => { const input = await body(request); return ok(await commerce.claimAccess(input.order, input.key)); },
 
     // Catálogo autorizado: índice para a busca local e detalhe de um recurso
     "GET /api/library": async (request) => { const { rank } = await requireAccess(request); return ok(await library.libraryFor(rank)); },

@@ -247,3 +247,11 @@
   .repo-hero h1 { padding-right: 140px; }
   .repo-cta { position: sticky; bottom: 16px; width: min(720px, 100% - 2 * var(--gutter)); margin: 18px auto 0; border: 1px solid var(--line); border-radius: var(--radius-lg); grid-template-columns: 1fr auto; align-items: center; }
 }
+
+/* Compra rápida (/comprar): um campo, um botão. */
+.buy-card h1 { font-size: clamp(26px, 6vw, 34px); }
+.buy-price { font-size: 16px; color: var(--text-2); }
+.buy-price b { font: 800 34px/1 var(--font-display); color: var(--text); margin-right: 6px; }
+.buy-points { list-style: none; padding: 0; display: grid; gap: 6px; font-size: 15px; color: var(--text-2); }
+.buy-points li::before { content: "✓ "; color: var(--ok); font-weight: 700; }
+.buy-submit { width: 100%; min-height: 52px; font-size: 17px; }
