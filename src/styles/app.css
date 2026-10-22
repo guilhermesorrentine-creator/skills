@@ -279,3 +279,4 @@
 .links-kit.area-ciencia { background: var(--tint-ciencia); --ink: var(--ink-ciencia); }
 .links-list { list-style: none; padding: 0; width: 100%; display: grid; gap: 8px; }
 .links-list a { display: block; min-height: 48px; padding: 13px; border-radius: 14px; background: var(--surface); border: 1px solid var(--line); text-decoration: none; color: var(--text); font-weight: 600; }
+.buy-input { width: 100%; min-height: 52px; }

@@ -41,7 +41,7 @@ export default function BuyPage({ signedIn, onEnter }) {
       <ul className="buy-points"><li>2 mil skills organizadas por objetivo</li><li>Guias passo a passo em português</li><li>15 dias de garantia</li></ul>
       <form onSubmit={submit} className="stack">
         <label htmlFor="buy-email">Seu e-mail <span className="muted small">(é o seu login)</span></label>
-        <input id="buy-email" type="email" inputMode="email" autoComplete="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="voce@email.com"/>
+        <input id="buy-email" className="input buy-input" type="email" inputMode="email" autoComplete="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="voce@email.com"/>
         {error && <p className="notice" role="alert">{error} {exists && <Link className="link" to={`/entrar?next=${encodeURIComponent("/acesso-pendente")}`}>Entrar</Link>}</p>}
         <button type="submit" className="btn btn-primary buy-submit" disabled={busy || !edition}>{busy ? "Abrindo pagamento…" : "Pagar com Pix ou cartão"}</button>
       </form>
