@@ -2,7 +2,7 @@ import { useState } from "react";
 import { apiFetch } from "../../lib/auth.jsx";
 
 // Link de conexão MCP: o Claude, o ChatGPT e outros agentes passam a consultar a Voxelia no próprio chat.
-export default function AiConnect() {
+export default function AiConnect({ until }) {
   const [url, setUrl] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -22,7 +22,7 @@ export default function AiConnect() {
 
   return <section className="panel ai-connect">
     <h2>Use a Voxelia dentro do Claude e do ChatGPT</h2>
-    <p>Conecte uma vez e peça no próprio chat: “qual skill uso para criar uma landing page?”. A IA consulta o acervo da Voxelia e traz o passo a passo, com fonte e autor. Incluído na sua licença.</p>
+    <p>Conecte uma vez e peça no próprio chat: “qual skill uso para criar uma landing page?”. A IA consulta o acervo da Voxelia e traz o passo a passo, com fonte e autor. Incluído no seu Voxelia Pro{until ? ` até ${new Date(until).toLocaleDateString("pt-BR")}` : ""}.</p>
     {!url ? <button type="button" className="btn btn-primary" onClick={() => load(false)} disabled={busy}>{busy ? "Gerando…" : "Gerar meu link de conexão"}</button> : <div className="stack">
       <label htmlFor="mcp-url">Seu link pessoal <span className="muted small">(não compartilhe: ele dá acesso à sua licença)</span></label>
       <div className="row"><input id="mcp-url" className="input" readOnly value={url} onFocus={(e) => e.target.select()}/><button type="button" className="btn btn-ghost" onClick={() => copy(url, "link")}>{copied === "link" ? "Copiado!" : "Copiar"}</button></div>

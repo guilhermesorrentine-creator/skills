@@ -7,6 +7,12 @@ const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const DAY = 86400000;
 const GUARANTEE_DAYS = 15;
 const REFUND_REQUESTED = "Reembolso pedido";
+// Voxelia Pro: acervo vitalício + conexão MCP por 12 meses, parcelável em 12x no cartão.
+const MCP_EDITION = "pro-anual";
+const MCP_DAYS = 365;
+const INSTALLMENTS = { [MCP_EDITION]: 12 };
+const installmentsFor = (edition) => INSTALLMENTS[edition?.code] || 1;
+const CONFIRMED = new Set(["RECEIVED", "CONFIRMED"]);
 const PAID_PAYMENT = new Set(["PAYMENT_CONFIRMED", "PAYMENT_RECEIVED"]);
 const REFUND_EVENTS = new Set(["PAYMENT_REFUNDED", "PAYMENT_PARTIALLY_REFUNDED"]);
 const DISPUTE = new Set(["PAYMENT_CHARGEBACK_REQUESTED", "PAYMENT_CHARGEBACK_DISPUTE", "PAYMENT_AWAITING_CHARGEBACK_REVERSAL"]);
@@ -46,8 +52,26 @@ export function createCommerce({ store, asaas, config, onboarding = null, conver
       upgrade: upgrade && !upgrade.error ? { edition: publicEdition(latest), ...upgrade } : null,
       pendingOrder: open?.checkout_url ? { url: open.checkout_url, expiresAt: open.expires_at } : null,
       refund: refundState(orders),
+      mcp: mcpWindow(orders, ent.editions),
     };
   }
+
+  // Conexão MCP: 12 meses a partir do último pagamento do Pro (não estornado).
+  function mcpWindow(orders, editions) {
+    const pro = editions.find((edition) => edition.code === MCP_EDITION);
+    const last = pro && orders.filter((order) => order.edition_id === pro.id && order.status === "paid" && !order.refunded_at && order.paid_at)
+      .map((order) => new Date(order.paid_at).getTime()).sort((a, b) => b - a)[0];
+    const until = last ? new Date(last + MCP_DAYS * DAY) : null;
+    return { active: Boolean(until && until > now()), until: until ? until.toISOString() : null };
+  }
+  async function mcpStatus(userId) {
+    const [orders, editions] = await Promise.all([store.listOrders(userId), store.listEditions({ onSaleOnly: false })]);
+    return mcpWindow(orders, editions);
+  }
+
+  // Cobrança do pedido pela referência gravada nela (vale para parcelas) ou, em pedidos antigos, pelo valor.
+  const paysOrder = (payment, order) => CONFIRMED.has(payment.status)
+    && (payment.externalReference === order.id || (!payment.externalReference && Math.round(Number(payment.value) * 100) === order.amount_cents));
 
   // Garantia: o último pedido pago pode ser reembolsado até 15 dias depois do pagamento.
   function refundable(orders) {
@@ -69,14 +93,17 @@ export function createCommerce({ store, asaas, config, onboarding = null, conver
     const customer = order.asaas_customer_id || (await store.getProfile(order.user_id))?.asaas_customer_id;
     if (!customer) return null;
     const remote = await asaas.listCustomerPayments(customer);
-    return (remote?.data || []).find((payment) => ["RECEIVED", "CONFIRMED"].includes(payment.status) && Math.round(Number(payment.value) * 100) === order.amount_cents && (!payment.externalReference || payment.externalReference === order.id))?.id || null;
+    return (remote?.data || []).find((payment) => paysOrder(payment, order))?.id || null;
   }
 
   // Estorna no Asaas, marca o pedido e recalcula a licença (sem pedido pago válido, o acesso termina).
   async function refundOrder(order, reason, actorId) {
     const paymentId = await paidPaymentId(order);
     if (!paymentId) throw httpError(404, "payment_not_found", "Cobrança do pedido não encontrada no Asaas.");
-    await asaas.refundPayment(paymentId, { description: `Garantia Voxelia${reason ? `: ${reason}` : ""}`.slice(0, 500) });
+    // Parcelado no cartão: estorna o parcelamento inteiro, não só uma parcela.
+    const remote = await asaas.getPayment?.(paymentId).catch(() => null);
+    if (remote?.installment) await asaas.refundInstallment(remote.installment);
+    else await asaas.refundPayment(paymentId, { description: `Garantia Voxelia${reason ? `: ${reason}` : ""}`.slice(0, 500) });
     await store.updateOrder(order.id, { status: "refunded", refunded_at: now().toISOString(), error: null });
     await recomputeLicense(order.user_id, "refunded");
     await store.insertAudit({ actor_id: actorId, action: "refund", target_user_id: order.user_id, details: { order_id: order.id, payment: paymentId, reason } });
@@ -114,13 +141,19 @@ export function createCommerce({ store, asaas, config, onboarding = null, conver
   // Cria (ou reaproveita) o pedido e o Checkout avulso no Asaas. Preço sempre do servidor.
   // Com `claim`, o retorno do pagamento leva o pedido e a chave para a pessoa criar a senha sem e-mail.
   // Com `payer` (nome e CPF), cobra direto: devolve o QR do Pix para a nossa página e a fatura para cartão.
-  async function startCheckout(user, editionCode, tracking = null, { claim = false, payer = null } = {}, retried = false) {
+  // `method` "card" parcela no cartão quando a edição permite (Pro: 12x); "pix" gera o QR à vista.
+  async function startCheckout(user, editionCode, tracking = null, { claim = false, payer = null, method = "pix" } = {}, retried = false) {
     const target = await store.getEditionByCode(String(editionCode || ""));
     if (!target || !target.on_sale) throw httpError(404, "edition_not_found", "Edição indisponível para compra.");
     const open = await store.getOpenOrder(user.id, now());
     if (open?.checkout_url && open.edition_id === target.id) {
       const payment = payer ? await store.findPaymentByOrder(open.id) : null;
-      return withClaim({ url: open.checkout_url, reused: true, ...(payment && { pix: await pixFor(payment.asaas_payment_id), amountCents: open.amount_cents }) }, open.id, claim);
+      if (!payment) return withClaim({ url: open.checkout_url, reused: true }, open.id, claim);
+      const isCard = payment.billing_type === "CREDIT_CARD";
+      const wantsCard = method === "card" && installmentsFor(target) > 1;
+      // Trocou de forma de pagamento: cancela a cobrança anterior e gera a nova no mesmo pedido.
+      if (isCard !== wantsCard) return withClaim(await chargeDirect(user, open, target, { kind: open.kind, amount: open.amount_cents }, payer, method, payment), open.id, claim);
+      return withClaim({ url: open.checkout_url, reused: true, pix: isCard ? null : await pixFor(payment.asaas_payment_id), amountCents: open.amount_cents, installments: isCard ? installmentsFor(target) : 1 }, open.id, claim);
     }
     if (open) throw httpError(409, "order_in_progress", "Você já tem um pagamento em andamento. Conclua ou aguarde ele expirar.");
 
@@ -144,10 +177,10 @@ export function createCommerce({ store, asaas, config, onboarding = null, conver
       // Pedido vencido ainda marcado em aberto (a cobrança direta não tem evento de expiração): encerra e tenta de novo.
       if (retried) throw httpError(409, "order_in_progress", "Você já tem um pagamento em andamento.");
       for (const stale of await store.listOrders(user.id)) if (["creating", "pending"].includes(stale.status) && stale.expires_at && new Date(stale.expires_at) <= now()) await store.updateOrder(stale.id, { status: "expired" });
-      return startCheckout(user, editionCode, tracking, { claim, payer }, true);
+      return startCheckout(user, editionCode, tracking, { claim, payer, method }, true);
     }
     if (tracking) await saveTracking(order.id, tracking);
-    if (payer) return withClaim(await chargeDirect(user, order, target, price, payer), order.id, claim);
+    if (payer) return withClaim(await chargeDirect(user, order, target, price, payer, method), order.id, claim);
     const back = claim ? `&pedido=${order.id}&chave=${claimKey(order.id)}` : "";
     try {
       const checkout = await asaas.createCheckout({
@@ -172,26 +205,43 @@ export function createCommerce({ store, asaas, config, onboarding = null, conver
   }
 
   // Cobrança direta: cliente no Asaas (reaproveitado se a conta já tiver), cobrança Pix ou cartão e o QR.
-  async function chargeDirect(user, order, target, price, payer) {
+  async function chargeDirect(user, order, target, price, payer, method = "pix", previous = null) {
     try {
+      if (previous) await cancelPayment(previous);
       let customer = (await store.getProfile(user.id))?.asaas_customer_id;
       if (!customer) {
         customer = (await asaas.createCustomer({ name: payer.name, cpfCnpj: payer.document, email: user.email, externalReference: user.id, notificationDisabled: true })).id;
         await store.setCustomerId(user.id, customer);
       }
-      const payment = await asaas.createPayment({
-        customer, billingType: "UNDEFINED", value: price.amount / 100, externalReference: order.id,
+      const installments = method === "card" ? installmentsFor(target) : 1;
+      const common = {
+        customer, externalReference: order.id,
         dueDate: new Date(now().getTime() + DAY).toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" }),
         description: price.kind === "upgrade" ? `Upgrade para ${target.name}` : target.name,
-      });
+      };
+      const payment = await asaas.createPayment(installments > 1
+        ? { ...common, billingType: "CREDIT_CARD", installmentCount: installments, totalValue: price.amount / 100 }
+        : { ...common, billingType: "UNDEFINED", value: price.amount / 100 });
       const url = safeAsaasUrl(payment.invoiceUrl);
-      await store.upsertPayment({ asaas_payment_id: payment.id, order_id: order.id, user_id: user.id, asaas_customer_id: customer, status: payment.status, value_cents: price.amount, billing_type: payment.billingType || null, confirmed_at: null, invoice_url: url });
+      await store.upsertPayment({ asaas_payment_id: payment.id, order_id: order.id, user_id: user.id, asaas_customer_id: customer, status: payment.status, value_cents: Math.round(Number(payment.value || price.amount / 100) * 100), billing_type: payment.billingType || null, confirmed_at: null, invoice_url: url });
       await store.updateOrder(order.id, { status: "pending", asaas_customer_id: customer, checkout_url: url });
-      return { url, reused: false, pix: await pixFor(payment.id), amountCents: price.amount };
+      return { url, reused: false, pix: installments > 1 ? null : await pixFor(payment.id), amountCents: price.amount, installments };
     } catch (error) {
       await store.updateOrder(order.id, { status: "failed", error: String(error.message).slice(0, 500) });
       // Recusa do Asaas (CPF, nome) volta com a mensagem dele para a pessoa corrigir.
       throw error.code === "asaas_error" && error.upstreamStatus === 400 ? httpError(422, "asaas_rejected", error.message) : error.status ? error : httpError(502, "asaas_error", "Não foi possível iniciar o pagamento.");
+    }
+  }
+
+  // Cobrança substituída (troca de Pix para cartão ou o contrário): some do Asaas para não haver pagamento em dobro.
+  async function cancelPayment(row) {
+    try {
+      const remote = await asaas.getPayment?.(row.asaas_payment_id);
+      if (remote?.installment) await asaas.deleteInstallment(remote.installment);
+      else await asaas.deletePayment(row.asaas_payment_id);
+      await store.upsertPayment({ ...row, status: "DELETED" });
+    } catch (error) {
+      throw Object.assign(new Error(`Não foi possível trocar a forma de pagamento: ${error.message}`), { status: 409, code: "payment_switch_failed" });
     }
   }
 
@@ -208,7 +258,7 @@ export function createCommerce({ store, asaas, config, onboarding = null, conver
 
   // Compra sem cadastro: e-mail (e, na cobrança direta, nome e CPF). A conta nasce sem senha (nenhum
   // e-mail é enviado) e a pessoa cria a senha no retorno do pagamento. E-mail de conta já usada exige login.
-  async function guestCheckout(email, editionCode, tracking = null, payer = null) {
+  async function guestCheckout(email, editionCode, tracking = null, payer = null, method = "pix") {
     const address = String(email || "").trim().toLowerCase();
     if (!EMAIL.test(address) || address.length > 254) throw httpError(400, "invalid_email", "Informe um e-mail válido.");
     const buyer = payer && validPayer(payer);
@@ -218,7 +268,13 @@ export function createCommerce({ store, asaas, config, onboarding = null, conver
       const invite = await store.createInvitedUser(address, `${config.appUrl}/criar-senha`);
       profile = { id: invite.userId, email: address };
     }
-    return startCheckout({ id: profile.id, email: address }, editionCode, tracking, { claim: true, payer: buyer });
+    return startCheckout({ id: profile.id, email: address }, editionCode, tracking, { claim: true, payer: buyer, method });
+  }
+
+  // Compra com login (upgrade para o Pro, por exemplo): mesma cobrança direta, com nome e CPF.
+  async function accountCheckout(user, editionCode, tracking = null, payer = null, method = "pix") {
+    if (!payer) return startCheckout(user, editionCode, tracking);
+    return startCheckout(user, editionCode, tracking, { claim: true, payer: validPayer(payer), method });
   }
 
   // Retorno da compra sem cadastro: com a chave certa e o pedido pago, devolve um link de uso único
@@ -344,7 +400,8 @@ export function createCommerce({ store, asaas, config, onboarding = null, conver
     const valueCents = Math.round(Number(payment.value || 0) * 100);
     const existing = await store.getPayment(payment.id);
     const orders = await store.listOrders(profile.id);
-    const order = (existing?.order_id && orders.find((item) => item.id === existing.order_id))
+    const order = (payment.externalReference && orders.find((item) => item.id === payment.externalReference))
+      || (existing?.order_id && orders.find((item) => item.id === existing.order_id))
       || orders.find((item) => ["paid", "refunded"].includes(item.status) && item.amount_cents === valueCents && item.asaas_customer_id === payment.customer)
       || orders.find((item) => item.status === "pending" && item.amount_cents === valueCents && item.asaas_customer_id === payment.customer);
     await store.upsertPayment({
@@ -379,7 +436,7 @@ export function createCommerce({ store, asaas, config, onboarding = null, conver
     const customer = order.asaas_customer_id || (await store.getProfile(order.user_id))?.asaas_customer_id;
     if (!customer) return null;
     const remote = await asaas.listCustomerPayments(customer);
-    const paid = (remote?.data || []).find((payment) => ["RECEIVED", "CONFIRMED"].includes(payment.status) && Math.round(Number(payment.value) * 100) === order.amount_cents && (!payment.externalReference || payment.externalReference === order.id));
+    const paid = (remote?.data || []).find((payment) => paysOrder(payment, order));
     if (!paid) return null;
     await store.updateOrder(order.id, { status: "paid", paid_at: now().toISOString(), asaas_customer_id: customer });
     await activateLicense(order.user_id, { ...order, status: "paid" }, kind);
@@ -410,12 +467,12 @@ export function createCommerce({ store, asaas, config, onboarding = null, conver
     return { status };
   }
 
-  return { userEntitlement, accountState, startCheckout, guestCheckout, claimAccess, requestRefund, adminRefund, receiveWebhook, processEvent, reconcileOrder, setLicenseStatus, verifyWebhookToken };
+  return { userEntitlement, accountState, startCheckout, guestCheckout, accountCheckout, mcpStatus, claimAccess, requestRefund, adminRefund, receiveWebhook, processEvent, reconcileOrder, setLicenseStatus, verifyWebhookToken };
 }
 
 export function publicEdition(edition) {
   if (!edition) return null;
-  return { code: edition.code, name: edition.name, rank: edition.rank, priceCents: edition.price_cents, description: edition.description, features: edition.features || [], onSale: edition.on_sale };
+  return { code: edition.code, name: edition.name, rank: edition.rank, priceCents: edition.price_cents, description: edition.description, features: edition.features || [], onSale: edition.on_sale, installments: installmentsFor(edition), mcp: edition.code === MCP_EDITION };
 }
 
 // Nome e CPF/CNPJ que o Asaas exige para cobrar. Confere os dígitos do CPF para errar aqui, não no banco.

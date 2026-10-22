@@ -23,6 +23,11 @@ export function createAsaasClient({ baseUrl, apiKey, fetchImpl = fetch }) {
     createCustomer: (body) => call("POST", "/customers", body),
     createPayment: (body) => call("POST", "/payments", body),
     pixQrCode: (paymentId) => call("GET", `/payments/${encodeURIComponent(paymentId)}/pixQrCode`),
+    getPayment: (paymentId) => call("GET", `/payments/${encodeURIComponent(paymentId)}`),
+    deletePayment: (paymentId) => call("DELETE", `/payments/${encodeURIComponent(paymentId)}`),
+    // Parcelamento no cartão: as 12 parcelas formam um "installment" único no Asaas.
+    deleteInstallment: (installmentId) => call("DELETE", `/installments/${encodeURIComponent(installmentId)}`),
+    refundInstallment: (installmentId) => call("POST", `/installments/${encodeURIComponent(installmentId)}/refund`),
     // Estorno integral (garantia). Exige saldo na conta Asaas; sem saldo, o Asaas recusa.
     refundPayment: (paymentId, body) => call("POST", `/payments/${encodeURIComponent(paymentId)}/refund`, body),
   };

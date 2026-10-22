@@ -95,6 +95,8 @@ export function createSupabaseStore({ url, serviceKey }) {
     insertGrant: async (row) => must(await db.from("access_grants").insert(row).select().single()),
     revokeGrant: async (id, revokedAt) => one(db.from("access_grants").update({ revoked_at: revokedAt }).eq("id", id).select()),
     insertAudit: (row) => run(db.from("audit_logs").insert(row)),
+    insertFunnelEvent: (row) => run(db.from("funnel_events").insert(row)),
+    listFunnelEvents: (since) => many(db.from("funnel_events").select("*").gte("at", since).order("at", { ascending: false }).limit(20000)),
     listAudit: ({ limit = 100 } = {}) => many(db.from("audit_logs").select("*").order("created_at", { ascending: false }).limit(limit)),
 
     listResources: ({ status } = {}) => { let query = db.from("resources").select("*").order("title"); if (status) query = query.eq("status", status); return many(query); },

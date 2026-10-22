@@ -6,7 +6,7 @@ import { CATEGORIES, TYPES } from "../lib/resources.js";
 import { Brand } from "../components/site/SiteNav.jsx";
 import { CopyButton } from "../components/shared.jsx";
 
-const tabs = [["recursos", "Recursos e guias"], ["caminhos", "Caminhos"], ["relacoes", "Relações"], ["edicoes", "Edições"], ["pedidos", "Pedidos"], ["licencas", "Licenças"], ["eventos", "Webhooks"], ["usuarios", "Usuários e acessos"], ["auditoria", "Auditoria"]];
+const tabs = [["funil", "Funil"], ["recursos", "Recursos e guias"], ["caminhos", "Caminhos"], ["relacoes", "Relações"], ["edicoes", "Edições"], ["pedidos", "Pedidos"], ["licencas", "Licenças"], ["eventos", "Webhooks"], ["usuarios", "Usuários e acessos"], ["auditoria", "Auditoria"]];
 const when = (value) => (value ? new Date(value).toLocaleString("pt-BR") : "—");
 const emptyResource = { id: "", type: "guide", category: "software", title: "", summary: "", body_md: "", instructions: "", tags: "", source_name: "", source_url: "", author: "", license: "", visibility: "edition", min_edition_rank: 1, status: "draft" };
 const emptyEdition = { code: "", name: "", rank: "", priceCents: "", description: "", features: "", onSale: false };
@@ -14,7 +14,7 @@ const emptyPath = { id: "", goal: "", description: "", keywords: "", steps: "", 
 
 // Administração: conteúdo, edições e operação financeira. Toda permissão é checada no servidor.
 export default function AdminPage() {
-  const [tab, setTab] = useState("recursos");
+  const [tab, setTab] = useState("funil");
   const [data, setData] = useState(null);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
@@ -40,6 +40,7 @@ export default function AdminPage() {
       {data && <>
         <div className="chip-row admin-tabs" role="tablist" aria-label="Seções">{tabs.map(([id, label]) => <button key={id} type="button" role="tab" className="chip" aria-selected={tab === id} aria-pressed={tab === id} onClick={() => { setTab(id); setMessage(""); }}>{label}</button>)}</div>
         <div className="panel">
+          {tab === "funil" && <FunnelTab/>}
           {tab === "recursos" && <ResourcesTab data={data} act={act}/>}
           {tab === "caminhos" && <PathsTab data={data} act={act}/>}
           {tab === "relacoes" && <RelationsTab data={data} act={act}/>}
@@ -216,4 +217,25 @@ function UsersTab({ data, act, emailOf, reload }) {
 function Table({ head, rows }) {
   if (!rows.length) return <p className="muted">Nenhum registro.</p>;
   return <div className="table-wrap"><table className="table"><thead><tr>{head.map((h, i) => <th key={i} scope="col">{h}</th>)}</tr></thead><tbody>{rows.map((row, i) => <tr key={i}>{row.map((cell, j) => <td key={j}>{cell}</td>)}</tr>)}</tbody></table></div>;
+}
+
+// Funil por origem (fonte · campanha · criativo): visitas → clique em comprar → página de compra →
+// pagamento gerado → venda. Taxas sobre as visitas da mesma origem.
+function FunnelTab() {
+  const [days, setDays] = useState(7);
+  const [data, setData] = useState(null);
+  const [error, setError] = useState("");
+  useEffect(() => { setData(null); apiFetch(`/api/admin/funnel?days=${days}`).then(setData).catch((e) => setError(e.message)); }, [days]);
+  const pct = (a, b) => (b ? `${Math.round((a / b) * 1000) / 10}%` : "—");
+  if (error) return <p className="form-error">{error}</p>;
+  if (!data) return <p className="muted">Carregando…</p>;
+  const total = data.rows.reduce((t, r) => ({ views: t.views + r.views, buyClicks: t.buyClicks + r.buyClicks, buyPage: t.buyPage + r.buyPage, checkouts: t.checkouts + r.checkouts, sales: t.sales + r.sales, revenueCents: t.revenueCents + r.revenueCents }), { views: 0, buyClicks: 0, buyPage: 0, checkouts: 0, sales: 0, revenueCents: 0 });
+  return <div className="stack">
+    <div className="chip-row">{[1, 2, 7, 30].map((d) => <button key={d} type="button" className="chip" aria-pressed={days === d} onClick={() => setDays(d)}>{d === 1 ? "Hoje" : `${d} dias`}</button>)}</div>
+    <p>Visitas <b>{total.views}</b> · cliques em comprar <b>{total.buyClicks}</b> ({pct(total.buyClicks, total.views)}) · pagamentos gerados <b>{total.checkouts}</b> · vendas <b>{total.sales}</b> ({pct(total.sales, total.views)}) · receita <b>{formatPrice(total.revenueCents)}</b></p>
+    <Table head={["Origem (fonte · campanha · criativo)", "Visitas", "Clique comprar", "Pág. compra", "Pagamento gerado", "Vendas", "Conversão", "Receita"]}
+      rows={data.rows.map((r) => [r.origin, r.views, `${r.buyClicks} (${pct(r.buyClicks, r.views)})`, r.buyPage, `${r.checkouts} (${pct(r.checkouts, r.buyPage)})`, r.sales, pct(r.sales, r.views), formatPrice(r.revenueCents)])}/>
+    <h3>Páginas mais vistas</h3>
+    <Table head={["Página", "Visitas"]} rows={data.pages.map((p) => [p.path, p.views])}/>
+  </div>;
 }
