@@ -12,6 +12,7 @@ import { CATEGORIES, categoryLabel, TYPES } from "../lib/resources.js";
 import { buildResourceIndex, searchResources } from "../lib/search.js";
 import { formatPrice, purchase } from "../lib/billing-client.js";
 import { track } from "../lib/meta-pixel.js";
+import { navigate } from "../lib/router.jsx";
 
 // Copy de venda: cada bloco responde a uma objeção de quem está começando com IA.
 // Só fatos verificáveis (números vêm do acervo); nada de depoimento ou escassez inventados.
@@ -252,15 +253,20 @@ function Reveal({ as = "div", index = 0, className, children }) {
   return <Tag className={className} {...cardReveal(reduced, index)}>{children}</Tag>;
 }
 
+// Cada área leva ao kit da profissão correspondente (/kit/<slug>).
+const KIT_BY_AREA = { software: "programadores", empreendedorismo: "empreendedores", conteudo: "criadores", ciencia: "pesquisadores" };
+
 function AreaTile({ category, count, index, fidget }) {
   const [active, setActive] = useState(false);
+  const kit = KIT_BY_AREA[category.id];
   return <Reveal index={index} className="l-area">
-    <button type="button" className="l-area-btn" data-category={category.id} aria-label={`${category.label}: ${count ?? "…"} skills. Ver animação`}
+    <button type="button" className="l-area-btn" data-category={category.id} aria-label={`${category.label}: ${count ?? "…"} skills. Ver o kit`}
       onPointerEnter={() => setActive(true)} onPointerLeave={() => setActive(false)} onFocus={() => setActive(true)} onBlur={() => setActive(false)}
-      onClick={() => setActive((value) => !value)}>
+      onClick={() => (kit ? navigate(`/kit/${kit}`) : setActive((value) => !value))}>
       <span className="l-area-art" aria-hidden="true"><CyberpunkCharacter category={category.id} active={active || fidget === "act"} fidget={fidget === "hop" ? "hop" : null}/></span>
       <span className="l-area-name">{category.label}</span>
       <span className="tag-mono">{count == null ? "…" : `${count.toLocaleString("pt-BR")} skills`}</span>
+      {kit && <span className="l-area-kit">Ver o kit →</span>}
     </button>
   </Reveal>;
 }

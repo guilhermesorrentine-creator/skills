@@ -289,3 +289,5 @@
 .l-guarantee { margin-top: 14px; padding: 12px 14px; border-radius: var(--radius-lg); background: var(--ok-bg); color: var(--text); font-size: 14px; }
 .l-guarantee b { color: var(--ok); }
 @media (max-width: 860px) { .l-pains, .l-fit { grid-template-columns: 1fr; } }
+
+.l-area-kit { font: 700 13px/1.2 var(--font-sans); color: var(--primary); }
