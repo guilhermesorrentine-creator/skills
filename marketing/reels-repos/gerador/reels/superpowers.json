@@ -1,0 +1,88 @@
+{
+  "repo": "superpowers",
+  "char": "software",
+  "accent": "#a589ec",
+  "lines": [
+    {
+      "scene": "terminal",
+      "say": "Você pede uma função pro agente, e ele sai escrevendo código sem entender o que você queria?",
+      "key": "entender",
+      "p": {
+        "lines": [
+          {
+            "cmd": "crie a tela de login"
+          },
+          {
+            "out": "✗ 400 linhas que ninguém pediu"
+          }
+        ]
+      }
+    },
+    {
+      "scene": "fases",
+      "say": "Alguém criou um método completo que faz o agente perguntar antes, mostrar o desenho e montar um plano.",
+      "key": "método",
+      "p": {
+        "label": "perguntar → desenhar → planejar → executar",
+        "n": 4,
+        "result": "✓ tarefas de 2 a 5 minutos"
+      }
+    },
+    {
+      "scene": "terminal",
+      "say": "E executa com testes antes do código e revisão a cada etapa.",
+      "key": "testes",
+      "p": {
+        "lines": [
+          {
+            "cmd": "rodar testes"
+          },
+          {
+            "out": "✓ testes passando"
+          },
+          {
+            "cmd": "revisar etapa"
+          },
+          {
+            "out": "✓ etapa aprovada"
+          }
+        ]
+      }
+    },
+    {
+      "scene": "contador",
+      "say": "São quinze skills que disparam sozinhas, no momento certo.",
+      "show": "São 15 skills que disparam sozinhas, no momento certo.",
+      "key": "15",
+      "p": {
+        "to": 15,
+        "label": "skills automáticas"
+      }
+    },
+    {
+      "scene": "voxelia",
+      "say": "Chama Súper Páuers. É de código aberto, e a gente explica cada passo em português.",
+      "show": "Chama Superpowers. É de código aberto, e a gente explica cada passo em português.",
+      "key": "Superpowers",
+      "p": {
+        "query": "programar com agente",
+        "tagline": "Método completo para agentes de código",
+        "chips": [
+          "Software",
+          "15 skills",
+          "MIT"
+        ]
+      }
+    },
+    {
+      "scene": "cta",
+      "say": "O passo a passo completo tá no nosso site. Toque no link da bio.",
+      "key": "link da bio",
+      "p": {
+        "pre": "Toque no",
+        "key": "link da bio",
+        "sub": "passo a passo completo em português"
+      }
+    }
+  ]
+}

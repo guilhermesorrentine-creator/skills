@@ -1,7 +1,7 @@
 import { lazy, Suspense, useCallback, useEffect } from "react";
 import LandingPage from "./pages/LandingPage.jsx";
 import AuthPage from "./pages/AuthPage.jsx";
-import { AccessPendingPage, CheckoutReturnPage, LegalPage, NotFound, SharedCollectionPage } from "./pages/AccountPages.jsx";
+import { AccessPendingPage, CheckoutReturnPage, LegalPage, NotFound, SharedCollectionPage, claimFrom } from "./pages/AccountPages.jsx";
 import { AuthProvider, useAccount, useAuth } from "./lib/auth.jsx";
 import { matchPath, navigate, safeNext, usePathname } from "./lib/router.jsx";
 import ConsentBanner from "./components/site/ConsentBanner.jsx";
@@ -9,6 +9,9 @@ import ConsentBanner from "./components/site/ConsentBanner.jsx";
 const AppRoutes = lazy(() => import("./pages/app/AppRoutes.jsx"));
 const AdminPage = lazy(() => import("./pages/AdminPage.jsx"));
 const RepoPage = lazy(() => import("./pages/RepoPage.jsx"));
+const BuyPage = lazy(() => import("./pages/BuyPage.jsx"));
+const KitPage = lazy(() => import("./pages/KitPage.jsx"));
+const LinksPage = lazy(() => import("./pages/KitPage.jsx").then((m) => ({ default: m.LinksPage })));
 const authModes = { "/entrar": "login", "/cadastro": "signup", "/recuperar-senha": "recover", "/redefinir-senha": "reset", "/criar-senha": "invite" };
 const legalSlugs = ["termos", "privacidade", "compra-e-reembolso"];
 const Loading = () => <main className="loading-line" role="status">Verificando acesso…</main>;
@@ -62,7 +65,9 @@ function Routes() {
 
   if (path === "/") return <LandingPage account={signedIn ? account : null} signedIn={signedIn} onEnter={enter}/>;
   if (authModes[path]) return <AuthPage key={path} mode={authModes[path]} account={account} onAuthenticated={afterLogin}/>;
-  if (path === "/checkout/retorno") return requireSession(() => <CheckoutReturnPage account={account} reload={reload}/>);
+  if (path === "/comprar") return <Suspense fallback={<Loading/>}><BuyPage signedIn={signedIn} onEnter={enter}/></Suspense>;
+  // Retorno do Asaas: compra sem cadastro (pedido + chave) não exige sessão; a compra logada sim.
+  if (path === "/checkout/retorno") return claimFrom(location.search) ? <CheckoutReturnPage account={signedIn ? account : null} reload={reload}/> : requireSession(() => <CheckoutReturnPage account={account} reload={reload}/>);
   if (path === "/acesso-pendente") return requireSession(() => (account?.access ? <Redirect to="/app"/> : <AccessPendingPage account={account} error={error} reload={reload}/>));
   if (path === "/app" || path.startsWith("/app/")) return requireSession(() => {
     if (!account) return error ? <AccessPendingPage account={null} error={error} reload={reload}/> : <Loading/>;
@@ -70,6 +75,9 @@ function Routes() {
     return <Suspense fallback={<Loading/>}><AppRoutes path={path} account={account}/></Suspense>;
   });
   if (path === "/admin") return requireSession(() => <Suspense fallback={<Loading/>}><AdminPage/></Suspense>);
+  const kit = matchPath("/kit/:slug", path);
+  if (kit) return <Suspense fallback={<Loading/>}><KitPage slug={kit.slug} onEnter={enter}/></Suspense>;
+  if (path === "/links") return <Suspense fallback={<Loading/>}><LinksPage/></Suspense>;
   const repo = matchPath("/r/:name", path);
   if (repo) return <Suspense fallback={<Loading/>}><RepoPage name={repo.name} account={signedIn ? account : null} onEnter={enter}/></Suspense>;
   const shared = matchPath("/c/:token", path);

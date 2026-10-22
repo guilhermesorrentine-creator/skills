@@ -21,7 +21,49 @@ function Shell({ title, eyebrow, children }) {
 }
 
 // Retorno do Asaas: nunca libera acesso pela URL; consulta o servidor até a confirmação chegar.
+// Pedido e chave da compra sem cadastro: da URL de retorno ou, se faltar, do navegador que iniciou a compra.
+export function claimFrom(search) {
+  const params = new URLSearchParams(search);
+  if (params.get("pedido") && params.get("chave")) return { order: params.get("pedido"), key: params.get("chave") };
+  try { const saved = JSON.parse(localStorage.getItem("vx-claim") || "null"); return saved?.order && saved?.key ? saved : null; } catch { return null; }
+}
+
+// Compra sem cadastro: consulta o servidor até o pagamento confirmar e oferece o link para criar a senha.
+function GuestReturn({ claim }) {
+  const [state, setState] = useState({ status: "pending" });
+  const [tries, setTries] = useState(0);
+  useEffect(() => {
+    if (state.status === "paid" || tries >= 60) return undefined;
+    const id = window.setTimeout(async () => {
+      try {
+        const response = await fetch("/api/checkout/claim", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(claim) });
+        const data = await response.json();
+        if (!response.ok) setState({ status: "error", message: data.message }); else setState(data);
+      } catch { /* tenta de novo */ }
+      setTries((v) => v + 1);
+    }, tries ? 3000 : 300);
+    return () => window.clearTimeout(id);
+  }, [claim, state.status, tries]);
+  useEffect(() => { if (state.status === "paid") try { localStorage.removeItem("vx-claim"); } catch { /* ok */ } }, [state.status]);
+  const paid = state.status === "paid";
+  return <Shell eyebrow="Pagamento" title={paid ? "Pagamento confirmado!" : state.status === "error" ? "Link de retorno inválido" : "Confirmando seu pagamento…"}>
+    <div className="panel stack">
+      {paid && state.url && <><p>Seu acesso vitalício está ativo. Falta só criar sua senha:</p><a className="btn btn-primary" href={state.url}>Criar minha senha e entrar</a></>}
+      {paid && state.login && <><p>Seu acesso está ativo. Entre com seu e-mail e senha.</p><Link className="btn btn-primary" to="/entrar?next=/app">Entrar na Voxelia</Link></>}
+      {state.status === "error" && <p>{state.message}</p>}
+      {!paid && state.status !== "error" && <><p className="waiting"><span className="spinner" aria-hidden="true"/> No Pix costuma ser imediato; no cartão, alguns instantes. Não feche esta página.</p>
+        {tries >= 60 && <p>A confirmação ainda não chegou. Guarde este endereço e volte a ele daqui a pouco: o acesso é liberado assim que o pagamento confirmar.</p>}</>}
+    </div>
+  </Shell>;
+}
+
 export function CheckoutReturnPage({ account, reload }) {
+  const claim = account?.access ? null : claimFrom(location.search);
+  if (claim) return <GuestReturn claim={claim}/>;
+  return <SignedReturn account={account} reload={reload}/>;
+}
+
+function SignedReturn({ account, reload }) {
   const result = new URLSearchParams(location.search).get("resultado");
   const [tries, setTries] = useState(0);
   const timer = useRef(0);

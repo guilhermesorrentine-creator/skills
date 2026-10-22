@@ -36,7 +36,8 @@ await writeFile(new URL("../public/data/repos.json", import.meta.url), `${JSON.s
 
 // Sitemap: páginas públicas fixas + uma por repositório.
 const base = "https://skills-five-snowy.vercel.app";
-const urls = ["/", "/termos", "/privacidade", "/compra-e-reembolso", ...repos.map((r) => `/r/${encodeURIComponent(r.name)}`)];
+const kits = ["criadores", "empreendedores", "programadores", "pesquisadores"];
+const urls = ["/", "/links", "/termos", "/privacidade", "/compra-e-reembolso", ...kits.map((k) => `/kit/${k}`), ...repos.map((r) => `/r/${encodeURIComponent(r.name)}`)];
 await writeFile(new URL("../public/sitemap.xml", import.meta.url),
   `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls.map((u) => `  <url><loc>${base}${u}</loc></url>`).join("\n")}\n</urlset>\n`, "utf8");
 console.log(`Vitrine pública: ${repos.length} repositórios com página.`);

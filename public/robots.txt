@@ -4,4 +4,19 @@ Disallow: /app
 Disallow: /admin
 Disallow: /c/
 Disallow: /api/
+
+# Assistentes e buscadores de IA: bem-vindos nas páginas públicas.
+User-agent: GPTBot
+User-agent: OAI-SearchBot
+User-agent: ChatGPT-User
+User-agent: ClaudeBot
+User-agent: Claude-SearchBot
+User-agent: Claude-User
+User-agent: PerplexityBot
+User-agent: Google-Extended
+Allow: /
+Disallow: /app
+Disallow: /admin
+Disallow: /api/
+
 Sitemap: https://skills-five-snowy.vercel.app/sitemap.xml

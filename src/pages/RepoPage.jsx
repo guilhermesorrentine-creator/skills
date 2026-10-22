@@ -29,7 +29,7 @@ export default function RepoPage({ name, account, onEnter }) {
   const owned = Boolean(account?.access);
   const primary = owned
     ? { label: "Abrir o guia completo", run: () => navigate(guidePath) }
-    : { label: "Quero o passo a passo completo", run: () => navigate("/#acesso") };
+    : { label: "Quero o passo a passo completo", run: () => navigate("/comprar?edicao=edicao-1") };
 
   return <div className="repo-page">
     <header className="repo-top"><Brand/>{!owned && <button type="button" className="btn btn-ghost btn-sm" onClick={() => onEnter(guidePath)}>Entrar</button>}</header>

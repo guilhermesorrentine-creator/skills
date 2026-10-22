@@ -7,6 +7,8 @@ export function readConfig(env = process.env) {
     appUrl: (previewUrl || env.APP_URL || "http://localhost:5173").replace(/\/$/, ""),
     supabaseUrl: env.SUPABASE_URL || env.VITE_SUPABASE_URL || "",
     supabaseServiceKey: env.SUPABASE_SERVICE_ROLE_KEY || "",
+    // Assina o retorno da compra sem cadastro. Sem CLAIM_SECRET, usa a chave de serviço (também secreta).
+    claimSecret: env.CLAIM_SECRET || env.SUPABASE_SERVICE_ROLE_KEY || env.ASAAS_WEBHOOK_TOKEN || "",
     asaas: {
       env: asaasEnv,
       apiKey: env.ASAAS_API_KEY || "",

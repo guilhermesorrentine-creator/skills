@@ -129,3 +129,6 @@ kbd { display: inline-flex; align-items: center; padding: 2px 6px; border-radius
 @media (hover: none) and (pointer: coarse) {
   .hw-search kbd, .app-search-trigger kbd { display: none; }
 }
+
+/* Conteúdo pré-renderizado para buscadores; o React o substitui ao carregar. */
+.prerender { max-width: 760px; margin: 0 auto; padding: 24px 16px; line-height: 1.6; }

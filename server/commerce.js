@@ -1,8 +1,9 @@
-import { timingSafeEqual } from "node:crypto";
+import { createHmac, timingSafeEqual } from "node:crypto";
 import { entitlement, licenseLabels, quote } from "./licensing.js";
 import { checkoutUrl } from "./asaas.js";
 
 const httpError = (status, code, message) => Object.assign(new Error(message), { status, code });
+const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const PAID_PAYMENT = new Set(["PAYMENT_CONFIRMED", "PAYMENT_RECEIVED"]);
 const DISPUTE = new Set(["PAYMENT_CHARGEBACK_REQUESTED", "PAYMENT_CHARGEBACK_DISPUTE", "PAYMENT_AWAITING_CHARGEBACK_REVERSAL"]);
 
@@ -43,12 +44,20 @@ export function createCommerce({ store, asaas, config, onboarding = null, conver
     };
   }
 
+  // Chave do retorno da compra sem cadastro: só quem iniciou o pagamento a recebe (vai na URL de sucesso).
+  function claimKey(orderId) {
+    if (!config.claimSecret) throw httpError(503, "not_configured", "Compra sem cadastro indisponível neste ambiente.");
+    return createHmac("sha256", config.claimSecret).update(`claim:${orderId}`).digest("base64url").slice(0, 32);
+  }
+  const withClaim = (result, orderId, claim) => (claim && orderId ? { ...result, order: orderId, key: claimKey(orderId) } : result);
+
   // Cria (ou reaproveita) o pedido e o Checkout avulso no Asaas. Preço sempre do servidor.
-  async function startCheckout(user, editionCode, tracking = null) {
+  // Com `claim`, o retorno do pagamento leva o pedido e a chave para a pessoa criar a senha sem e-mail.
+  async function startCheckout(user, editionCode, tracking = null, { claim = false } = {}) {
     const target = await store.getEditionByCode(String(editionCode || ""));
     if (!target || !target.on_sale) throw httpError(404, "edition_not_found", "Edição indisponível para compra.");
     const open = await store.getOpenOrder(user.id, now());
-    if (open?.checkout_url && open.edition_id === target.id) return { url: open.checkout_url, reused: true };
+    if (open?.checkout_url && open.edition_id === target.id) return withClaim({ url: open.checkout_url, reused: true }, open.id, claim);
     if (open) throw httpError(409, "order_in_progress", "Você já tem um pagamento em andamento. Conclua ou aguarde ele expirar.");
 
     const [ent, orders] = await Promise.all([userEntitlement(user.id), store.listOrders(user.id)]);
@@ -67,8 +76,9 @@ export function createCommerce({ store, asaas, config, onboarding = null, conver
 
     // O índice único parcial impede dois pedidos em aberto simultâneos.
     const order = await store.insertOrder({ ...base, status: "creating", expires_at: expiresAt });
-    if (!order) return startCheckout(user, editionCode, tracking);
+    if (!order) return startCheckout(user, editionCode, tracking, { claim });
     if (tracking) await saveTracking(order.id, tracking);
+    const back = claim ? `&pedido=${order.id}&chave=${claimKey(order.id)}` : "";
     try {
       const checkout = await asaas.createCheckout({
         billingTypes: ["PIX", "CREDIT_CARD"],
@@ -76,7 +86,7 @@ export function createCommerce({ store, asaas, config, onboarding = null, conver
         minutesToExpire: config.asaas.checkoutMinutes,
         externalReference: order.id,
         callback: {
-          successUrl: `${config.appUrl}/checkout/retorno?resultado=sucesso`,
+          successUrl: `${config.appUrl}/checkout/retorno?resultado=sucesso${back}`,
           cancelUrl: `${config.appUrl}/checkout/retorno?resultado=cancelado`,
           expiredUrl: `${config.appUrl}/checkout/retorno?resultado=expirado`,
         },
@@ -84,11 +94,41 @@ export function createCommerce({ store, asaas, config, onboarding = null, conver
       });
       const url = checkoutUrl(checkout, config.asaas.checkoutHost);
       await store.updateOrder(order.id, { status: "pending", asaas_checkout_id: checkout.id, checkout_url: url });
-      return { url, reused: false };
+      return withClaim({ url, reused: false }, order.id, claim);
     } catch (error) {
       await store.updateOrder(order.id, { status: "failed", error: String(error.message).slice(0, 500) });
       throw error.status ? error : httpError(502, "asaas_error", "Não foi possível iniciar o pagamento.");
     }
+  }
+
+  // Compra sem cadastro: só o e-mail. A conta nasce sem senha (nenhum e-mail é enviado) e a pessoa
+  // cria a senha no retorno do pagamento. E-mail de conta já usada exige login.
+  async function guestCheckout(email, editionCode, tracking = null) {
+    const address = String(email || "").trim().toLowerCase();
+    if (!EMAIL.test(address) || address.length > 254) throw httpError(400, "invalid_email", "Informe um e-mail válido.");
+    let profile = await store.findProfileByEmail(address);
+    if (profile && await store.hasSignedIn(profile.id)) throw httpError(409, "account_exists", "Este e-mail já tem conta na Voxelia. Entre para concluir a compra.");
+    if (!profile) {
+      const invite = await store.createInvitedUser(address, `${config.appUrl}/criar-senha`);
+      profile = { id: invite.userId, email: address };
+    }
+    return startCheckout({ id: profile.id, email: address }, editionCode, tracking, { claim: true });
+  }
+
+  // Retorno da compra sem cadastro: com a chave certa e o pedido pago, devolve um link de uso único
+  // para criar a senha. Nada é liberado pela URL: o pagamento é sempre o confirmado pelo webhook.
+  async function claimAccess(orderId, key) {
+    const id = String(orderId || "");
+    const given = Buffer.from(String(key || ""));
+    const expected = Buffer.from(id ? claimKey(id) : "");
+    if (!id || given.length !== expected.length || !timingSafeEqual(given, expected)) throw httpError(403, "invalid_claim", "Link de retorno inválido.");
+    const order = await store.getOrder(id);
+    if (!order) throw httpError(404, "not_found", "Pedido não encontrado.");
+    if (order.status !== "paid") return { status: order.status };
+    if (await store.hasSignedIn(order.user_id)) return { status: "paid", login: true };
+    const profile = await store.getProfile(order.user_id);
+    if (!profile?.email) throw httpError(404, "not_found", "Conta do pedido não encontrada.");
+    return { status: "paid", url: await store.createPasswordLink(profile.email, `${config.appUrl}/criar-senha`) };
   }
 
   // Dados de anúncio (com consentimento) ficam no pedido; falha aqui não impede a compra.
@@ -251,7 +291,7 @@ export function createCommerce({ store, asaas, config, onboarding = null, conver
     return { status };
   }
 
-  return { userEntitlement, accountState, startCheckout, receiveWebhook, processEvent, reconcileOrder, setLicenseStatus, verifyWebhookToken };
+  return { userEntitlement, accountState, startCheckout, guestCheckout, claimAccess, receiveWebhook, processEvent, reconcileOrder, setLicenseStatus, verifyWebhookToken };
 }
 
 export function publicEdition(edition) {

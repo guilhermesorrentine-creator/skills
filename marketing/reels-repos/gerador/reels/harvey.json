@@ -1,0 +1,76 @@
+{
+  "repo": "harvey",
+  "char": "empreendedorismo",
+  "accent": "#f2a65a",
+  "lines": [
+    {
+      "scene": "orbita",
+      "say": "Você passa o dia caçando cliente e respondendo e-mail, em vez de vender?",
+      "key": "cliente",
+      "p": {
+        "items": [
+          "prospectar",
+          "pesquisar",
+          "escrever",
+          "enviar",
+          "responder",
+          "agendar"
+        ]
+      }
+    },
+    {
+      "scene": "fases",
+      "say": "Alguém criou um vendedor de IA, de graça, que acha empresas, lê o site de cada uma e escreve um e-mail personalizado.",
+      "key": "vendedor",
+      "p": {
+        "label": "o ciclo do Harvey",
+        "n": 6,
+        "result": "✓ reunião marcada"
+      }
+    },
+    {
+      "scene": "aprovar",
+      "say": "Ele lê as respostas e leva a conversa até a reunião. E você aprova os e-mails antes do envio.",
+      "key": "reunião",
+      "p": {
+        "draft": "E-mail personalizado",
+        "you": "você aprova",
+        "button": "Aprovar e enviar"
+      }
+    },
+    {
+      "scene": "plano",
+      "say": "E roda na assinatura do Claude que você já paga, sem custo por token.",
+      "key": "sem custo por token",
+      "p": {
+        "title": "Harvey",
+        "stamp": "SEM CUSTO POR TOKEN"
+      }
+    },
+    {
+      "scene": "voxelia",
+      "say": "Chama Rárvei. É de código aberto, e a gente explica cada passo em português.",
+      "show": "Chama Harvey. É de código aberto, e a gente explica cada passo em português.",
+      "key": "Harvey",
+      "p": {
+        "query": "vender com IA",
+        "tagline": "Vendedor autônomo de IA",
+        "chips": [
+          "Empreendedorismo",
+          "MIT",
+          "Código aberto"
+        ]
+      }
+    },
+    {
+      "scene": "cta",
+      "say": "O passo a passo completo tá no nosso site. Toque no link da bio.",
+      "key": "link da bio",
+      "p": {
+        "pre": "Toque no",
+        "key": "link da bio",
+        "sub": "passo a passo completo em português"
+      }
+    }
+  ]
+}

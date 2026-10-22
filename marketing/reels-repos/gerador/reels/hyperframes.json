@@ -1,0 +1,75 @@
+{
+  "repo": "hyperframes",
+  "char": "conteudo",
+  "accent": "#f27aa8",
+  "lines": [
+    {
+      "scene": "orbita",
+      "say": "E se você pudesse pedir um vídeo pro seu agente de IA, do jeito que pede um texto?",
+      "key": "vídeo",
+      "p": {
+        "items": [
+          "lançamento",
+          "explicador",
+          "legenda",
+          "motion",
+          "anúncio",
+          "reels"
+        ]
+      }
+    },
+    {
+      "scene": "transform",
+      "say": "Alguém liberou de graça o framework que transforma HTML em vídeo MP4, sempre com o mesmo resultado.",
+      "key": "vídeo MP4",
+      "p": {
+        "app": "HTML",
+        "machine": "HyperFrames",
+        "cmd": "video.mp4 ✓"
+      }
+    },
+    {
+      "scene": "fases",
+      "say": "As skills ensinam o agente a planejar, montar, revisar e renderizar.",
+      "key": "renderizar",
+      "p": {
+        "label": "planejar → montar → revisar → renderizar",
+        "n": 4,
+        "result": "✓ video.mp4 pronto"
+      }
+    },
+    {
+      "scene": "semana",
+      "say": "Os Reels deste perfil foram feitos com ele.",
+      "key": "Reels",
+      "p": {
+        "label": "os Reels deste perfil"
+      }
+    },
+    {
+      "scene": "voxelia",
+      "say": "Chama Ráiper Frêims. É de código aberto, e a gente explica cada passo em português.",
+      "show": "Chama HyperFrames. É de código aberto, e a gente explica cada passo em português.",
+      "key": "HyperFrames",
+      "p": {
+        "query": "fazer vídeo com IA",
+        "tagline": "Vídeos MP4 feitos pelo seu agente",
+        "chips": [
+          "Conteúdo",
+          "Apache 2.0",
+          "Código aberto"
+        ]
+      }
+    },
+    {
+      "scene": "cta",
+      "say": "O passo a passo completo tá no nosso site. Toque no link da bio.",
+      "key": "link da bio",
+      "p": {
+        "pre": "Toque no",
+        "key": "link da bio",
+        "sub": "passo a passo completo em português"
+      }
+    }
+  ]
+}

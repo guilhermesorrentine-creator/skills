@@ -232,3 +232,37 @@ test("produção do Asaas exige duas chaves explícitas", () => {
   assert.equal(readConfig({ APP_URL: "https://prod.example", VERCEL_ENV: "preview", VERCEL_BRANCH_URL: "app-git-x.vercel.app" }).appUrl, "https://app-git-x.vercel.app");
   assert.equal(readConfig({ APP_URL: "https://prod.example/", VERCEL_ENV: "production", VERCEL_BRANCH_URL: "app-git-main.vercel.app" }).appUrl, "https://prod.example");
 });
+
+test("compra sem cadastro: só e-mail, retorno com chave e link de senha após o webhook", async () => {
+  const ctx = setup();
+  const bad = await ctx.call("POST", "/api/checkout/guest", { body: { email: "x", editionCode: "edicao-1" } });
+  assert.equal(bad.status, 400);
+  const started = await ctx.call("POST", "/api/checkout/guest", { body: { email: " Nova@Exemplo.com ", editionCode: "edicao-1" } });
+  assert.equal(started.status, 200);
+  const { order, key } = started.data;
+  assert.ok(order && key);
+  assert.ok(ctx.calls.at(-1).callback.successUrl.includes(`pedido=${order}&chave=${key}`));
+  assert.equal(ctx.store.db.profiles.at(-1).email, "nova@exemplo.com");
+  const again = await ctx.call("POST", "/api/checkout/guest", { body: { email: "nova@exemplo.com", editionCode: "edicao-1" } });
+  assert.equal(again.data.order, order, "mesmo pedido em aberto é reaproveitado");
+
+  assert.equal((await ctx.call("POST", "/api/checkout/claim", { body: { order, key: "x".repeat(32) } })).status, 403);
+  assert.deepEqual((await ctx.call("POST", "/api/checkout/claim", { body: { order, key } })).data, { status: "pending" });
+
+  const row = ctx.store.db.orders.find((item) => item.id === order);
+  await ctx.hook({ id: "evt_guest", event: "CHECKOUT_PAID", checkout: { id: row.asaas_checkout_id, customer: "cus_guest", items: [{ value: 97.9, quantity: 1 }] } });
+  const claimed = await ctx.call("POST", "/api/checkout/claim", { body: { order, key } });
+  assert.equal(claimed.data.status, "paid");
+  assert.ok(claimed.data.url.includes("/criar-senha"));
+
+  ctx.store.db.profiles.find((item) => item.email === "nova@exemplo.com").last_sign_in_at = "2026-10-22T00:00:00Z";
+  assert.deepEqual((await ctx.call("POST", "/api/checkout/claim", { body: { order, key } })).data, { status: "paid", login: true });
+});
+
+test("compra sem cadastro recusa e-mail de conta já usada", async () => {
+  const ctx = setup();
+  ctx.store.db.profiles.find((item) => item.id === "u1").last_sign_in_at = "2026-10-01T00:00:00Z";
+  const response = await ctx.call("POST", "/api/checkout/guest", { body: { email: "a@x.com", editionCode: "edicao-1" } });
+  assert.equal(response.status, 409);
+  assert.equal(response.data.error, "account_exists");
+});

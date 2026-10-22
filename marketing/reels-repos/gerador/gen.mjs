@@ -183,7 +183,7 @@ const scenes = {
   }),
   // Terminal digitando comandos, com saída.
   terminal: (s, p) => {
-    const rows = p.lines.map((l) => `<div class="tl ${l.out ? "out" : "cmd"}">${l.out ? esc(l.out) : `<span class="ps">$</span> <span class="typed" data-text="${esc(l.cmd)}"></span>`}</div>`).join("");
+    const rows = p.lines.map((l) => `<div class="tl ${l.out ? (l.out.startsWith("✗") ? "out err" : "out") : "cmd"}">${l.out ? esc(l.out) : `<span class="ps">$</span> <span class="typed" data-text="${esc(l.cmd)}"></span>`}</div>`).join("");
     const step = (s.d - 0.6) / p.lines.length;
     return {
       dark: true,
@@ -257,7 +257,7 @@ const scenes = {
   // Celular com botão "Publicar": o personagem é quem aperta.
   aprovar: (s, p) => ({
     dark: true,
-    html: `<div class="phone"><div class="draft"><b>${esc(p.draft)}</b><i></i><i></i><i></i></div><div class="publish">Publicar</div></div><div class="you">${esc(p.you)}</div>${hero("left:700px;top:1150px;width:280px")}`,
+    html: `<div class="phone"><div class="draft"><b>${esc(p.draft)}</b><i></i><i></i><i></i></div><div class="publish">${esc(p.button ?? "Publicar")}</div></div><div class="you">${esc(p.you)}</div>${hero("left:700px;top:1150px;width:280px")}`,
     anim: `
       q(".phone").forEach(e => tl.fromTo(e, { y: 1200 }, { y: 0, duration: 0.5, ease: "power3.out" }, ${s.t0}));
       ${heroIn("x: 400", s.t0 + 0.3)}
@@ -283,7 +283,7 @@ const scenes = {
     dark: false,
     html: `<div class="bignum"><b id="bn${s.n}">0</b><span>${esc(p.label)}</span></div><div class="flasks">${Array.from({ length: 60 }, (_, k) => `<i class="flask f${k % 4}"></i>`).join("")}</div>${hero("left:400px;top:1150px;width:280px")}`,
     anim: `
-      const c = { v: 0 }; tl.to(c, { v: ${p.to}, duration: 1.5, ease: "power2.out", onUpdate: () => document.getElementById("bn${s.n}").textContent = Math.round(c.v) }, ${s.t0} + 0.2);
+      const c = { v: 0 }; tl.to(c, { v: ${p.to}, duration: 1.5, ease: "power2.out", onUpdate: () => document.getElementById("bn${s.n}").textContent = Math.round(c.v).toLocaleString("pt-BR") }, ${s.t0} + 0.2);
       q(".flask").forEach((e, k) => tl.fromTo(e, { scale: 0 }, { scale: 1, duration: 0.2, ease: "back.out(3)" }, ${s.t0} + 0.2 + k * 0.022));
       ${heroIn("y: 600", s.t0 + 0.3)}`,
   }),
@@ -339,10 +339,10 @@ const scenes = {
       q(".chips span").forEach((e, k) => tl.fromTo(e, { scale: 0 }, { scale: 1, duration: 0.2, ease: "back.out(3)" }, ${s.t0} + 2.0 + k * 0.12));
       q(".guide").forEach(e => tl.fromTo(e, { opacity: 0 }, { opacity: 1, duration: 0.3 }, ${s.t0 + s.d * 0.7}));`,
   }),
-  cta: (s) => ({
+  cta: (s, p) => ({
     dark: true, purple: true,
     html: `<div class="row">${["software", "empreendedorismo", "conteudo", "ciencia"].map((c) => sprite(c)).join("")}</div>
-      <div class="ctapill">Link no <span>comentário fixado</span></div><div class="arrow">↓</div><p class="ctasub">passo a passo completo no site da Voxelia</p><div class="handle">@voxelia.ia</div>`,
+      <div class="ctapill">${esc(p.pre ?? "Link no")} <span>${esc(p.key ?? "comentário fixado")}</span></div><div class="arrow">↓</div><p class="ctasub">${esc(p.sub ?? "passo a passo completo no site da Voxelia")}</p><div class="handle">@voxelia.ia</div>`,
     anim: `
       q(".row .spr").forEach((e, k) => { tl.fromTo(e, { y: -900 }, { y: 0, duration: 0.4, ease: "bounce.out" }, ${s.t0} + k * 0.08); tl.to(e, { y: -40, duration: 0.25, yoyo: true, repeat: 7, ease: "sine.inOut" }, ${s.t0} + 0.8 + k * 0.06); });
       q(".ctapill").forEach(e => tl.fromTo(e, { scale: 0, rotation: -8 }, { scale: 1, rotation: 0, duration: 0.35, ease: "back.out(2.5)" }, ${s.t0} + 0.2));

@@ -1,0 +1,90 @@
+{
+  "repo": "kit-empreendedores",
+  "char": "empreendedorismo",
+  "accent": "#f2a65a",
+  "lines": [
+    {
+      "scene": "orbita",
+      "say": "Você é o marketing, o vendedor e o financeiro do seu negócio. Tudo ao mesmo tempo.",
+      "key": "financeiro",
+      "p": {
+        "items": [
+          "marketing",
+          "vendas",
+          "financeiro",
+          "preço",
+          "clientes",
+          "plano"
+        ]
+      }
+    },
+    {
+      "scene": "varal",
+      "say": "A Voxelia não é pack de prompts: são especialistas de IA que trabalham pra você no Claude.",
+      "key": "não é pack de prompts",
+      "p": {
+        "items": [
+          "conselho",
+          "financeiro",
+          "preço",
+          "oferta",
+          "vendedor",
+          "leads",
+          "lançamento",
+          "marketing"
+        ]
+      }
+    },
+    {
+      "scene": "multidao",
+      "say": "Testa a sua ideia com cem compradores virtuais, antes de você gastar.",
+      "show": "Testa a sua ideia com 100 compradores virtuais, antes de você gastar.",
+      "key": "100 compradores",
+      "p": {
+        "label": "100 compradores virtuais",
+        "yes": 61
+      }
+    },
+    {
+      "scene": "terminal",
+      "say": "E monta a sua lista de clientes direto do Google Maps.",
+      "key": "lista de clientes",
+      "p": {
+        "lines": [
+          {
+            "cmd": "liste padarias de Curitiba no Google Maps"
+          },
+          {
+            "out": "✓ lista salva em planilha"
+          },
+          {
+            "cmd": "Harvey, comece a prospecção"
+          },
+          {
+            "out": "✓ prospecção em andamento"
+          }
+        ]
+      }
+    },
+    {
+      "scene": "plano",
+      "say": "Pagamento único, acesso imediato e quinze dias de garantia.",
+      "show": "Pagamento único, acesso imediato e 15 dias de garantia.",
+      "key": "garantia",
+      "p": {
+        "title": "Voxelia",
+        "stamp": "15 DIAS DE GARANTIA"
+      }
+    },
+    {
+      "scene": "cta",
+      "say": "Toque no link da bio e escolha o kit para empreendedores.",
+      "key": "link da bio",
+      "p": {
+        "pre": "Toque no",
+        "key": "link da bio",
+        "sub": "kit para empreendedores · pagamento único"
+      }
+    }
+  ]
+}

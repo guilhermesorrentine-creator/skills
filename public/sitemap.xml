@@ -1,9 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url><loc>https://skills-five-snowy.vercel.app/</loc></url>
+  <url><loc>https://skills-five-snowy.vercel.app/links</loc></url>
   <url><loc>https://skills-five-snowy.vercel.app/termos</loc></url>
   <url><loc>https://skills-five-snowy.vercel.app/privacidade</loc></url>
   <url><loc>https://skills-five-snowy.vercel.app/compra-e-reembolso</loc></url>
+  <url><loc>https://skills-five-snowy.vercel.app/kit/criadores</loc></url>
+  <url><loc>https://skills-five-snowy.vercel.app/kit/empreendedores</loc></url>
+  <url><loc>https://skills-five-snowy.vercel.app/kit/programadores</loc></url>
+  <url><loc>https://skills-five-snowy.vercel.app/kit/pesquisadores</loc></url>
   <url><loc>https://skills-five-snowy.vercel.app/r/android-skills</loc></url>
   <url><loc>https://skills-five-snowy.vercel.app/r/claude-mem</loc></url>
   <url><loc>https://skills-five-snowy.vercel.app/r/claude-plugins-official</loc></url>
