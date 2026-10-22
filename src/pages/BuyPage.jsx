@@ -4,6 +4,7 @@ import { Link, navigate } from "../lib/router.jsx";
 import { formatPrice } from "../lib/billing-client.js";
 import { apiFetch } from "../lib/auth.jsx";
 import { track, trackingForCheckout } from "../lib/meta-pixel.js";
+import { funnel } from "../lib/funnel.js";
 
 const isAsaas = (value) => {
   try { const url = new URL(value); return url.protocol === "https:" && (url.hostname === "asaas.com" || url.hostname.endsWith(".asaas.com")); } catch { return false; }
@@ -34,6 +35,7 @@ export default function BuyPage({ signedIn }) {
   const [charge, setCharge] = useState(null);
   const [copied, setCopied] = useState(false);
 
+  useEffect(() => { funnel("buy_page"); }, []);
   useEffect(() => {
     fetch("/api/editions").then((r) => (r.ok ? r.json() : { editions: [] })).then((d) => setEdition(d.editions.find((e) => e.code === code) || d.editions[0] || null)).catch(() => setEdition(null));
   }, [code]);
@@ -74,6 +76,7 @@ export default function BuyPage({ signedIn }) {
         if (!response.ok) { setExists(data.error === "account_exists"); throw new Error(data.message || "Não foi possível iniciar o pagamento."); }
       }
       try { localStorage.setItem("vx-claim", JSON.stringify({ order: data.order, key: data.key })); } catch { /* sem armazenamento: o retorno usa a URL */ }
+      funnel("checkout", { order: data.order });
       if (data.pix || isAsaas(data.url)) { setCharge(data); setBusy(""); return; }
       throw new Error("Endereço de pagamento inesperado.");
     } catch (cause) { setError(cause.message); setBusy(""); }

@@ -50,6 +50,15 @@ export function createApi({ store, commerce, onboarding = null, library, me, mcp
     "GET /api/editions": async () => json(200, { editions: (await store.listEditions({ onSaleOnly: true })).map(publicEdition) }, { "Cache-Control": "public, max-age=60" }),
     "GET /api/stats": async () => json(200, await library.stats(), { "Cache-Control": "public, max-age=300" }),
     "GET /api/shared": async (request) => json(200, await me.shared(param(request, "token")), { "X-Robots-Tag": "noindex, nofollow" }),
+    // Funil próprio: aceita só eventos conhecidos, sem dados pessoais.
+    "POST /api/funnel": async (request) => {
+      const input = await body(request);
+      const text = (value, max = 120) => String(value || "").replace(/[^\p{L}\p{N}_\-./ ]/gu, "").slice(0, max);
+      if (!FUNNEL_EVENTS.has(input.name) || !/^[a-z0-9]{8,40}$/.test(String(input.sid || ""))) return json(400, { error: "invalid_event" });
+      await store.insertFunnelEvent({ sid: input.sid, name: input.name, path: text(input.path, 200), source: text(input.source), campaign: text(input.campaign), content: text(input.content),
+        order_id: /^[0-9a-f-]{36}$/i.test(String(input.order || "")) ? input.order : null });
+      return new Response(null, { status: 204 });
+    },
     "POST /api/webhooks/asaas": async (request) => ok({ received: true, ...(await commerce.receiveWebhook(request.headers.get("asaas-access-token"), await body(request))) }),
 
     // Conta e compra
@@ -149,6 +158,14 @@ export function createApi({ store, commerce, onboarding = null, library, me, mcp
       await store.insertAudit({ actor_id: admin.id, action: "reprocess_event", details: { event_id: event.id, result: result.status } });
       return ok(result);
     },
+    // Painel do funil: por campanha e criativo, sessões em cada etapa, pedidos pagos e receita.
+    "GET /api/admin/funnel": async (request) => {
+      await requireAdmin(request);
+      const days = Math.min(90, Math.max(1, Number(param(request, "days")) || 7));
+      const since = new Date(Date.now() - days * 86400000).toISOString();
+      const [events, orders] = await Promise.all([store.listFunnelEvents(since), store.listOrders()]);
+      return ok({ days, ...summarizeFunnel(events, orders) });
+    },
     "POST /api/admin/orders/refund": async (request) => { const admin = await requireAdmin(request); return ok(await commerce.adminRefund((await body(request)).orderId, admin.id)); },
     "POST /api/admin/orders/reconcile": async (request) => { const admin = await requireAdmin(request); return ok(await commerce.reconcileOrder(String((await body(request)).orderId || ""), admin.id)); },
     "POST /api/admin/licenses/status": async (request) => { const admin = await requireAdmin(request); const input = await body(request); return ok(await commerce.setLicenseStatus(input.userId, input.status, input.reason, admin.id)); },
@@ -188,6 +205,30 @@ export function createApi({ store, commerce, onboarding = null, library, me, mcp
     if (!route) return json(404, { error: "not_found", message: "Rota inexistente." });
     try { return await route(request); } catch (error) { return fail(error); }
   };
+}
+
+const FUNNEL_EVENTS = new Set(["view", "buy_click", "buy_page", "checkout"]);
+
+// Agrega o funil por origem (campanha · criativo): cada etapa conta sessões distintas; venda = pedido pago
+// gerado a partir de um evento "checkout" daquela origem.
+export function summarizeFunnel(events, orders) {
+  const paid = new Map(orders.filter((order) => order.status === "paid").map((order) => [order.id, order]));
+  const rows = new Map();
+  const origin = (e) => [e.source || "direto", e.campaign || "-", e.content || "-"].join(" · ");
+  for (const e of events) {
+    const key = origin(e);
+    const row = rows.get(key) || { origin: key, view: new Set(), buy_click: new Set(), buy_page: new Set(), checkout: new Set(), orders: new Set() };
+    row[e.name]?.add(e.sid);
+    if (e.name === "checkout" && e.order_id) row.orders.add(e.order_id);
+    rows.set(key, row);
+  }
+  const out = [...rows.values()].map((row) => {
+    const sold = [...row.orders].map((id) => paid.get(id)).filter(Boolean);
+    return { origin: row.origin, views: row.view.size, buyClicks: row.buy_click.size, buyPage: row.buy_page.size, checkouts: row.checkout.size, sales: sold.length, revenueCents: sold.reduce((sum, order) => sum + order.amount_cents, 0) };
+  }).sort((a, b) => b.views - a.views);
+  const pages = {};
+  for (const e of events) if (e.name === "view") pages[e.path] = (pages[e.path] || 0) + 1;
+  return { rows: out, pages: Object.entries(pages).sort((a, b) => b[1] - a[1]).slice(0, 20).map(([path, views]) => ({ path, views })) };
 }
 
 function validateEdition(input) {

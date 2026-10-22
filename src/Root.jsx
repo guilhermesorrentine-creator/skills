@@ -5,6 +5,7 @@ import { AccessPendingPage, CheckoutReturnPage, LegalPage, NotFound, SharedColle
 import { AuthProvider, useAccount, useAuth } from "./lib/auth.jsx";
 import { matchPath, navigate, safeNext, usePathname } from "./lib/router.jsx";
 import ConsentBanner from "./components/site/ConsentBanner.jsx";
+import { funnel } from "./lib/funnel.js";
 
 const AppRoutes = lazy(() => import("./pages/app/AppRoutes.jsx"));
 const AdminPage = lazy(() => import("./pages/AdminPage.jsx"));
@@ -42,6 +43,8 @@ function Routes() {
     window.addEventListener("hashchange", legacy);
     return () => window.removeEventListener("hashchange", legacy);
   }, []);
+  // Funil: visita em páginas públicas (o app logado não entra).
+  useEffect(() => { if (!path.startsWith("/app") && !path.startsWith("/admin")) funnel("view"); }, [path]);
   useEffect(() => {
     if (path === "/planos") navigate("/#acesso", { replace: true });
     if (recovery && !["/redefinir-senha", "/criar-senha"].includes(path)) navigate("/redefinir-senha", { replace: true });

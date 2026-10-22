@@ -5,7 +5,7 @@ import { randomUUID } from "node:crypto";
 export function createMemoryStore(seed = {}) {
   const db = {
     profiles: [...(seed.profiles || [])], editions: [...(seed.editions || [])], orders: [], payments: [], licenses: [], licenseEvents: [],
-    events: [], grants: [], audit: [], resources: [...(seed.resources || [])], relations: [...(seed.relations || [])], paths: [...(seed.paths || [])],
+    events: [], grants: [], audit: [], funnel: [], resources: [...(seed.resources || [])], relations: [...(seed.relations || [])], paths: [...(seed.paths || [])],
     collections: [], items: [], favorites: [], recent: [],
   };
   const clone = (value) => (value === undefined || value === null ? null : structuredClone(value));
@@ -85,6 +85,8 @@ export function createMemoryStore(seed = {}) {
     insertGrant: async (row) => { const record = { id: randomUUID(), created_at: stamp(), ...row }; db.grants.push(record); return clone(record); },
     revokeGrant: async (id, revokedAt) => { const record = db.grants.find((item) => item.id === id); if (record) record.revoked_at = revokedAt; return clone(record); },
     insertAudit: async (row) => { db.audit.push({ id: randomUUID(), created_at: stamp(), ...row }); },
+    insertFunnelEvent: async (row) => { db.funnel.push({ id: db.funnel.length + 1, at: stamp(), ...row }); },
+    listFunnelEvents: async (since) => clone(db.funnel.filter((item) => item.at >= since)),
     listAudit: async ({ limit = 100 } = {}) => clone(db.audit.slice(-limit).reverse()),
 
     listResources: async ({ status } = {}) => clone(db.resources.filter((item) => !status || item.status === status)),
