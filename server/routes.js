@@ -13,7 +13,7 @@ const fail = (error) => {
 };
 const httpError = (status, code, message) => Object.assign(new Error(message), { status, code });
 
-export function createApi({ store, commerce, onboarding = null, library, me, verifyToken, devUser = null }) {
+export function createApi({ store, commerce, onboarding = null, library, me, mcp = null, verifyToken, devUser = null }) {
   async function requireUser(request) {
     if (devUser) return devUser;
     const header = request.headers.get("authorization") || "";
@@ -55,6 +55,9 @@ export function createApi({ store, commerce, onboarding = null, library, me, ver
     "POST /api/checkout": async (request) => { const input = await body(request); return ok(await commerce.startCheckout(await requireUser(request), input.editionCode, readTracking(input.tracking, request))); },
     // Compra sem cadastro (só e-mail) e retorno com link para criar a senha.
     "POST /api/checkout/guest": async (request) => { const input = await body(request); return ok(await commerce.guestCheckout(input.email, input.editionCode, readTracking(input.tracking, request), input.name || input.document ? { name: input.name, document: input.document } : null)); },
+    // Conexão com IAs (MCP): só para quem tem licença ativa.
+    "GET /api/account/mcp": async (request) => { const { user } = await requireAccess(request); return ok({ url: await mcp.connectionUrl(user.id) }); },
+    "POST /api/account/mcp/rotate": async (request) => { const { user } = await requireAccess(request); return ok({ url: await mcp.rotate(user.id) }); },
     "POST /api/account/refund": async (request) => ok(await commerce.requestRefund(await requireUser(request), (await body(request)).reason)),
     "POST /api/checkout/claim": async (request) => { const input = await body(request); return ok(await commerce.claimAccess(input.order, input.key)); },
 
@@ -172,6 +175,9 @@ export function createApi({ store, commerce, onboarding = null, library, me, ver
 
   return async function handle(request) {
     const path = new URL(request.url).pathname.replace(/\/$/, "");
+    if (mcp && path.startsWith("/api/mcp/")) {
+      try { return await mcp.handle(request, decodeURIComponent(path.slice("/api/mcp/".length))); } catch (error) { return fail(error); }
+    }
     const route = routes[`${request.method} ${path}`];
     if (!route) return json(404, { error: "not_found", message: "Rota inexistente." });
     try { return await route(request); } catch (error) { return fail(error); }

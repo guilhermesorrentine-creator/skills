@@ -30,6 +30,18 @@ export function createSupabaseStore({ url, serviceKey }) {
       if (error) throw Object.assign(new Error(error.message), { status: 400, code: "invite_failed" });
       return data.properties.action_link;
     },
+    // Versão do link de conexão MCP (nos metadados do usuário): trocar o link invalida o anterior.
+    getMcpVersion: async (userId) => {
+      const { data, error } = await db.auth.admin.getUserById(userId);
+      if (error) return 0;
+      return Number(data?.user?.app_metadata?.mcp_v) || 1;
+    },
+    setMcpVersion: async (userId, version) => {
+      const { data, error } = await db.auth.admin.getUserById(userId);
+      if (error) throw error;
+      const { error: updateError } = await db.auth.admin.updateUserById(userId, { app_metadata: { ...(data.user.app_metadata || {}), mcp_v: version } });
+      if (updateError) throw updateError;
+    },
     hasSignedIn: async (userId) => {
       const { data, error } = await db.auth.admin.getUserById(userId);
       if (error) throw error;
