@@ -46,7 +46,7 @@ function setup() {
     const order = store.db.orders.at(-1);
     return hook({ id: `evt_paid_${n}`, event: "CHECKOUT_PAID", checkout: { id: order.asaas_checkout_id, customer: `cus_${user}`, items: [{ value: (amount ?? order.amount_cents) / 100, quantity: 1 }] } });
   };
-  return { store, calls, call, hook, pay };
+  return { store, asaas, calls, call, hook, pay };
 }
 
 test("cálculo de upgrade em centavos com crédito elegível", () => {
@@ -257,6 +257,61 @@ test("compra sem cadastro: só e-mail, retorno com chave e link de senha após o
 
   ctx.store.db.profiles.find((item) => item.email === "nova@exemplo.com").last_sign_in_at = "2026-10-22T00:00:00Z";
   assert.deepEqual((await ctx.call("POST", "/api/checkout/claim", { body: { order, key } })).data, { status: "paid", login: true });
+});
+
+test("compra direta: nome e CPF geram o QR do Pix na página e o retorno confirma no Asaas", async () => {
+  const ctx = setup();
+  const remote = [];
+  Object.assign(ctx.asaas, {
+    createCustomer: async (body) => { ctx.calls.push(body); return { id: "cus_pix" }; },
+    createPayment: async (body) => { ctx.calls.push(body); return { id: "pay_1", status: "PENDING", billingType: "UNDEFINED", invoiceUrl: "https://www.asaas.com/i/abc" }; },
+    pixQrCode: async () => ({ encodedImage: "iVBOR", payload: "000201pix" }),
+    listCustomerPayments: async () => ({ data: remote }),
+  });
+  const input = { email: "pix@exemplo.com", editionCode: "edicao-1", name: "Ana Souza", document: "529.982.247-25" };
+  assert.equal((await ctx.call("POST", "/api/checkout/guest", { body: { ...input, document: "111.111.111-11" } })).data.error, "invalid_document");
+  const started = await ctx.call("POST", "/api/checkout/guest", { body: input });
+  assert.equal(started.status, 200);
+  assert.deepEqual(started.data.pix, { image: "iVBOR", payload: "000201pix" });
+  assert.equal(started.data.url, "https://www.asaas.com/i/abc");
+  assert.equal(ctx.calls.find((c) => c.cpfCnpj).cpfCnpj, "52998224725");
+  assert.equal(ctx.calls.at(-1).externalReference, started.data.order);
+  const again = await ctx.call("POST", "/api/checkout/guest", { body: input });
+  assert.equal(again.data.order, started.data.order, "reabrir a página mostra o mesmo QR");
+  assert.equal(again.data.pix.payload, "000201pix");
+
+  const claim = { order: started.data.order, key: started.data.key };
+  assert.equal((await ctx.call("POST", "/api/checkout/claim", { body: claim })).data.status, "pending");
+  remote.push({ id: "pay_1", status: "RECEIVED", value: 97.9, externalReference: started.data.order });
+  const paid = await ctx.call("POST", "/api/checkout/claim", { body: claim });
+  assert.equal(paid.data.status, "paid");
+  assert.ok(ctx.store.db.licenses.some((l) => l.status === "active"));
+});
+
+test("garantia: reembolso automático encerra o acesso; recusa do Asaas vira pedido para o admin", async () => {
+  const ctx = setup();
+  await ctx.pay("tok-u1");
+  const order = ctx.store.db.orders.at(-1);
+  const refunds = [];
+  Object.assign(ctx.asaas, {
+    listCustomerPayments: async () => ({ data: [{ id: "pay_c", status: "RECEIVED", value: 97.9 }] }),
+    refundPayment: async (id, body) => { if (refunds.fail) throw Object.assign(new Error("Saldo insuficiente"), { status: 502 }); refunds.push(id); return {}; },
+  });
+  assert.equal((await ctx.call("GET", "/api/account", { token: "tok-u1" })).data.refund.orderId, order.id);
+
+  refunds.fail = true;
+  const pending = await ctx.call("POST", "/api/account/refund", { token: "tok-u1", body: { reason: "não usei" } });
+  assert.deepEqual(pending.data, { refunded: false, requested: true });
+  assert.equal((await ctx.call("GET", "/api/account", { token: "tok-u1" })).data.refund.requested, true);
+  assert.equal((await ctx.call("GET", "/api/account", { token: "tok-u1" })).data.access, true, "acesso segue até o estorno sair");
+
+  refunds.fail = false;
+  assert.equal((await ctx.call("POST", "/api/admin/orders/refund", { token: "tok-adm", body: { orderId: order.id } })).data.refunded, true);
+  assert.deepEqual([...refunds], ["pay_c"]);
+  const after = (await ctx.call("GET", "/api/account", { token: "tok-u1" })).data;
+  assert.equal(after.access, false);
+  assert.equal(after.refund, null);
+  assert.equal((await ctx.call("POST", "/api/account/refund", { token: "tok-u1", body: {} })).status, 422);
 });
 
 test("compra sem cadastro recusa e-mail de conta já usada", async () => {

@@ -51,6 +51,7 @@ export function createSupabaseStore({ url, serviceKey }) {
     listOrders: (userId) => { let query = db.from("orders").select("*").order("created_at", { ascending: false }).limit(1000); if (userId) query = query.eq("user_id", userId); return many(query); },
 
     getPayment: (id) => one(db.from("payments").select("*").eq("asaas_payment_id", id)),
+    findPaymentByOrder: (orderId) => one(db.from("payments").select("*").eq("order_id", orderId).order("created_at", { ascending: false }).limit(1)),
     upsertPayment: async (row) => {
       const existing = await one(db.from("payments").select("order_id").eq("asaas_payment_id", row.asaas_payment_id));
       await run(db.from("payments").upsert({ ...row, order_id: row.order_id || existing?.order_id || null, updated_at: now() }, { onConflict: "asaas_payment_id" }));

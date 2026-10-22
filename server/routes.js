@@ -54,7 +54,8 @@ export function createApi({ store, commerce, onboarding = null, library, me, ver
     },
     "POST /api/checkout": async (request) => { const input = await body(request); return ok(await commerce.startCheckout(await requireUser(request), input.editionCode, readTracking(input.tracking, request))); },
     // Compra sem cadastro (só e-mail) e retorno com link para criar a senha.
-    "POST /api/checkout/guest": async (request) => { const input = await body(request); return ok(await commerce.guestCheckout(input.email, input.editionCode, readTracking(input.tracking, request))); },
+    "POST /api/checkout/guest": async (request) => { const input = await body(request); return ok(await commerce.guestCheckout(input.email, input.editionCode, readTracking(input.tracking, request), input.name || input.document ? { name: input.name, document: input.document } : null)); },
+    "POST /api/account/refund": async (request) => ok(await commerce.requestRefund(await requireUser(request), (await body(request)).reason)),
     "POST /api/checkout/claim": async (request) => { const input = await body(request); return ok(await commerce.claimAccess(input.order, input.key)); },
 
     // Catálogo autorizado: índice para a busca local e detalhe de um recurso
@@ -139,6 +140,7 @@ export function createApi({ store, commerce, onboarding = null, library, me, ver
       await store.insertAudit({ actor_id: admin.id, action: "reprocess_event", details: { event_id: event.id, result: result.status } });
       return ok(result);
     },
+    "POST /api/admin/orders/refund": async (request) => { const admin = await requireAdmin(request); return ok(await commerce.adminRefund((await body(request)).orderId, admin.id)); },
     "POST /api/admin/orders/reconcile": async (request) => { const admin = await requireAdmin(request); return ok(await commerce.reconcileOrder(String((await body(request)).orderId || ""), admin.id)); },
     "POST /api/admin/licenses/status": async (request) => { const admin = await requireAdmin(request); const input = await body(request); return ok(await commerce.setLicenseStatus(input.userId, input.status, input.reason, admin.id)); },
     // Convite: cria a conta (se preciso), libera o acesso e envia as boas-vindas com o link para criar a senha.
