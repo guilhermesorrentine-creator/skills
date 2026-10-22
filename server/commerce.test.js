@@ -132,6 +132,13 @@ test("estorno recalcula; contestação mantém acesso até decisão auditada", a
   assert.equal(account.access, false);
 });
 
+test("estorno parcial feito no painel do Asaas também encerra o acesso", async () => {
+  const ctx = setup();
+  await ctx.pay("tok-u1", 1);
+  await ctx.hook({ id: "prf", event: "PAYMENT_PARTIALLY_REFUNDED", payment: { id: "pay_1", customer: "cus_tok-u1", value: 97.9, status: "RECEIVED" } });
+  assert.equal((await ctx.call("GET", "/api/account", { token: "tok-u1" })).data.access, false);
+});
+
 test("upgrade cobra a diferença e amplia direitos sem apagar os anteriores", async () => {
   const ctx = setup();
   await ctx.pay("tok-u1", 1);

@@ -8,6 +8,7 @@ const DAY = 86400000;
 const GUARANTEE_DAYS = 15;
 const REFUND_REQUESTED = "Reembolso pedido";
 const PAID_PAYMENT = new Set(["PAYMENT_CONFIRMED", "PAYMENT_RECEIVED"]);
+const REFUND_EVENTS = new Set(["PAYMENT_REFUNDED", "PAYMENT_PARTIALLY_REFUNDED"]);
 const DISPUTE = new Set(["PAYMENT_CHARGEBACK_REQUESTED", "PAYMENT_CHARGEBACK_DISPUTE", "PAYMENT_AWAITING_CHARGEBACK_REVERSAL"]);
 
 // Pagamento único por edição (Asaas Checkout avulso) e licença vitalícia.
@@ -357,7 +358,7 @@ export function createCommerce({ store, asaas, config, onboarding = null, conver
       await reportPurchase(order);
       return finish(row, "processed", "Licença ativada pela confirmação da cobrança.");
     }
-    if (payload.event === "PAYMENT_REFUNDED" && order?.status === "paid") {
+    if (REFUND_EVENTS.has(payload.event) && order?.status === "paid") {
       await store.updateOrder(order.id, { status: "refunded", refunded_at: now().toISOString() });
       await recomputeLicense(profile.id, "refunded");
       return finish(row, "processed", "Pedido estornado; licença recalculada.");
