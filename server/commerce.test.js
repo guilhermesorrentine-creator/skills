@@ -385,6 +385,39 @@ test("Pro: 12x no cartão, troca para Pix cancela o parcelamento e a parcela pag
   assert.equal((await ctx.call("POST", "/api/checkout/claim", { body: { order: pix.order, key: pix.key } })).data.status, "paid");
 });
 
+test("Pro: renovação abre 30 dias antes do vencimento e soma ao prazo restante", async () => {
+  const ctx = setup();
+  await ctx.pay("tok-u1");
+  ctx.store.db.editions.push({ id: "ep", code: "pro-anual", name: "Voxelia Pro", rank: 4, price_cents: 59880, on_sale: true, features: [] });
+  ctx.store.db.licenses.find((l) => l.user_id === "u1").edition_id = "ep";
+  const daysAgo = (n) => new Date(Date.now() - n * 86400000).toISOString();
+  const opro = { id: "opro", user_id: "u1", edition_id: "ep", kind: "upgrade", status: "paid", amount_cents: 50090, list_price_cents: 59880, credit_cents: 9790, paid_at: daysAgo(100), created_at: daysAgo(100) };
+  ctx.store.db.orders.push(opro);
+  let account = (await ctx.call("GET", "/api/account", { token: "tok-u1" })).data;
+  assert.equal(account.renewal, null, "longe do vencimento não oferece renovação");
+  assert.equal((await ctx.call("POST", "/api/checkout", { token: "tok-u1", body: { editionCode: "pro-anual" } })).status, 409);
+
+  opro.paid_at = daysAgo(350);
+  account = (await ctx.call("GET", "/api/account", { token: "tok-u1" })).data;
+  assert.equal(account.mcp.active, true);
+  assert.deepEqual([account.renewal.amount, account.renewal.edition.code], [59880, "pro-anual"]);
+  const res = await ctx.call("POST", "/api/checkout", { token: "tok-u1", body: { editionCode: "pro-anual" } });
+  assert.equal(res.status, 200);
+  const renewal = ctx.store.db.orders.at(-1);
+  assert.deepEqual([renewal.kind, renewal.amount_cents, renewal.credit_cents], ["purchase", 59880, 0]);
+
+  Object.assign(renewal, { status: "paid", paid_at: new Date().toISOString() });
+  account = (await ctx.call("GET", "/api/account", { token: "tok-u1" })).data;
+  const days = Math.round((new Date(account.mcp.until) - Date.now()) / 86400000);
+  assert.equal(days, 380, "15 dias restantes + 365");
+  assert.equal(account.renewal, null);
+
+  opro.paid_at = daysAgo(800); renewal.paid_at = daysAgo(400);
+  account = (await ctx.call("GET", "/api/account", { token: "tok-u1" })).data;
+  assert.equal(account.mcp.active, false);
+  assert.equal(account.renewal.amount, 59880, "vencida: renovação pelo preço cheio");
+});
+
 test("funil: grava só eventos válidos e agrega vendas por criativo", async () => {
   const ctx = setup();
   const send = (b) => ctx.call("POST", "/api/funnel", { body: b });

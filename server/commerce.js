@@ -10,6 +10,7 @@ const REFUND_REQUESTED = "Reembolso pedido";
 // Voxelia Pro: acervo vitalício + conexão MCP por 12 meses, parcelável em 12x no cartão.
 const MCP_EDITION = "pro-anual";
 const MCP_DAYS = 365;
+const RENEW_DAYS = 30; // a renovação do Pro abre 30 dias antes de a conexão vencer
 const INSTALLMENTS = { [MCP_EDITION]: 12 };
 const installmentsFor = (edition) => INSTALLMENTS[edition?.code] || 1;
 const CONFIRMED = new Set(["RECEIVED", "CONFIRMED"]);
@@ -29,6 +30,8 @@ export function createCommerce({ store, asaas, config, onboarding = null, conver
     const forSale = ent.editions.filter((edition) => edition.on_sale).sort((a, b) => a.rank - b.rank);
     const latest = forSale.at(-1) || null;
     const upgrade = latest && ent.rank > 0 && latest.rank > ent.rank ? quote({ target: latest, license: ent.license, editions: ent.editions, orders }) : null;
+    const pro = forSale.find((edition) => edition.code === MCP_EDITION);
+    const renewal = pro ? renewalQuote(pro, ent, orders) : null;
     const events = ent.license ? await store.listLicenseEvents(user.id) : [];
     return {
       email: user.email,
@@ -53,16 +56,25 @@ export function createCommerce({ store, asaas, config, onboarding = null, conver
       pendingOrder: open?.checkout_url ? { url: open.checkout_url, expiresAt: open.expires_at } : null,
       refund: refundState(orders),
       mcp: mcpWindow(orders, ent.editions),
+      renewal: renewal ? { edition: publicEdition(pro), amount: renewal.amount } : null,
     };
   }
 
-  // Conexão MCP: 12 meses a partir do último pagamento do Pro (não estornado).
+  // Conexão MCP: 12 meses por pagamento do Pro (não estornado). Renovar antes de vencer soma ao prazo restante.
   function mcpWindow(orders, editions) {
     const pro = editions.find((edition) => edition.code === MCP_EDITION);
-    const last = pro && orders.filter((order) => order.edition_id === pro.id && order.status === "paid" && !order.refunded_at && order.paid_at)
-      .map((order) => new Date(order.paid_at).getTime()).sort((a, b) => b - a)[0];
-    const until = last ? new Date(last + MCP_DAYS * DAY) : null;
+    const paidAt = pro ? orders.filter((order) => order.edition_id === pro.id && order.status === "paid" && !order.refunded_at && order.paid_at)
+      .map((order) => new Date(order.paid_at).getTime()).sort((a, b) => a - b) : [];
+    const end = paidAt.reduce((until, at) => Math.max(until, at) + MCP_DAYS * DAY, 0);
+    const until = end ? new Date(end) : null;
     return { active: Boolean(until && until > now()), until: until ? until.toISOString() : null };
+  }
+  // Quem já tem o Pro compra de novo a conexão por mais 12 meses, sem crédito, perto do vencimento ou depois dele.
+  function renewalQuote(target, ent, orders) {
+    if (target?.code !== MCP_EDITION || ent.edition?.code !== MCP_EDITION) return null;
+    const { until } = mcpWindow(orders, ent.editions);
+    if (until && new Date(until).getTime() - now().getTime() > RENEW_DAYS * DAY) return null;
+    return { kind: "purchase", listPrice: target.price_cents, credit: 0, amount: target.price_cents };
   }
   async function mcpStatus(userId) {
     const [orders, editions] = await Promise.all([store.listOrders(userId), store.listEditions({ onSaleOnly: false })]);
@@ -158,7 +170,8 @@ export function createCommerce({ store, asaas, config, onboarding = null, conver
     if (open) throw httpError(409, "order_in_progress", "Você já tem um pagamento em andamento. Conclua ou aguarde ele expirar.");
 
     const [ent, orders] = await Promise.all([userEntitlement(user.id), store.listOrders(user.id)]);
-    const price = quote({ target, license: ent.license, editions: ent.editions, orders });
+    const quoted = quote({ target, license: ent.license, editions: ent.editions, orders });
+    const price = quoted.error === "already_owned" ? renewalQuote(target, ent, orders) || quoted : quoted;
     if (price.error === "already_owned") throw httpError(409, "already_owned", "Sua licença já inclui esta edição.");
     const expiresAt = new Date(now().getTime() + (payer ? DAY : config.asaas.checkoutMinutes * 60000)).toISOString();
     const base = { user_id: user.id, edition_id: target.id, kind: price.kind, list_price_cents: price.listPrice, credit_cents: price.credit, amount_cents: price.amount };

@@ -16,10 +16,11 @@ export default function LicensePage({ account }) {
   const [refundMsg, setRefundMsg] = useState("");
   if (!account) return <div className="page"><p className="muted">Carregando…</p></div>;
   const paid = account.orders.filter((order) => order.status === "paid");
-  const upgrade = async () => {
+  const buy = async (code) => {
     setBusy(true); setError("");
-    try { await purchase(account.upgrade.edition.code, { signedIn: true }); } catch (e) { setError(e.message); setBusy(false); }
+    try { await purchase(code, { signedIn: true }); } catch (e) { setError(e.message); setBusy(false); }
   };
+  const upgrade = () => buy(account.upgrade.edition.code);
   const refund = async () => {
     setBusy(true); setError("");
     try {
@@ -47,6 +48,13 @@ export default function LicensePage({ account }) {
     {account.edition?.features?.length > 0 && <section className="panel"><h2>Incluído na sua edição</h2><ul className="check-list">{account.edition.features.map((f) => <li key={f}>{f}</li>)}</ul></section>}
 
     {account.mcp?.active && <AiConnect until={account.mcp.until}/>}
+
+    {account.renewal && <section className="panel upgrade-panel">
+      <h2>{account.mcp?.active ? "Sua conexão com a IA vence em breve" : "Sua conexão com a IA venceu"}</h2>
+      <p>{account.mcp?.until && <>{account.mcp.active ? "Válida até" : "Venceu em"} {when(account.mcp.until)}. </>}Renove por mais 12 meses e a sua IA continua consultando o acervo da Voxelia.{account.mcp?.active && " Os dias que faltam somam ao novo prazo."} O acervo continua vitalício de qualquer forma.</p>
+      <p className="upgrade-amount">Renovação por <b>{formatPrice(account.renewal.amount)}</b>{account.renewal.edition.installments > 1 && <> ou {account.renewal.edition.installments}x de {formatPrice(Math.round(account.renewal.amount / account.renewal.edition.installments))} no cartão</>}</p>
+      <button type="button" className="btn btn-primary" onClick={() => buy(account.renewal.edition.code)} disabled={busy}>{busy ? "Abrindo pagamento…" : "Renovar a conexão"}</button>
+    </section>}
 
     {account.upgrade && <section className="panel upgrade-panel">{account.upgrade.edition.mcp
       ? <><h2>Conecte a Voxelia na sua IA</h2>
