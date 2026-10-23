@@ -6,13 +6,13 @@ O objetivo é descobrir qual gancho gera clique e compra; lucro não é a meta d
 
 | Campanha | Conjunto | Anúncios | Verba/dia | Destino |
 |---|---|---|---|---|
-| `voxelia-teste1-pro` | Brasil · 22–45 · IA | A, B, C | R$ 35 | /conecta |
-| `voxelia-teste1-vitalicio` | Brasil · 22–45 · IA | D | R$ 15 | /comprar |
+| `voxelia-teste1-pro` | Brasil · 22–45 · IA | A, B, C | R$ 35 | /oferta |
+| `voxelia-teste1-vitalicio` | Brasil · 22–45 · IA | D | R$ 15 | /oferta (vitalício marcado) |
 
 Total: R$ 50/dia × 2 dias = R$ 100. Encerre as duas campanhas às 23h59 de 25/10.
 
 **Configuração das duas campanhas**
-- **Objetivo:** **Vendas** (site), com o Pixel instalado. Otimização: evento **InitiateCheckout** (Iniciar finalização da compra), que dispara na `/comprar` e tem volume para o Meta aprender com R$ 100. Depois de 10 a 15 compras, troque a otimização para **Purchase**.
+- **Objetivo:** **Vendas** (site), com o Pixel instalado. Otimização: evento **InitiateCheckout** (Iniciar finalização da compra), que dispara quando a pessoa clica em pagar no checkout da `/oferta` e tem volume para o Meta aprender com R$ 100. Depois de 10 a 15 compras, troque a otimização para **Purchase**.
   - **Sem o Pixel no ar até o início:** use Tráfego, otimizado para visualizações da página de destino. Nesse caso o Meta entrega para quem clica, e não para quem compra.
   - O Pixel só carrega para quem aceita os cookies, então o Meta enxerga parte das compras. O funil próprio (aba Funil do Admin) mede todas.
 - **Orçamento:** no conjunto (ABO), diário, início em 24/10 às 0h e término em 25/10 às 23h59.
@@ -24,34 +24,34 @@ Total: R$ 50/dia × 2 dias = R$ 100. Encerre as duas campanhas às 23h59 de 25/1
 
 ## Links (cole no campo "URL do site")
 
-- A: `https://skills-five-snowy.vercel.app/conecta?utm_source=meta&utm_medium=paid&utm_campaign=teste1&utm_content=A`
-- B: `https://skills-five-snowy.vercel.app/conecta?utm_source=meta&utm_medium=paid&utm_campaign=teste1&utm_content=B`
-- C: `https://skills-five-snowy.vercel.app/conecta?utm_source=meta&utm_medium=paid&utm_campaign=teste1&utm_content=C`
-- D: `https://skills-five-snowy.vercel.app/comprar?edicao=edicao-1&utm_source=meta&utm_medium=paid&utm_campaign=teste1&utm_content=D`
+- A: `https://skills-five-snowy.vercel.app/oferta?utm_source=meta&utm_medium=paid&utm_campaign=teste1&utm_content=A`
+- B: `https://skills-five-snowy.vercel.app/oferta?utm_source=meta&utm_medium=paid&utm_campaign=teste1&utm_content=B`
+- C: `https://skills-five-snowy.vercel.app/oferta?utm_source=meta&utm_medium=paid&utm_campaign=teste1&utm_content=C`
+- D: `https://skills-five-snowy.vercel.app/oferta?utm_source=meta&utm_medium=paid&utm_campaign=teste1&utm_content=D`
 
-Cada letra aparece separada na aba **Funil** do Admin (origem `meta · teste1 · A`).
+Cada letra aparece separada na aba **Funil** do Admin (origem `meta · teste1 · A`). A /oferta repete no título o gancho de cada anúncio e mostra o preço só no checkout, no fim da página.
 
 ## Textos
 
 ### A: tokens desperdiçados (`reel-ad-a-tokens.mp4`)
 - **Texto principal:** Você explica tudo de novo a cada conversa e a IA ainda devolve resposta genérica. Conecte a Voxelia no Claude ou no ChatGPT: ela consulta a skill certa e para de gastar tokens adivinhando.
 - **Título:** Pare de pagar a IA para adivinhar
-- **Descrição:** 12x de R$ 49,90 · 15 dias de garantia
+- **Descrição:** Acesso na hora · 15 dias de garantia
 
 ### B: resposta genérica, antes e depois (`reel-ad-b-generica.mp4`)
 - **Texto principal:** "Eleve seu negócio a outro nível." Se a sua IA escreve assim, ela não precisa de prompt maior, precisa da skill certa. A Voxelia conecta 2 mil skills, com guia em português, no Claude e no ChatGPT.
 - **Título:** Como sair do texto genérico
-- **Descrição:** 12x de R$ 49,90 · 15 dias de garantia
+- **Descrição:** Acesso na hora · 15 dias de garantia
 
 ### C: superpoderes (`reel-ad-c-bomba.mp4`)
 - **Texto principal:** Veja como dar bomba para a sua IA. Você conecta uma vez e ela passa a usar 2 mil skills para texto, vídeo, design, código e vendas. É como dar superpoderes a ela.
 - **Título:** Dê superpoderes para a sua IA
-- **Descrição:** 12x de R$ 49,90 · 15 dias de garantia
+- **Descrição:** Acesso na hora · 15 dias de garantia
 
 ### D: o Claude fez este vídeo (`reel-ad-d-claude.mp4`)
-- **Texto principal:** Este vídeo foi feito inteiro pelo Claude, com uma skill. Na Voxelia são 2 mil skills assim, cada uma com passo a passo em português. Acesso vitalício, pagamento único.
+- **Texto principal:** Este vídeo foi feito inteiro pelo Claude, com uma skill. Na Voxelia são 2 mil skills assim, cada uma com passo a passo em português. Acesso vitalício.
 - **Título:** 2 mil skills com guia em português
-- **Descrição:** R$ 97,90 · acesso vitalício
+- **Descrição:** Acesso vitalício · 15 dias de garantia
 
 ## Como ler o resultado (25/10 à noite)
 
