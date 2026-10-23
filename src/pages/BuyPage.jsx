@@ -111,6 +111,7 @@ export default function BuyPage({ signedIn }) {
           </> : <button type="submit" className="btn btn-primary buy-submit" disabled={Boolean(busy) || !edition}>{busy ? "Gerando pagamento…" : "Pagar com Pix ou cartão"}</button>}
         </form>
         <p className="small muted">Pagamento seguro pelo Asaas. {signedIn ? "A liberação é automática." : "Depois do pagamento você cria sua senha na hora, sem esperar e-mail."}</p>
+        <p className="small muted">Ao pagar, você concorda com os <a className="link" href="/termos" target="_blank" rel="noopener">Termos de uso</a> e a política de <a className="link" href="/compra-e-reembolso" target="_blank" rel="noopener">Compra e reembolso</a>. Garantia de 15 dias.</p>
         <button type="button" className="link small" onClick={() => navigate("/")}>← Conhecer a Voxelia</button>
       </> : cardCharge ? <>
         <h1>Finalize no cartão</h1>

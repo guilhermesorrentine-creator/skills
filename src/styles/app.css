@@ -166,6 +166,9 @@
 .waiting { display: flex; gap: 10px; align-items: baseline; }
 .spinner { width: 14px; height: 14px; flex: none; border-radius: 50%; border: 2px solid var(--primary-soft); border-top-color: var(--primary); animation: spin 0.9s linear infinite; }
 .legal-outline { list-style: decimal; padding-left: 22px; display: grid; gap: 8px; color: var(--text-2); }
+.legal-text { display: grid; gap: 18px; margin: 8px 0 24px; }
+.legal-text h2 { font-size: 1.05rem; margin: 0 0 6px; }
+.legal-text p { margin: 0; color: var(--text-2); line-height: 1.6; }
 .simple .l-price b { font-size: 44px; }
 .auth-view { display: grid; place-items: center; padding: 40px var(--gutter); background: radial-gradient(60% 50% at 80% 10%, var(--bg-soft), transparent), var(--bg); }
 .auth-card { display: grid; gap: 14px; width: min(440px, 100%); padding: 32px; border-radius: var(--radius-xl); background: var(--surface); border: 1px solid var(--line); box-shadow: var(--shadow-3); }
