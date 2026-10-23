@@ -84,7 +84,16 @@ export function createMcp({ store, commerce, library, loadCatalog, config }) {
       if (!goal) return text("Informe o objetivo da pessoa.", true);
       const limit = Math.min(20, Math.max(1, Number.parseInt(args.limite, 10) || 8));
       const lib = await library.libraryFor(rank);
-      const found = searchResources(buildResourceIndex(lib.resources), goal, { types: args.tipo ? [args.tipo] : null, category: args.categoria || "todas" }).slice(0, limit);
+      // A mesma skill aparece em mais de uma pasta de alguns repositórios (traduções, cópias por agente):
+      // fica uma por nome e fonte, na posição da primeira, com o resumo mais completo entre as cópias.
+      const unique = new Map();
+      for (const item of searchResources(buildResourceIndex(lib.resources), goal, { types: args.tipo ? [args.tipo] : null, category: args.categoria || "todas" })) {
+        const key = `${item.source_name}:${item.title}`;
+        const kept = unique.get(key);
+        if (!kept) unique.set(key, item);
+        else if ((item.summary || "").length > (kept.summary || "").length) unique.set(key, { ...item, score: kept.score });
+      }
+      const found = [...unique.values()].slice(0, limit);
       const paths = matchPaths(lib.paths, goal).slice(0, 2);
       if (!found.length && !paths.length) return text(`Nada encontrado para "${goal}". Tente outras palavras (em inglês também funciona) ou sem filtros.`);
       const pathText = paths.map((path) => `Caminho recomendado: ${path.goal}\n${path.steps.map((step, i) => `  ${i + 1}. ${step.resource_id}${step.reason ? `: ${step.reason}` : ""}`).join("\n")}`).join("\n\n");

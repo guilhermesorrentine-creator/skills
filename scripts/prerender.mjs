@@ -23,15 +23,20 @@ const faq = [
   ["Para quem é?", "Criadores de conteúdo, empreendedores, programadores e pesquisadores que usam ou querem usar o Claude, o Claude Code e outros agentes de IA."],
 ];
 
-function page({ path, title, description, body, jsonld = [] }) {
+function page({ path, title, description, body, jsonld = [], noindex = false }) {
   const url = `${BASE}${path}`;
   const head = [
     `<title>${esc(title)}</title>`,
     `<meta name="description" content="${esc(short(description))}" />`,
     `<link rel="canonical" href="${url}" />`,
+    ...(noindex ? [`<meta name="robots" content="noindex, follow" />`] : []),
     `<meta property="og:title" content="${esc(title)}" />`,
     `<meta property="og:description" content="${esc(short(description))}" />`,
     `<meta property="og:url" content="${url}" />`,
+    `<meta property="og:image" content="${BASE}/og.png" />`,
+    `<meta property="og:image:width" content="1200" />`,
+    `<meta property="og:image:height" content="630" />`,
+    `<meta name="twitter:card" content="summary_large_image" />`,
     ...jsonld.map((j) => `<script type="application/ld+json">${JSON.stringify(j).replace(/</g, "\\u003c")}</script>`),
   ].join("\n    ");
   return template
@@ -39,6 +44,8 @@ function page({ path, title, description, body, jsonld = [] }) {
     .replace(/<meta name="description"[^>]*>/, "")
     .replace(/<meta property="og:title"[^>]*>/, "")
     .replace(/<meta property="og:description"[^>]*>/, "")
+    .replace(/<meta property="og:image"[^>]*>/, "")
+    .replace(/<meta name="twitter:card"[^>]*>/, "")
     .replace("</head>", `    ${head}\n  </head>`)
     .replace('<div id="root"></div>', `<div id="root"><main class="prerender">${body}</main></div>`);
 }
@@ -77,6 +84,10 @@ for (const k of KITS) {
 await emit("/conecta", page({ path: "/conecta", title: "Voxelia Pro: conecte na sua IA e dê superpoderes a ela", description: `Conecte a Voxelia no Claude, no ChatGPT e no Claude Code: a IA passa a usar ${skills} skills com o passo a passo certo. 12x no cartão ou Pix, 15 dias de garantia.`,
   body: `<h1>Conecte na sua IA. É como dar superpoderes a ela.</h1><p>Menos texto genérico, menos resposta incompleta e menos token desperdiçado: a IA consulta ${skills} skills da Voxelia e usa a certa.</p><p>${link("/comprar?edicao=pro-anual", "Quero o Voxelia Pro")}</p>`,
   jsonld: [{ ...product("Voxelia Pro", "Conexão da Voxelia com a sua IA (MCP) por 12 meses e acervo vitalício"), offers: { ...offer, price: "598.80", url: `${BASE}/conecta` } }] }));
+
+// Página do tráfego pago: fora do Google, preço só no checkout
+await emit("/oferta", page({ path: "/oferta", noindex: true, title: "Voxelia: dê superpoderes para a sua IA", description: `Conecte a Voxelia no Claude, no ChatGPT e no Claude Code: a IA passa a usar ${skills} skills com o passo a passo certo. 15 dias de garantia.`,
+  body: `<h1>Dê superpoderes para a sua IA.</h1><p>Conecte uma vez e a sua IA passa a usar ${skills} skills de especialistas, com o passo a passo certo para cada pedido.</p>` }));
 
 // Bio e início
 const kitLinks = ul(KITS.map((k) => link(`/kit/${k.slug}`, `Voxelia para ${k.name}`)));
