@@ -12,7 +12,9 @@ O objetivo é descobrir qual gancho gera clique e compra; lucro não é a meta d
 Total: R$ 50/dia × 2 dias = R$ 100. Encerre as duas campanhas às 23h59 de 25/10.
 
 **Configuração das duas campanhas**
-- **Objetivo:** Tráfego. Otimização: visualizações da página de destino. Use Vendas só depois que o Pixel tiver eventos.
+- **Objetivo:** **Vendas** (site), com o Pixel instalado. Otimização: evento **InitiateCheckout** (Iniciar finalização da compra), que dispara na `/comprar` e tem volume para o Meta aprender com R$ 100. Depois de 10 a 15 compras, troque a otimização para **Purchase**.
+  - **Sem o Pixel no ar até o início:** use Tráfego, otimizado para visualizações da página de destino. Nesse caso o Meta entrega para quem clica, e não para quem compra.
+  - O Pixel só carrega para quem aceita os cookies, então o Meta enxerga parte das compras. O funil próprio (aba Funil do Admin) mede todas.
 - **Orçamento:** no conjunto (ABO), diário, início em 24/10 às 0h e término em 25/10 às 23h59.
 - **Público:** Brasil, 22 a 45 anos, todos os gêneros. Interesses: ChatGPT, inteligência artificial, OpenAI, marketing digital e empreendedorismo. Ative o Advantage+ público.
 - **Posicionamentos:** manuais. Instagram Reels, Stories e Feed; Facebook Reels.
