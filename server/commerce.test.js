@@ -418,6 +418,23 @@ test("Pro: renovação abre 30 dias antes do vencimento e soma ao prazo restante
   assert.equal(account.renewal.amount, 59880, "vencida: renovação pelo preço cheio");
 });
 
+test("concessão de todas as edições libera o MCP sem prazo e sem oferta de renovação; só a Edição 1 não libera", async () => {
+  const ctx = setup();
+  ctx.store.db.editions.push({ id: "ep", code: "pro-anual", name: "Voxelia Pro", rank: 4, price_cents: 59880, on_sale: true, features: [] });
+  const started = new Date(Date.now() - 60000).toISOString();
+  assert.equal((await ctx.call("GET", "/api/account/mcp", { token: "tok-u2" })).status, 402);
+  ctx.store.db.grants.push({ id: "g1", user_id: "u2", edition_id: null, starts_at: started, ends_at: null, revoked_at: null, reason: "cortesia" });
+  const account = (await ctx.call("GET", "/api/account", { token: "tok-u2" })).data;
+  assert.equal(account.access, true);
+  assert.deepEqual([account.mcp.active, account.mcp.until], [true, null]);
+  assert.equal(account.renewal, null, "quem tem concessão não recebe oferta de renovação");
+  assert.equal((await ctx.call("GET", "/api/account/mcp", { token: "tok-u2" })).status, 200);
+  ctx.store.db.grants[0].revoked_at = new Date().toISOString();
+  assert.equal((await ctx.call("GET", "/api/account/mcp", { token: "tok-u2" })).status, 402, "concessão revogada encerra a conexão");
+  ctx.store.db.grants.push({ id: "g2", user_id: "u2", edition_id: "e1", starts_at: started, ends_at: null, revoked_at: null, reason: "só a Edição 1" });
+  assert.equal((await ctx.call("GET", "/api/account/mcp", { token: "tok-u2" })).status, 402, "concessão só da Edição 1 não inclui a conexão");
+});
+
 test("funil: grava só eventos válidos e agrega vendas por criativo", async () => {
   const ctx = setup();
   const send = (b) => ctx.call("POST", "/api/funnel", { body: b });

@@ -4,11 +4,15 @@
 
 const ACCESS_STATUSES = new Set(["active", "disputed"]);
 
+// Concessão vigente: não revogada, já iniciada e dentro do prazo (sem prazo = para sempre).
+export function activeGrants(grants = [], now = new Date()) {
+  const time = new Date(now).getTime();
+  return grants.filter((item) => !item.revoked_at && new Date(item.starts_at).getTime() <= time && (!item.ends_at || new Date(item.ends_at).getTime() > time));
+}
+
 export function entitlement({ license, grants = [], editions = [], now = new Date() }) {
   const byId = new Map(editions.map((edition) => [edition.id, edition]));
-  const time = new Date(now).getTime();
-  const grant = grants
-    .filter((item) => !item.revoked_at && new Date(item.starts_at).getTime() <= time && (!item.ends_at || new Date(item.ends_at).getTime() > time))
+  const grant = activeGrants(grants, now)
     .map((item) => ({ ...item, rank: byId.get(item.edition_id)?.rank ?? maxRank(editions) }))
     .sort((a, b) => b.rank - a.rank)[0];
   const licenseRank = license && ACCESS_STATUSES.has(license.status) ? byId.get(license.edition_id)?.rank || 0 : 0;
