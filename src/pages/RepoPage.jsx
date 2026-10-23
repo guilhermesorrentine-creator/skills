@@ -6,6 +6,7 @@ import { useT } from "../i18n/index.js";
 import { Link, navigate } from "../lib/router.jsx";
 import { track } from "../lib/meta-pixel.js";
 import { NotFound } from "./AccountPages.jsx";
+import { funnel } from "../lib/funnel.js";
 
 // Vitrine pública de um repositório (/r/<nome>), destino dos links dos Reels. Mostra o começo do guia;
 // o passo a passo completo fica no sistema. Pensada primeiro para celular: CTA fixo no rodapé.
@@ -30,7 +31,7 @@ export default function RepoPage({ name, account, onEnter }) {
   const owned = Boolean(account?.access);
   const primary = owned
     ? { label: t("repo.openGuide"), run: () => navigate(guidePath) }
-    : { label: t("repo.buyGuide"), run: () => navigate("/comprar?edicao=edicao-1") };
+    : { label: t("repo.buyGuide"), run: () => { funnel("buy_click"); navigate("/comprar?edicao=edicao-1"); } };
 
   return <div className="repo-page">
     <header className="repo-top"><Brand/>{!owned && <button type="button" className="btn btn-ghost btn-sm" onClick={() => onEnter(guidePath)}>{t("common.enter")}</button>}</header>

@@ -28,8 +28,15 @@ export default function AppShell({ path, account, children }) {
   const [open, setOpen] = useState(false);
   const [palette, setPalette] = useState(false);
   const [accountMenu, setAccountMenu] = useState(false);
-  const { localPending, actions } = useLibrary();
+  const { localPending, actions, index, library } = useLibrary();
   useEffect(() => setOpen(false), [path]);
+  // Seção sem nenhum recurso publicado não aparece no menu (evita página "0 recursos" para quem comprou).
+  const hidden = useMemo(() => {
+    if (!library) return new Set();
+    const has = (...types) => index.some((item) => types.includes(item.type));
+    return new Set([!has("subagent") && "/app/subagentes", !has("workflow") && "/app/workflows", !has("tool", "reference") && "/app/ferramentas"].filter(Boolean));
+  }, [index, library]);
+  const visibleMenu = menu.filter((item) => !hidden.has(item.to));
   useEffect(() => {
     const onKey = (event) => {
       if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") { event.preventDefault(); setPalette((v) => !v); }
@@ -44,7 +51,7 @@ export default function AppShell({ path, account, children }) {
     <a className="skip-link" href="#app-main">{t("common.skipToContent")}</a>
     <aside className="app-side" aria-label={t("app.shell.menu")}>
       <div className="app-side-head"><Brand to="/app"/></div>
-      <nav><ul>{menu.map((item) => <li key={item.to}><Link to={item.to} className="app-link" aria-current={active(item.to) ? "page" : undefined}>
+      <nav><ul>{visibleMenu.map((item) => <li key={item.to}><Link to={item.to} className="app-link" aria-current={active(item.to) ? "page" : undefined}>
         <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d={item.icon} fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round" strokeLinecap="round"/></svg>{t(item.key)}
       </Link></li>)}</ul></nav>
       <div className="app-side-foot">

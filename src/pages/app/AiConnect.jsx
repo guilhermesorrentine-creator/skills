@@ -3,8 +3,8 @@ import { apiFetch } from "../../lib/auth.jsx";
 import { useT } from "../../i18n/index.js";
 
 // Link de conexão MCP: o Claude, o ChatGPT e outros agentes passam a consultar a Voxelia no próprio chat.
-export default function AiConnect() {
-  const { t } = useT();
+export default function AiConnect({ until }) {
+  const { t, date } = useT();
   const [url, setUrl] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -24,7 +24,7 @@ export default function AiConnect() {
 
   return <section className="panel ai-connect">
     <h2>{t("app.ai.title")}</h2>
-    <p>{t("app.ai.lead")}</p>
+    <p>{t("app.ai.lead", { until: until ? t("app.ai.until", { date: date(until, { day: "2-digit", month: "2-digit", year: "numeric" }) }) : "" })}</p>
     {!url ? <button type="button" className="btn btn-primary" onClick={() => load(false)} disabled={busy}>{busy ? t("app.ai.generating") : t("app.ai.generate")}</button> : <div className="stack">
       <label htmlFor="mcp-url">{t("app.ai.link")} <span className="muted small">{t("app.ai.linkHint")}</span></label>
       <div className="row"><input id="mcp-url" className="input" readOnly value={url} onFocus={(e) => e.target.select()}/><button type="button" className="btn btn-ghost" onClick={() => copy(url, "link")}>{copied === "link" ? t("app.ai.copied") : t("common.copy")}</button></div>

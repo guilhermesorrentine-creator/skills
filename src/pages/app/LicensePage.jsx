@@ -46,11 +46,14 @@ export default function LicensePage({ account }) {
 
     {account.edition?.features?.length > 0 && <section className="panel"><h2>{t("app.license.included")}</h2><ul className="check-list">{account.edition.features.map((f) => <li key={f}>{f}</li>)}</ul></section>}
 
-    {account.access && account.license && <AiConnect/>}
+    {account.mcp?.active && <AiConnect until={account.mcp.until}/>}
 
-    {account.upgrade && <section className="panel upgrade-panel"><h2>{t("app.license.available", { name: account.upgrade.edition.name })}</h2>
+    {account.upgrade && <section className="panel upgrade-panel">{account.upgrade.edition.mcp
+      ? <><h2>{t("app.license.proTitle")}</h2>
+        <p>{t("app.license.proText", { name: account.upgrade.edition.name })}</p></>
+      : <h2>{t("app.license.available", { name: account.upgrade.edition.name })}</h2>}
       <p>{t("app.license.price", { price: formatPrice(account.upgrade.listPrice), credit: formatPrice(account.upgrade.credit) })}</p>
-      <p className="upgrade-amount">{t("app.license.upgradeFor")} <b>{formatPrice(account.upgrade.amount)}</b></p>
+      <p className="upgrade-amount">{t("app.license.upgradeFor")} <b>{formatPrice(account.upgrade.amount)}</b>{account.upgrade.edition.installments > 1 && t("app.license.orCard", { n: account.upgrade.edition.installments, price: formatPrice(Math.round(account.upgrade.amount / account.upgrade.edition.installments)) })}</p>
       <p className="small muted">{t("app.license.optional")}</p>
       <button type="button" className="btn btn-primary" onClick={upgrade} disabled={busy}>{busy ? t("common.openingPayment") : t("app.license.upgrade")}</button>
       {error && <p className="form-error" role="alert">{error}</p>}
