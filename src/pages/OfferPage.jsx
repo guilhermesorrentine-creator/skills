@@ -94,7 +94,7 @@ export default function OfferPage({ signedIn }) {
       </section>
 
       {videoOk && <section className="offer-video" aria-label="Vídeo: como a Voxelia funciona">
-        <video controls playsInline preload="metadata" poster="/og.png" onError={() => setVideoOk(false)}>
+        <video controls playsInline preload="none" poster="/video/oferta-poster.jpg" onError={() => setVideoOk(false)}>
           <source src="/video/oferta.mp4" type="video/mp4" onError={() => setVideoOk(false)}/>
         </video>
       </section>}
