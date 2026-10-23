@@ -1,5 +1,5 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
-import { entitlement, licenseLabels, quote } from "./licensing.js";
+import { activeGrants, entitlement, licenseLabels, quote } from "./licensing.js";
 import { checkoutUrl } from "./asaas.js";
 
 const httpError = (status, code, message) => Object.assign(new Error(message), { status, code });
@@ -10,6 +10,7 @@ const REFUND_REQUESTED = "Reembolso pedido";
 // Voxelia Pro: acervo vitalício + conexão MCP por 12 meses, parcelável em 12x no cartão.
 const MCP_EDITION = "pro-anual";
 const MCP_DAYS = 365;
+const RENEW_DAYS = 30; // a renovação do Pro abre 30 dias antes de a conexão vencer
 const INSTALLMENTS = { [MCP_EDITION]: 12 };
 const installmentsFor = (edition) => INSTALLMENTS[edition?.code] || 1;
 const CONFIRMED = new Set(["RECEIVED", "CONFIRMED"]);
@@ -29,6 +30,8 @@ export function createCommerce({ store, asaas, config, onboarding = null, conver
     const forSale = ent.editions.filter((edition) => edition.on_sale).sort((a, b) => a.rank - b.rank);
     const latest = forSale.at(-1) || null;
     const upgrade = latest && ent.rank > 0 && latest.rank > ent.rank ? quote({ target: latest, license: ent.license, editions: ent.editions, orders }) : null;
+    const pro = forSale.find((edition) => edition.code === MCP_EDITION);
+    const renewal = pro ? renewalQuote(pro, ent, orders) : null;
     const events = ent.license ? await store.listLicenseEvents(user.id) : [];
     return {
       email: user.email,
@@ -52,21 +55,35 @@ export function createCommerce({ store, asaas, config, onboarding = null, conver
       upgrade: upgrade && !upgrade.error ? { edition: publicEdition(latest), ...upgrade } : null,
       pendingOrder: open?.checkout_url ? { url: open.checkout_url, expiresAt: open.expires_at } : null,
       refund: refundState(orders),
-      mcp: mcpWindow(orders, ent.editions),
+      mcp: mcpWindow(orders, ent.editions, ent.grants),
+      renewal: renewal ? { edition: publicEdition(pro), amount: renewal.amount } : null,
     };
   }
 
-  // Conexão MCP: 12 meses a partir do último pagamento do Pro (não estornado).
-  function mcpWindow(orders, editions) {
+  // Conexão MCP: 12 meses por pagamento do Pro (não estornado). Renovar antes de vencer soma ao prazo restante.
+  // Concessão vigente que cobre o Pro (todas as edições ou edição igual/maior) também libera, pelo prazo dela.
+  function mcpWindow(orders, editions, grants = []) {
     const pro = editions.find((edition) => edition.code === MCP_EDITION);
-    const last = pro && orders.filter((order) => order.edition_id === pro.id && order.status === "paid" && !order.refunded_at && order.paid_at)
-      .map((order) => new Date(order.paid_at).getTime()).sort((a, b) => b - a)[0];
-    const until = last ? new Date(last + MCP_DAYS * DAY) : null;
-    return { active: Boolean(until && until > now()), until: until ? until.toISOString() : null };
+    if (!pro) return { active: false, until: null };
+    const covering = activeGrants(grants, now()).filter((grant) => !grant.edition_id || (editions.find((edition) => edition.id === grant.edition_id)?.rank || 0) >= pro.rank);
+    if (covering.some((grant) => !grant.ends_at)) return { active: true, until: null, grant: true };
+    const paidAt = orders.filter((order) => order.edition_id === pro.id && order.status === "paid" && !order.refunded_at && order.paid_at)
+      .map((order) => new Date(order.paid_at).getTime()).sort((a, b) => a - b);
+    const paidEnd = paidAt.reduce((until, at) => Math.max(until, at) + MCP_DAYS * DAY, 0);
+    const grantEnd = Math.max(0, ...covering.map((grant) => new Date(grant.ends_at).getTime()));
+    const end = Math.max(paidEnd, grantEnd);
+    return { active: end > now().getTime(), until: end ? new Date(end).toISOString() : null, ...(grantEnd > paidEnd && { grant: true }) };
+  }
+  // Quem já tem o Pro compra de novo a conexão por mais 12 meses, sem crédito, perto do vencimento ou depois dele.
+  function renewalQuote(target, ent, orders) {
+    if (target?.code !== MCP_EDITION || ent.edition?.code !== MCP_EDITION) return null;
+    const { until, grant } = mcpWindow(orders, ent.editions, ent.grants);
+    if (grant || (until && new Date(until).getTime() - now().getTime() > RENEW_DAYS * DAY)) return null;
+    return { kind: "purchase", listPrice: target.price_cents, credit: 0, amount: target.price_cents };
   }
   async function mcpStatus(userId) {
-    const [orders, editions] = await Promise.all([store.listOrders(userId), store.listEditions({ onSaleOnly: false })]);
-    return mcpWindow(orders, editions);
+    const [orders, editions, grants] = await Promise.all([store.listOrders(userId), store.listEditions({ onSaleOnly: false }), store.listGrants(userId)]);
+    return mcpWindow(orders, editions, grants);
   }
 
   // Cobrança do pedido pela referência gravada nela (vale para parcelas) ou, em pedidos antigos, pelo valor.
@@ -158,7 +175,8 @@ export function createCommerce({ store, asaas, config, onboarding = null, conver
     if (open) throw httpError(409, "order_in_progress", "Você já tem um pagamento em andamento. Conclua ou aguarde ele expirar.");
 
     const [ent, orders] = await Promise.all([userEntitlement(user.id), store.listOrders(user.id)]);
-    const price = quote({ target, license: ent.license, editions: ent.editions, orders });
+    const quoted = quote({ target, license: ent.license, editions: ent.editions, orders });
+    const price = quoted.error === "already_owned" ? renewalQuote(target, ent, orders) || quoted : quoted;
     if (price.error === "already_owned") throw httpError(409, "already_owned", "Sua licença já inclui esta edição.");
     const expiresAt = new Date(now().getTime() + (payer ? DAY : config.asaas.checkoutMinutes * 60000)).toISOString();
     const base = { user_id: user.id, edition_id: target.id, kind: price.kind, list_price_cents: price.listPrice, credit_cents: price.credit, amount_cents: price.amount };
