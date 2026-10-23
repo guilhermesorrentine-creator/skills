@@ -1,9 +1,10 @@
 const synonyms = {
   criar: ["create", "build", "make", "gerar"],
   construir: ["build", "create"],
-  site: ["website", "web", "landing"],
-  landing: ["site", "website", "web"],
-  pagina: ["page", "website"],
+  site: ["website", "web", "landing", "frontend"],
+  landing: ["site", "website", "web", "frontend", "webpage"],
+  pagina: ["page", "website", "landing", "frontend"],
+  page: ["website", "landing", "frontend", "webpage"],
   aplicativo: ["app", "application"],
   desenvolver: ["develop", "build", "code"],
   automatizar: ["automation", "automate", "workflow"],
@@ -17,9 +18,11 @@ const synonyms = {
   interface: ["ui", "ux", "design"],
   tokens: ["token", "context", "compact", "caveman", "megacave"],
   economizar: ["reduce", "token", "compact", "caveman"],
-  seguranca: ["security", "secure", "audit"],
+  seguranca: ["security", "secure", "audit", "vulnerability", "pentest"],
+  auditoria: ["audit", "auditing", "security", "review"],
+  auditar: ["audit", "auditing", "security", "review"],
   pesquisa: ["research", "science", "scientific"],
-  cientifica: ["science", "scientific", "research"],
+  cientifica: ["science", "scientific", "research", "academic"],
   testes: ["test", "testing", "quality"],
   melhorar: ["improve", "optimize", "refactor"],
   app: ["application", "mobile", "android", "ios"],
@@ -30,10 +33,99 @@ const synonyms = {
   editar: ["edit", "editing", "editor"],
   imagem: ["image", "images", "visual"],
   documentacao: ["docs", "documentation", "readme"],
+  // Vendas e negócios
+  prospectar: ["prospect", "prospecting", "lead", "leads", "outreach", "sales", "scraper"],
+  prospeccao: ["prospect", "prospecting", "lead", "leads", "outreach", "sales", "scraper"],
+  clientes: ["client", "clients", "customer", "customers", "lead", "leads", "crm"],
+  cliente: ["client", "customer", "lead", "crm"],
+  leads: ["lead", "prospect", "sales", "outreach"],
+  vender: ["sell", "sales", "selling", "marketing", "conversion", "copywriting", "vendedor"],
+  vendas: ["sales", "sell", "selling", "marketing", "conversion", "vendedor"],
+  venda: ["sales", "sell", "marketing", "conversion"],
+  anuncio: ["ads", "ad", "advertising", "campaign"],
+  anuncios: ["ads", "ad", "advertising", "campaign"],
+  negocio: ["business", "startup", "founder", "company"],
+  negocios: ["business", "startup", "founder", "company"],
+  empresa: ["business", "company", "startup"],
+  empresas: ["business", "companies", "company", "startup"],
+  plano: ["plan", "planning", "strategy"],
+  estrategia: ["strategy", "plan", "planning"],
+  financeiro: ["finance", "financial", "budget", "cfo"],
+  financas: ["finance", "financial", "budget"],
+  email: ["email", "newsletter", "mail"],
+  // Conteúdo e redes
+  roteiro: ["script", "scripts", "storyboard", "outline"],
+  reels: ["reel", "reels", "short", "shorts", "instagram"],
+  reel: ["reel", "reels", "short", "shorts", "instagram"],
+  legenda: ["caption", "captions", "subtitle", "subtitles"],
+  legendas: ["caption", "captions", "subtitle", "subtitles"],
+  post: ["post", "posts", "social", "caption"],
+  posts: ["post", "posts", "social", "caption"],
+  postagem: ["post", "posts", "social", "caption"],
+  sociais: ["social"],
+  conteudo: ["content", "copy", "writing"],
+  escrever: ["write", "writing", "writer", "copy"],
+  texto: ["text", "writing", "copy", "content"],
+  textos: ["text", "writing", "copy", "content"],
+  artigo: ["article", "paper", "blog", "writing", "manuscript"],
+  artigos: ["article", "articles", "paper", "papers", "blog"],
+  cientifico: ["scientific", "science", "research", "academic"],
+  literatura: ["literature", "papers", "citation", "citations"],
+  revisao: ["review", "revision"],
+  revisar: ["review", "proofread", "edit"],
+  canal: ["channel", "youtube"],
+  crescer: ["growth", "grow", "audience"],
+  crescimento: ["growth", "grow", "audience"],
+  viralizar: ["viral", "growth", "hook"],
+  gancho: ["hook", "hooks"],
+  ganchos: ["hook", "hooks"],
+  foto: ["photo", "image", "picture"],
+  fotos: ["photo", "photos", "image", "images"],
+  marca: ["brand", "branding", "logo"],
+  apresentacao: ["slides", "presentation", "deck", "pptx"],
+  apresentacoes: ["slides", "presentation", "deck", "pptx"],
+  // Voz e áudio
+  voz: ["voice", "speech", "tts"],
+  clonar: ["clone", "cloning"],
+  dublagem: ["dubbing", "dub", "voice"],
+  transcrever: ["transcribe", "transcription", "transcript", "speech"],
+  transcricao: ["transcribe", "transcription", "transcript", "speech"],
+  traduzir: ["translate", "translation", "i18n"],
+  resumir: ["summarize", "summary", "summarization"],
+  resumo: ["summary", "summarize"],
+  musica: ["music", "song", "audio"],
+  // Dados, código e estudo
+  planilha: ["spreadsheet", "excel", "xlsx", "csv", "sheets"],
+  planilhas: ["spreadsheet", "spreadsheets", "excel", "xlsx", "csv", "sheets"],
+  tabela: ["table", "csv", "spreadsheet"],
+  grafico: ["chart", "plot", "visualization"],
+  graficos: ["charts", "chart", "plot", "visualization"],
+  relatorio: ["report", "reporting"],
+  testar: ["test", "testing", "tdd", "qa"],
+  teste: ["test", "testing", "tdd", "qa"],
+  codigo: ["code", "coding", "programming"],
+  programar: ["code", "coding", "programming", "developer"],
+  programacao: ["code", "coding", "programming", "developer"],
+  corrigir: ["fix", "debug", "bug", "error"],
+  erro: ["error", "bug", "debug", "fix"],
+  erros: ["errors", "error", "bug", "debug"],
+  banco: ["database", "sql"],
+  memoria: ["memory", "remember", "persistent", "mem"],
+  sessao: ["session", "sessions"],
+  sessoes: ["session", "sessions"],
+  estudar: ["study", "learning", "notes", "research"],
+  estudo: ["study", "learning", "research"],
+  estudos: ["study", "learning", "research"],
+  aula: ["lecture", "class", "course"],
+  aulas: ["lectures", "lecture", "class", "course"],
+  curso: ["course", "learning", "lesson"],
+  jogo: ["game", "games"],
+  jogos: ["game", "games"],
+  agendar: ["schedule", "scheduling", "calendar"],
 };
 
 // Palavras de intenção ("Quero criar um site") não descrevem o conteúdo e são ignoradas no ranking.
-const stopwords = new Set(["quero", "preciso", "gostaria", "vou", "um", "uma", "uns", "umas", "de", "do", "da", "dos", "das", "meu", "minha", "meus", "minhas", "para", "pra", "o", "a", "os", "as", "e", "em", "no", "na", "com", "por", "que", "como", "i", "want", "need", "to", "the", "an", "of", "my", "for", "and"]);
+const stopwords = new Set(["quero", "preciso", "gostaria", "vou", "um", "uma", "uns", "umas", "de", "do", "da", "dos", "das", "meu", "minha", "meus", "minhas", "seu", "sua", "seus", "suas", "eu", "me", "para", "pra", "o", "a", "os", "as", "e", "em", "no", "na", "nos", "nas", "ao", "aos", "pelo", "pela", "sobre", "com", "por", "que", "como", "mais", "muito", "fazer", "faca", "ter", "usar", "ia", "i", "want", "need", "to", "the", "an", "of", "my", "for", "and"]);
 
 export function normalize(value = "") {
   return String(value).normalize("NFD").replace(/[\u0300-\u036f]/g, "")
@@ -112,6 +204,9 @@ export function safeGitHubUrl(value) {
   } catch { return null; }
 }
 
+// Prefixo só vale para termos com 5+ letras ou palavras quase do mesmo tamanho ("post" não acha "postgres").
+const prefixOf = (term, word) => word.startsWith(term) && (term.length >= 5 || word.length <= term.length + 2);
+
 export function scoreText(query, fieldMap) {
   if (!normalize(query)) return 0;
   const searchTerms = queryTerms(query);
@@ -129,17 +224,21 @@ export function scoreText(query, fieldMap) {
     let best = 0;
     for (const [field, value] of allFields) {
       const weight = weights[field] || 1;
+      const words = value.split(" ");
       if (value === term) best = Math.max(best, 13 * weight);
-      else if (value.split(" ").some((word) => word.startsWith(term))) best = Math.max(best, 7 * weight);
-      else if (value.includes(term)) best = Math.max(best, 3 * weight);
-      else if (term.length >= 5 && value.split(" ").some((word) => word.length >= 5 && distanceOne(term, word))) best = Math.max(best, 1.5 * weight);
+      else if (words.some((word) => prefixOf(term, word))) best = Math.max(best, 7 * weight);
+      else if (term.length >= 5 && value.includes(term)) best = Math.max(best, 3 * weight);
+      else if (term.length >= 5 && words.some((word) => word.length >= 5 && distanceOne(term, word))) best = Math.max(best, 1.5 * weight);
     }
-    if (best) { covered++; score += best; continue; }
-    const aliases = synonyms[term] || [];
-    if (aliases.some((alias) => contentFields.some(([, value]) => value.split(" ").some((word) => word === alias || word.startsWith(alias))))) {
-      covered++;
-      score += 1.5;
+    // Sinônimos (o acervo é quase todo em inglês): contam pelo campo onde aparecem, um pouco abaixo da palavra exata.
+    for (const alias of synonyms[term] || []) {
+      for (const [field, value] of contentFields) {
+        const words = value.split(" ");
+        if (words.includes(alias)) best = Math.max(best, 4 * (weights[field] || 1));
+        else if (words.some((word) => prefixOf(alias, word))) best = Math.max(best, 2.5 * (weights[field] || 1));
+      }
     }
+    if (best) { covered++; score += best; }
   }
   if (searchTerms.length > 1) score *= covered / searchTerms.length;
   if (covered === searchTerms.length && searchTerms.length > 1) score *= 1.2;

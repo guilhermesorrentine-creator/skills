@@ -84,7 +84,10 @@ export function createMcp({ store, commerce, library, loadCatalog, config }) {
       if (!goal) return text("Informe o objetivo da pessoa.", true);
       const limit = Math.min(20, Math.max(1, Number.parseInt(args.limite, 10) || 8));
       const lib = await library.libraryFor(rank);
-      const found = searchResources(buildResourceIndex(lib.resources), goal, { types: args.tipo ? [args.tipo] : null, category: args.categoria || "todas" }).slice(0, limit);
+      // A mesma skill aparece em mais de uma pasta de alguns repositórios: uma por nome e fonte basta.
+      const seen = new Set();
+      const found = searchResources(buildResourceIndex(lib.resources), goal, { types: args.tipo ? [args.tipo] : null, category: args.categoria || "todas" })
+        .filter((item) => { const key = `${item.source_name}:${item.title}`; return !seen.has(key) && seen.add(key); }).slice(0, limit);
       const paths = matchPaths(lib.paths, goal).slice(0, 2);
       if (!found.length && !paths.length) return text(`Nada encontrado para "${goal}". Tente outras palavras (em inglês também funciona) ou sem filtros.`);
       const pathText = paths.map((path) => `Caminho recomendado: ${path.goal}\n${path.steps.map((step, i) => `  ${i + 1}. ${step.resource_id}${step.reason ? `: ${step.reason}` : ""}`).join("\n")}`).join("\n\n");
