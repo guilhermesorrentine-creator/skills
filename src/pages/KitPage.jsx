@@ -88,7 +88,8 @@ export function LinksPage() {
   return <main id="conteudo" className="links-page">
     <Brand/>
     <p className="links-lead">2 mil skills de IA organizadas, com passo a passo em português.</p>
-    <button type="button" className="btn btn-primary links-buy" onClick={buy}>Garantir meu acesso</button>
+    <button type="button" className="btn btn-primary links-buy" onClick={buy}>Acesso vitalício · R$ 97,90</button>
+    <Link className="btn btn-secondary links-buy" to="/conecta">Conectar na minha IA · 12x R$ 49,90</Link>
     <h2>Kits por profissão</h2>
     <div className="links-grid">{KITS.map((k) => <Link key={k.slug} className={`links-kit area-${k.category}`} to={`/kit/${k.slug}`}>{k.name}</Link>)}</div>
     {repos.length > 0 && <><h2>Dos nossos Reels</h2>

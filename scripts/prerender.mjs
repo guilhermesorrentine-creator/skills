@@ -32,6 +32,10 @@ function page({ path, title, description, body, jsonld = [] }) {
     `<meta property="og:title" content="${esc(title)}" />`,
     `<meta property="og:description" content="${esc(short(description))}" />`,
     `<meta property="og:url" content="${url}" />`,
+    `<meta property="og:image" content="${BASE}/og.png" />`,
+    `<meta property="og:image:width" content="1200" />`,
+    `<meta property="og:image:height" content="630" />`,
+    `<meta name="twitter:card" content="summary_large_image" />`,
     ...jsonld.map((j) => `<script type="application/ld+json">${JSON.stringify(j).replace(/</g, "\\u003c")}</script>`),
   ].join("\n    ");
   return template
@@ -39,6 +43,8 @@ function page({ path, title, description, body, jsonld = [] }) {
     .replace(/<meta name="description"[^>]*>/, "")
     .replace(/<meta property="og:title"[^>]*>/, "")
     .replace(/<meta property="og:description"[^>]*>/, "")
+    .replace(/<meta property="og:image"[^>]*>/, "")
+    .replace(/<meta name="twitter:card"[^>]*>/, "")
     .replace("</head>", `    ${head}\n  </head>`)
     .replace('<div id="root"></div>', `<div id="root"><main class="prerender">${body}</main></div>`);
 }

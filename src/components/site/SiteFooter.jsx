@@ -2,7 +2,9 @@ import { Link } from "../../lib/router.jsx";
 import { setConsent } from "../../lib/consent.js";
 import { Brand } from "./SiteNav.jsx";
 
-const supportEmail = import.meta.env.VITE_SUPPORT_EMAIL;
+import { seller, sellerLine } from "../../lib/seller.js";
+
+const supportEmail = seller.email;
 
 export default function SiteFooter({ onEnter }) {
   return <footer className="site-footer">
@@ -21,6 +23,6 @@ export default function SiteFooter({ onEnter }) {
         <ul><li><Link to="/termos">Termos de uso</Link></li><li><Link to="/privacidade">Privacidade</Link></li><li><Link to="/compra-e-reembolso">Compra e reembolso</Link></li><li><button type="button" className="link" onClick={() => setConsent(null)}>Preferências de cookies</button></li></ul>
       </nav>
     </div>
-    <div className="wrap site-footer-base"><span>Dados legais do vendedor: pendentes de aprovação.</span><a href="https://github.com/guilhermesorrentine-creator/skills" target="_blank" rel="noopener noreferrer">Código no GitHub ↗</a></div>
+    <div className="wrap site-footer-base"><span>{sellerLine() || "Voxelia"}</span><a href="https://github.com/guilhermesorrentine-creator/skills" target="_blank" rel="noopener noreferrer">Código no GitHub ↗</a></div>
   </footer>;
 }

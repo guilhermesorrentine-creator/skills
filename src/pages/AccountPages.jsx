@@ -4,6 +4,7 @@ import { Link, navigate } from "../lib/router.jsx";
 import { formatPrice, purchase } from "../lib/billing-client.js";
 import { categoryLabel, typeLabel } from "../lib/resources.js";
 import { Brand } from "../components/site/SiteNav.jsx";
+import { seller, sellerLine } from "../lib/seller.js";
 
 // Navegação das páginas simples: com sessão, Voxelia/Sair; sem sessão, Entrar/Criar conta.
 function Shell({ title, eyebrow, children }) {
@@ -124,18 +125,49 @@ export function SharedCollectionPage({ token }) {
   </Shell>;
 }
 
+// Textos jurídicos. Os dados de quem vende vêm do ambiente (src/lib/seller.js).
+const UPDATED = "23 de outubro de 2026";
+const who = () => sellerLine() || "o responsável pela Voxelia (dados em cadastro)";
+const contact = () => seller.email || "o e-mail de suporte indicado no rodapé";
 const legal = {
-  termos: { title: "Termos de uso", sections: ["Objeto do serviço e descrição da plataforma", "Cadastro e responsabilidades do usuário", "Licença vitalícia por edição: alcance e limites", "Conteúdo de terceiros e licenças dos repositórios indexados", "Disponibilidade, manutenção e suporte", "Limitação de responsabilidade", "Foro e legislação aplicável"] },
-  privacidade: { title: "Política de privacidade", sections: ["Dados coletados (e-mail, favoritos, histórico, coleções, dados de pagamento recebidos do Asaas)", "Finalidade e base legal (LGPD)", "Operadores (Supabase, Asaas, Vercel, Meta)", "Cookies de marketing: Pixel e API de Conversões do Meta, só com consentimento, revogável em Preferências de cookies", "Compartilhamento opcional de coleções", "Direitos do titular e canal de contato", "Retenção e exclusão"] },
-  "compra-e-reembolso": { title: "Compra e reembolso", sections: ["Preço, pagamento único e meios de pagamento", "Liberação do acesso após confirmação", "Upgrades opcionais e cálculo da diferença", "Direito de arrependimento (CDC) e reembolsos", "Contestações e estornos", "Contato para cobrança"] },
+  termos: { title: "Termos de uso", sections: () => [
+    ["1. Quem somos", `A Voxelia é uma plataforma operada por ${who()}. Ao criar uma conta ou comprar, você concorda com estes termos.`],
+    ["2. O que é o serviço", "A Voxelia organiza Agent Skills e outros recursos de repositórios públicos para o Claude, o ChatGPT e outros agentes de IA, com busca por objetivo e guias passo a passo em português. As skills não são exclusivas: vêm de projetos públicos, sempre com a fonte e o autor creditados. O que vendemos é a curadoria, a organização, a busca e os guias."],
+    ["3. Conta", "Você é responsável pelo e-mail informado e pela senha da sua conta. A licença é pessoal: não compartilhe o acesso nem o link de conexão com a IA."],
+    ["4. Licença vitalícia", "A compra de uma edição dá acesso por tempo indeterminado aos recursos daquela edição, enquanto a Voxelia estiver em operação. Edições futuras podem trazer recursos extras mediante upgrade opcional, pagando a diferença."],
+    ["5. Voxelia Pro e conexão com a IA", "O Voxelia Pro inclui a edição vitalícia e a conexão da sua IA ao acervo (servidor MCP) por 12 meses contados do pagamento. Depois desse prazo, o acervo continua vitalício e a conexão pode ser renovada. Os aplicativos de IA (Claude, ChatGPT e outros) são de terceiros e têm suas próprias regras e custos."],
+    ["6. Conteúdo de terceiros", "Cada skill segue a licença do repositório de origem, informada junto ao recurso. Antes de usar em produção, confira a licença e revise o que o agente vai executar. A Voxelia não se responsabiliza pelo funcionamento de ferramentas de terceiros."],
+    ["7. Disponibilidade e suporte", `Trabalhamos para manter a plataforma no ar, mas podem ocorrer interrupções para manutenção. Suporte por ${contact()}.`],
+    ["8. Uso proibido", "É proibido revender o acesso, copiar o acervo em massa, burlar a cobrança ou usar a plataforma para fins ilegais. Nesses casos a licença pode ser revogada."],
+    ["9. Responsabilidade", "Os guias têm caráter educativo. Resultados dependem do seu uso e das ferramentas escolhidas. Nada nestes termos limita direitos garantidos pelo Código de Defesa do Consumidor."],
+    ["10. Lei e foro", "Aplica-se a lei brasileira. Fica eleito o foro do domicílio do consumidor."],
+  ] },
+  privacidade: { title: "Política de privacidade", sections: () => [
+    ["1. Controlador", `${who()} é o controlador dos dados tratados na Voxelia, nos termos da LGPD (Lei 13.709/2018). Contato do encarregado: ${contact()}.`],
+    ["2. Dados que coletamos", "E-mail e senha da conta; nome e CPF na compra (exigidos pelo meio de pagamento); dados do pedido e do pagamento informados pelo Asaas; favoritos, histórico e coleções que você cria; um identificador anônimo de navegação com a origem da visita (campanha e anúncio), sem dado pessoal."],
+    ["3. Para que usamos", "Executar o contrato (liberar e manter o acesso, processar pagamento, reembolso e suporte), cumprir obrigações legais e fiscais e, com o seu consentimento, medir anúncios."],
+    ["4. Com quem compartilhamos", "Operadores que nos ajudam a prestar o serviço: Supabase (conta e banco de dados), Asaas (pagamentos), Vercel (hospedagem), Resend (e-mails) e Meta (medição de anúncios, só com consentimento). Não vendemos seus dados."],
+    ["5. Cookies e Meta", "O Pixel e a API de Conversões do Meta só são usados se você aceitar os cookies de marketing. Você pode mudar a escolha a qualquer momento em Preferências de cookies, no rodapé."],
+    ["6. Seus direitos", `Você pode pedir acesso, correção, portabilidade ou exclusão dos seus dados e revogar consentimentos, escrevendo para ${contact()}. Respondemos em até 15 dias.`],
+    ["7. Retenção", "Mantemos os dados enquanto a conta existir. Dados de pagamento e notas são guardados pelo prazo exigido pela lei fiscal. Coleções compartilhadas por link só ficam públicas enquanto você mantiver o compartilhamento."],
+    ["8. Segurança", "Usamos conexão criptografada, senhas protegidas pelo provedor de autenticação e acesso restrito ao banco de dados. Os dados do cartão são digitados no ambiente do Asaas e não passam pelos nossos servidores."],
+  ] },
+  "compra-e-reembolso": { title: "Compra e reembolso", sections: () => [
+    ["1. Preços e pagamento", "Os preços são exibidos em reais na página de compra. A edição vitalícia é paga uma única vez. O Voxelia Pro pode ser pago em até 12 parcelas no cartão ou à vista no Pix. Os pagamentos são processados pelo Asaas."],
+    ["2. Liberação do acesso", "O acesso é liberado assim que o pagamento é confirmado: na hora no Pix e em instantes no cartão. Depois da confirmação você cria a senha na própria página, sem esperar e-mail."],
+    ["3. Garantia de 15 dias", "Você pode desistir em até 15 dias da compra, mais que os 7 dias do Código de Defesa do Consumidor (art. 49), sem precisar justificar. Peça em Minha licença → Garantia de 15 dias ou pelo suporte."],
+    ["4. Como o reembolso é feito", "O valor volta pelo mesmo meio de pagamento: no Pix, para a conta de origem; no cartão, como estorno na fatura (no parcelamento, todas as parcelas são canceladas). O acesso é encerrado quando o reembolso é feito. Quando o estorno automático não for possível, ele é concluído em até 2 dias úteis."],
+    ["5. Upgrades e renovação", "No upgrade para uma edição maior, o que você já pagou vira crédito e você paga só a diferença. A conexão do Pro com a IA pode ser renovada por mais 12 meses a partir de 30 dias antes do vencimento."],
+    ["6. Contestação", "Se você contestar a cobrança no banco ou no cartão, o acesso pode ficar em análise até a decisão. Antes disso, fale com a gente: resolvemos mais rápido."],
+    ["7. Contato", `Dúvidas sobre cobrança: ${contact()}. Vendedor: ${who()}.`],
+  ] },
 };
 
-// Documentos jurídicos: estrutura preparada, sem texto fictício.
 export function LegalPage({ slug }) {
   const doc = legal[slug];
   return <Shell eyebrow="Documento" title={doc.title}>
-    <p className="notice" role="note">Documento pendente de aprovação do proprietário. O texto final ainda não foi redigido e esta página não tem valor jurídico.</p>
-    <ol className="legal-outline">{doc.sections.map((s) => <li key={s}>{s}</li>)}</ol>
+    <p className="muted small">Atualizado em {UPDATED}.</p>
+    <div className="legal-text">{doc.sections().map(([h, p]) => <section key={h}><h2>{h}</h2><p>{p}</p></section>)}</div>
     <Link className="link" to="/">← Voltar ao início</Link>
   </Shell>;
 }
