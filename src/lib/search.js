@@ -30,10 +30,23 @@ const synonyms = {
   editar: ["edit", "editing", "editor"],
   imagem: ["image", "images", "visual"],
   documentacao: ["docs", "documentation", "readme"],
+  // Espanhol: os objetivos da interface em es viram termos do acervo (em inglês).
+  crear: ["create", "build", "make"],
+  sitio: ["website", "web", "site", "landing"],
+  web: ["website", "site", "landing"],
+  aplicacion: ["app", "application"],
+  datos: ["data", "analytics", "analysis"],
+  analizar: ["analysis", "analytics", "analyze", "data"],
+  tareas: ["task", "tasks", "workflow", "automation"],
+  automatizacion: ["automation", "automate", "workflow"],
+  seguridad: ["security", "secure", "audit"],
+  mejorar: ["improve", "optimize", "refactor"],
+  investigacion: ["research", "science", "scientific"],
+  imagen: ["image", "images", "visual"],
 };
 
 // Palavras de intenção ("Quero criar um site") não descrevem o conteúdo e são ignoradas no ranking.
-const stopwords = new Set(["quero", "preciso", "gostaria", "vou", "um", "uma", "uns", "umas", "de", "do", "da", "dos", "das", "meu", "minha", "meus", "minhas", "para", "pra", "o", "a", "os", "as", "e", "em", "no", "na", "com", "por", "que", "como", "i", "want", "need", "to", "the", "an", "of", "my", "for", "and"]);
+const stopwords = new Set(["quero", "preciso", "gostaria", "vou", "um", "uma", "uns", "umas", "de", "do", "da", "dos", "das", "meu", "minha", "meus", "minhas", "para", "pra", "o", "a", "os", "as", "e", "em", "no", "na", "com", "por", "que", "como", "i", "want", "need", "to", "the", "an", "of", "my", "for", "and", "quiero", "necesito", "el", "la", "los", "las", "mi", "mis", "del", "y", "en", "con"]);
 
 export function normalize(value = "") {
   return String(value).normalize("NFD").replace(/[\u0300-\u036f]/g, "")

@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { createClient } from "@supabase/supabase-js";
+import { t } from "../i18n/index.js";
 
 const url = import.meta.env.VITE_SUPABASE_URL;
 const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
@@ -35,14 +36,14 @@ export function AuthProvider({ children }) {
 export const useAuth = () => useContext(AuthContext);
 
 const translate = (message = "") => {
-  if (/invalid login credentials/i.test(message)) return "E-mail ou senha incorretos.";
-  if (/email not confirmed/i.test(message)) return "Confirme seu e-mail pelo link enviado antes de entrar.";
-  if (/already registered|already been registered/i.test(message)) return "Este e-mail já tem cadastro. Entre ou recupere a senha.";
-  if (/password should be at least/i.test(message)) return "A senha precisa ter pelo menos 8 caracteres.";
-  if (/rate limit|too many/i.test(message)) return "Muitas tentativas. Aguarde alguns minutos.";
-  return message || "Não foi possível concluir. Tente novamente.";
+  if (/invalid login credentials/i.test(message)) return t("auth.errors.credentials");
+  if (/email not confirmed/i.test(message)) return t("auth.errors.unconfirmed");
+  if (/already registered|already been registered/i.test(message)) return t("auth.errors.registered");
+  if (/password should be at least/i.test(message)) return t("auth.errors.short");
+  if (/rate limit|too many/i.test(message)) return t("auth.errors.rate");
+  return message || t("auth.errors.generic");
 };
-const requireClient = () => { if (!supabase) throw new Error("Login indisponível: o Supabase ainda não foi configurado."); return supabase; };
+const requireClient = () => { if (!supabase) throw new Error(t("auth.errors.unavailable")); return supabase; };
 const run = async (promise) => { const { data, error } = await promise; if (error) throw new Error(translate(error.message)); return data; };
 
 export const authActions = {
@@ -61,7 +62,7 @@ export async function apiFetch(path, { method = "GET", body } = {}) {
     body: body ? JSON.stringify(body) : undefined,
   });
   const data = await response.json().catch(() => ({}));
-  if (!response.ok) throw Object.assign(new Error(data.message || "Falha na comunicação com o servidor."), { status: response.status, code: data.error });
+  if (!response.ok) throw Object.assign(new Error(data.message || t("common.serverError")), { status: response.status, code: data.error });
   return data;
 }
 

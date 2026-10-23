@@ -3,9 +3,10 @@ import { AnimatePresence, motion, useMotionValueEvent, useScroll } from "motion/
 import { useReduced } from "../../lib/motion-pref.jsx";
 import { motionTokens } from "../../lib/motion-tokens.js";
 import { Link } from "../../lib/router.jsx";
-import { categoryLabel, resourcePath } from "../../lib/resources.js";
+import { resourcePath } from "../../lib/resources.js";
+import { useT } from "../../i18n/index.js";
 import CyberpunkCharacter from "../../components/categories/CyberpunkCharacter.jsx";
-import { CELLS, finalFrame, frameAt, SCENARIOS, sceneAt } from "./terminal-script.js";
+import { CELLS, finalFrame, frameAt, localizeScenario, SCENARIOS, sceneAt } from "./terminal-script.js";
 
 // Terminal guiado pelo scroll: o bloco fica fixo enquanto a página rola; o progresso do scroll
 // escreve o terminal, avança as etapas e troca de área. O personagem é o professor da etapa atual.
@@ -26,6 +27,8 @@ function Line({ line, seed }) {
 
 export default function TerminalScene() {
   const reduced = useReduced();
+  const { t, lang } = useT();
+  const categoryLabel = (id) => t(`cat.${id}`);
   const trackRef = useRef(null);
   const bodyRef = useRef(null);
   const [p, setP] = useState(0);
@@ -35,7 +38,7 @@ export default function TerminalScene() {
   useMotionValueEvent(scrollYProgress, "change", (value) => { if (!reduced) setP(Math.round(value * 2000) / 2000); });
 
   const { index, q } = reduced ? { index: picked, q: 1 } : sceneAt(p);
-  const scenario = SCENARIOS[index];
+  const scenario = localizeScenario(SCENARIOS[index], lang);
   const frame = reduced ? finalFrame(scenario) : frameAt(scenario, q);
   const running = frame.status === "running";
 
@@ -74,11 +77,11 @@ export default function TerminalScene() {
               initial={reduced ? false : { opacity: 0, y: 10, scale: 0.96 }} animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={reduced ? undefined : { opacity: 0, y: -6, transition: { duration: 0.14, ease: motionTokens.easing.accelExit } }}
               transition={{ duration: 0.3, ease: motionTokens.easing.snapSettle }}>
-              <b>{categoryLabel[scenario.category]}</b> {lesson.say}
+              <b>{categoryLabel(scenario.category)}</b> {lesson.say}
             </motion.p>
           </AnimatePresence>
         </div>
-        <ol className="term-steps" aria-label={`Etapas: ${scenario.title}`}>
+        <ol className="term-steps" aria-label={t("terminal.steps", { title: scenario.title })}>
           {scenario.lessons.map((item, i) => {
             const state = frame.status === "done" || i < frame.lesson ? "done" : i === frame.lesson && frame.status !== "idle" ? "now" : "next";
             return <li key={item.title} className={`term-step is-${state}`} aria-current={state === "now" ? "step" : undefined}>
@@ -95,16 +98,16 @@ export default function TerminalScene() {
         transition={{ default: { duration: 0.7, ease: motionTokens.easing.snapSettle }, opacity: { duration: 0.18 } }}>
         <div className="term-bar">
           <span className="term-dots" aria-hidden="true"><i/><i/><i/></span>
-          <div className="term-tabs" role="group" aria-label="Escolher demonstração">
+          <div className="term-tabs" role="group" aria-label={t("terminal.tabs")}>
             {SCENARIOS.map((item, i) => <button key={item.category} type="button" className={`term-tab ${i === index ? "is-on" : ""} ${!reduced && i < index ? "is-past" : ""}`} aria-pressed={i === index} onClick={() => goTo(i)}>
               {i === index && <motion.span layoutId="term-tab-pill" className="term-tab-pill" transition={reduced ? { duration: 0 } : { type: "spring", stiffness: 420, damping: 34 }} aria-hidden="true"/>}
-              <span>{categoryLabel[item.category]}</span>
+              <span>{categoryLabel(item.category)}</span>
             </button>)}
           </div>
         </div>
         {!reduced && <div className="term-meter" aria-hidden="true"><span style={{ transform: `scaleX(${p})` }}/></div>}
 
-        <p className="sr-only">Demonstração: {scenario.title}. {finalFrame(scenario).lines.map((line) => line.text).join(". ")}.</p>
+        <p className="sr-only">{t("terminal.sr", { title: scenario.title, lines: finalFrame(scenario).lines.map((line) => line.text).join(". ") })}</p>
         <div className="term-body" ref={bodyRef} aria-hidden="true" style={reduced ? undefined : { transform: `scale(${1 + q * 0.02})` }}>
           <p className="term-title"><span>{scenario.title}</span></p>
           {frame.lines.map((line, i) => <Line key={i} line={line} seed={spinSeed}/>)}
@@ -117,13 +120,13 @@ export default function TerminalScene() {
           {frame.status === "done" && <motion.div key={`r-${index}`} className="term-result" initial={reduced ? false : { opacity: 0, y: 28, scale: 0.9 }} animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={reduced ? undefined : { opacity: 0, y: 16, transition: { duration: 0.18, ease: motionTokens.easing.accelExit } }}
             transition={{ type: "spring", stiffness: 420, damping: 26 }}>
-            <span className="badge">{categoryLabel[scenario.category]}</span>
-            <span>Passo a passo completo: <b>{scenario.guideTitle}</b></span>
-            <Link className="btn btn-primary btn-sm" to={resourcePath(scenario.guide)}>Ver o guia</Link>
+            <span className="badge">{categoryLabel(scenario.category)}</span>
+            <span>{t("terminal.full")} <b>{scenario.guideTitle}</b></span>
+            <Link className="btn btn-primary btn-sm" to={resourcePath(scenario.guide)}>{t("terminal.guide")}</Link>
           </motion.div>}
         </AnimatePresence>
       </motion.div>
-      <p className="term-note">{reduced ? "Simulação ilustrativa com comandos reais dos guias." : "Role a página: cada movimento escreve o terminal. Simulação ilustrativa com comandos reais dos guias."}</p>
+      <p className="term-note">{reduced ? t("terminal.noteReduced") : t("terminal.note")}</p>
     </div>
   </div>;
 }

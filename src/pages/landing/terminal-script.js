@@ -117,3 +117,51 @@ export function sceneAt(p, count = SCENARIOS.length) {
 export function finalFrame(scenario) {
   return { lines: scenario.steps.map(finished), typing: null, progress: null, lesson: scenario.lessons.length - 1, status: "done" };
 }
+
+// Textos do roteiro em en/es: só o que é linguagem (títulos, falas, saídas). Comandos e arquivos não mudam.
+// `steps` lista, na ordem dos passos, o texto traduzido de out/run/progress/done ou do pedido `›` (null = mantém).
+const SCENARIO_I18N = {
+  software: {
+    en: { title: "Security audit", guideTitle: "Security Audit, by Cloudflare",
+      lessons: [["Install the skill", "First, one command installs Cloudflare's security skill in your agent."], ["Ask in plain language", "Then just ask. No configuring tool by tool."], ["The agent works in phases", "It maps the system, hunts for flaws and sends each finding to a fresh verifier."], ["Verified result", "In the end, a report with only what held up under verification."]],
+      steps: [null, "security-audit skill installed", null, "Phase 1 · recon: architecture, inputs and trust boundaries", "Phase 2 · hunt: isolated agents go through each part of the code", "Phase 3 · validation: a fresh verifier tries to knock down each finding", "Phase 6 · report", "REPORT.md generated, with confirmed findings only"] },
+    es: { title: "Auditoría de seguridad", guideTitle: "Security Audit, de Cloudflare",
+      lessons: [["Instala la skill", "Primero, un comando instala la skill de seguridad de Cloudflare en tu agente."], ["Pide en lenguaje simple", "Después solo pides. Nada de configurar herramienta por herramienta."], ["El agente trabaja por fases", "Mapea el sistema, busca fallas y envía cada hallazgo a un verificador nuevo."], ["Resultado verificado", "Al final, un informe solo con lo que resistió la verificación."]],
+      steps: [null, "skill security-audit instalada", null, "Fase 1 · reconocimiento: arquitectura, entradas y fronteras de confianza", "Fase 2 · búsqueda: agentes aislados recorren cada parte del código", "Fase 3 · validación: un verificador nuevo intenta derribar cada hallazgo", "Fase 6 · informe", "REPORT.md generado, solo con lo confirmado"] },
+  },
+  empreendedorismo: {
+    en: { title: "Your business board", guideTitle: "Founder, 11 business skills",
+      lessons: [["Describe your idea", "You describe the business in one sentence, your way."], ["Three lenses evaluate", "A board analyzes the offer, what sets you apart and the customer experience."], ["The board votes", "Each lens gives a score and says what would kill the idea."], ["Decision recorded", "The vote and conditions go into a file for the next steps."]],
+      steps: ["/founder-board specialty coffee subscription shop", "Offers lens: what makes the customer say yes", "Monopoly lens: what nobody else can copy", "Product lens: the end-to-end experience", "Board vote", "founder/idea.md saved with the vote and conditions"] },
+    es: { title: "Consejo de tu negocio", guideTitle: "Founder, 11 skills para negocios",
+      lessons: [["Cuenta tu idea", "Describes el negocio en una frase, a tu manera."], ["Tres lentes evalúan", "Un consejo analiza la oferta, lo que te diferencia y la experiencia del cliente."], ["El consejo vota", "Cada lente da una nota y dice qué mataría la idea."], ["Decisión registrada", "El voto y las condiciones quedan en un archivo para las próximas etapas."]],
+      steps: ["/founder-board tienda de cafés especiales por suscripción", "Lente Ofertas: qué hace que el cliente diga sí", "Lente Monopolio: lo que nadie más puede copiar", "Lente Producto: la experiencia de punta a punta", "Votación del consejo", "founder/idea.md guardado con el voto y las condiciones"] },
+  },
+  conteudo: {
+    en: { title: "Launch video", guideTitle: "HyperFrames, videos with HTML",
+      lessons: [["Install the plugin", "One command puts HyperFrames inside Claude Code."], ["Describe the video", "Format, length and topic. It asks for whatever is missing."], ["Plan, check and render", "You approve the plan; it checks the composition and renders."], ["Video ready", "Out comes a vertical MP4, ready for Reels."]],
+      steps: [null, "hyperframes plugin installed", "/hyperframes 25-second vertical video launching my app", "Plan and storyboard ready for your approval", "npx hyperframes check: composition validated", "Rendering 1080×1920", "renders/lancamento-9x16.mp4 ready"] },
+    es: { title: "Video de lanzamiento", guideTitle: "HyperFrames, videos con HTML",
+      lessons: [["Instala el plugin", "Un comando pone HyperFrames dentro de Claude Code."], ["Describe el video", "Formato, duración y tema. Pregunta lo que falte."], ["Plan, revisión y render", "Apruebas el plan; revisa la composición y renderiza."], ["Video listo", "Sale un MP4 vertical, listo para los Reels."]],
+      steps: [null, "plugin hyperframes instalado", "/hyperframes video vertical de 25 s lanzando mi app", "Plan y storyboard listos para que apruebes", "npx hyperframes check: composición validada", "Renderizando 1080×1920", "renders/lancamento-9x16.mp4 listo"] },
+  },
+  ciencia: {
+    en: { title: "Literature review", guideTitle: "Scientific Agent Skills",
+      lessons: [["Install the skills", "177 scientific skills, installed at once."], ["Ask the question", "Ask like a researcher: topic, scope and what you want to find out."], ["Search and reading", "The agent searches the databases, reads and grades the evidence."], ["Review with sources", "You get the review with the sources cited. Always double-check."]],
+      steps: [null, "scientific skills installed", "literature review on microalgae for carbon capture", "Searching papers and scientific databases", "Reading, grading evidence and citations", "Mapping research gaps", "literature-review.md with sources cited"] },
+    es: { title: "Revisión de literatura", guideTitle: "Scientific Agent Skills",
+      lessons: [["Instala las skills", "Son 177 skills científicas, instaladas de una vez."], ["Haz la pregunta", "Pregunta como investigador: tema, recorte y qué quieres descubrir."], ["Búsqueda y lectura", "El agente busca en las bases, lee y clasifica la evidencia."], ["Revisión con fuentes", "Recibes la revisión con las fuentes citadas. Revísala siempre."]],
+      steps: [null, "skills científicas instaladas", "revisión de literatura sobre microalgas en la captura de carbono", "Buscando artículos y bases científicas", "Leyendo, clasificando evidencias y citas", "Mapeando vacíos de investigación", "revision-literatura.md con las fuentes citadas"] },
+  },
+};
+
+export function localizeScenario(scenario, lang) {
+  const local = SCENARIO_I18N[scenario.category]?.[lang];
+  if (!local) return scenario;
+  const field = (step) => (step.prompt ? "text" : step.out ? "out" : step.run ? "run" : step.progress ? "progress" : "done");
+  return {
+    ...scenario, title: local.title, guideTitle: local.guideTitle,
+    lessons: scenario.lessons.map((lesson, i) => ({ title: local.lessons[i][0], say: local.lessons[i][1] })),
+    steps: scenario.steps.map((step, i) => (local.steps[i] == null ? step : { ...step, [field(step)]: local.steps[i] })),
+  };
+}

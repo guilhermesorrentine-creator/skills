@@ -5,6 +5,7 @@ import { AccessPendingPage, CheckoutReturnPage, LegalPage, NotFound, SharedColle
 import { AuthProvider, useAccount, useAuth } from "./lib/auth.jsx";
 import { matchPath, navigate, safeNext, usePathname } from "./lib/router.jsx";
 import ConsentBanner from "./components/site/ConsentBanner.jsx";
+import { useT } from "./i18n/index.js";
 import { funnel } from "./lib/funnel.js";
 
 const AppRoutes = lazy(() => import("./pages/app/AppRoutes.jsx"));
@@ -16,7 +17,10 @@ const KitPage = lazy(() => import("./pages/KitPage.jsx"));
 const LinksPage = lazy(() => import("./pages/KitPage.jsx").then((m) => ({ default: m.LinksPage })));
 const authModes = { "/entrar": "login", "/cadastro": "signup", "/recuperar-senha": "recover", "/redefinir-senha": "reset", "/criar-senha": "invite" };
 const legalSlugs = ["termos", "privacidade", "compra-e-reembolso"];
-const Loading = () => <main className="loading-line" role="status">Verificando acesso…</main>;
+function Loading() {
+  const { t } = useT();
+  return <main className="loading-line" role="status">{t("common.checking")}</main>;
+}
 function Redirect({ to }) {
   useEffect(() => { navigate(to, { replace: true }); }, [to]);
   return <Loading/>;

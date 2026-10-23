@@ -110,6 +110,13 @@ kbd { display: inline-flex; align-items: center; padding: 2px 6px; border-radius
 .consent p { flex: 1 1 320px; margin: 0; }
 .consent-actions { display: flex; gap: 8px; }
 
+/* Seletor de idioma: discreto, no rodapé, no menu do sistema e nas páginas simples. */
+.lang-select { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text-3); }
+.lang-select select { min-height: 32px; padding: 4px 8px; border-radius: var(--radius-pill); border: 1px solid var(--line); background: transparent; color: var(--text-2); font-size: 13px; cursor: pointer; }
+.lang-select select:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.simple-lang, .auth-lang { margin-top: var(--space-5, 24px); }
+.app-lang { margin-top: 10px; }
+
 /* Celular: o botão de animações sai de cima do conteúdo e dos CTAs fixos e vai para o fim da página. */
 @media (max-width: 760px) {
   .motion-toggle { position: static; display: flex; width: fit-content; margin: 8px auto 28px; box-shadow: none; }
@@ -132,3 +139,6 @@ kbd { display: inline-flex; align-items: center; padding: 2px 6px; border-radius
 
 /* Conteúdo pré-renderizado para buscadores; o React o substitui ao carregar. */
 .prerender { max-width: 760px; margin: 0 auto; padding: 24px 16px; line-height: 1.6; }
+
+/* Celular: seletor de idioma com alvo de toque de 44 px e sem zoom no iOS. */
+@media (max-width: 760px) { .lang-select select { min-height: 44px; font-size: 16px; } }

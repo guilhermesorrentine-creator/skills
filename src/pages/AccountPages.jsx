@@ -2,20 +2,23 @@ import { useEffect, useRef, useState } from "react";
 import { authActions, useAuth } from "../lib/auth.jsx";
 import { Link, navigate } from "../lib/router.jsx";
 import { formatPrice, purchase } from "../lib/billing-client.js";
-import { categoryLabel, typeLabel } from "../lib/resources.js";
+import { useT } from "../i18n/index.js";
 import { Brand } from "../components/site/SiteNav.jsx";
+import LanguageSelect from "../components/site/LanguageSelect.jsx";
 
 // Navegação das páginas simples: com sessão, Voxelia/Sair; sem sessão, Entrar/Criar conta.
 function Shell({ title, eyebrow, children }) {
   const { user, devMode } = useAuth();
+  const { t } = useT();
   return <main id="conteudo" className="simple">
     <div className="simple-wrap">
-      <nav className="simple-nav" aria-label="Conta"><Brand/>{user || devMode
-        ? <span className="row"><Link className="link" to="/app">Voxelia</Link><button type="button" className="link" onClick={async () => { await authActions.signOut(); navigate("/"); }}>Sair</button></span>
-        : <span className="row"><Link className="btn btn-ghost btn-sm" to="/entrar">Entrar</Link><Link className="btn btn-primary btn-sm" to="/cadastro">Criar conta</Link></span>}</nav>
+      <nav className="simple-nav" aria-label={t("account.nav")}><Brand/>{user || devMode
+        ? <span className="row"><Link className="link" to="/app">Voxelia</Link><button type="button" className="link" onClick={async () => { await authActions.signOut(); navigate("/"); }}>{t("common.signOut")}</button></span>
+        : <span className="row"><Link className="btn btn-ghost btn-sm" to="/entrar">{t("common.enter")}</Link><Link className="btn btn-primary btn-sm" to="/cadastro">{t("common.signup")}</Link></span>}</nav>
       {eyebrow && <p className="eyebrow">{eyebrow}</p>}
       <h1>{title}</h1>
       {children}
+      <LanguageSelect className="simple-lang"/>
     </div>
   </main>;
 }
@@ -30,6 +33,7 @@ export function claimFrom(search) {
 
 // Compra sem cadastro: consulta o servidor até o pagamento confirmar e oferece o link para criar a senha.
 function GuestReturn({ claim }) {
+  const { t } = useT();
   const [state, setState] = useState({ status: "pending" });
   const [tries, setTries] = useState(0);
   useEffect(() => {
@@ -46,13 +50,13 @@ function GuestReturn({ claim }) {
   }, [claim, state.status, tries]);
   useEffect(() => { if (state.status === "paid") try { localStorage.removeItem("vx-claim"); } catch { /* ok */ } }, [state.status]);
   const paid = state.status === "paid";
-  return <Shell eyebrow="Pagamento" title={paid ? "Pagamento confirmado!" : state.status === "error" ? "Link de retorno inválido" : "Confirmando seu pagamento…"}>
+  return <Shell eyebrow={t("account.payment")} title={paid ? t("account.guest.paid") : state.status === "error" ? t("account.guest.invalid") : t("account.guest.confirming")}>
     <div className="panel stack">
-      {paid && state.url && <><p>Seu acesso vitalício está ativo. Falta só criar sua senha:</p><a className="btn btn-primary" href={state.url}>Criar minha senha e entrar</a></>}
-      {paid && state.login && <><p>Seu acesso está ativo. Entre com seu e-mail e senha.</p><Link className="btn btn-primary" to="/entrar?next=/app">Entrar na Voxelia</Link></>}
+      {paid && state.url && <><p>{t("account.guest.createPassword")}</p><a className="btn btn-primary" href={state.url}>{t("account.guest.createButton")}</a></>}
+      {paid && state.login && <><p>{t("account.guest.login")}</p><Link className="btn btn-primary" to="/entrar?next=/app">{t("common.enterVoxelia")}</Link></>}
       {state.status === "error" && <p>{state.message}</p>}
-      {!paid && state.status !== "error" && <><p className="waiting"><span className="spinner" aria-hidden="true"/> No Pix costuma ser imediato; no cartão, alguns instantes. Não feche esta página.</p>
-        {tries >= 60 && <p>A confirmação ainda não chegou. Guarde este endereço e volte a ele daqui a pouco: o acesso é liberado assim que o pagamento confirmar.</p>}</>}
+      {!paid && state.status !== "error" && <><p className="waiting"><span className="spinner" aria-hidden="true"/> {t("account.guest.waiting")}</p>
+        {tries >= 60 && <p>{t("account.guest.late")}</p>}</>}
     </div>
   </Shell>;
 }
@@ -64,6 +68,7 @@ export function CheckoutReturnPage({ account, reload }) {
 }
 
 function SignedReturn({ account, reload }) {
+  const { t } = useT();
   const result = new URLSearchParams(location.search).get("resultado");
   const [tries, setTries] = useState(0);
   const timer = useRef(0);
@@ -73,36 +78,37 @@ function SignedReturn({ account, reload }) {
     timer.current = window.setTimeout(async () => { await reload(); setTries((v) => v + 1); }, 3000);
     return () => window.clearTimeout(timer.current);
   }, [confirmed, result, tries, reload]);
-  return <Shell eyebrow="Pagamento" title={confirmed ? "Pagamento confirmado" : result === "sucesso" ? "Aguardando confirmação do pagamento" : result === "expirado" ? "O link de pagamento expirou" : "Pagamento não concluído"}>
+  return <Shell eyebrow={t("account.payment")} title={confirmed ? t("account.signed.confirmed") : result === "sucesso" ? t("account.signed.awaiting") : result === "expirado" ? t("account.signed.expired") : t("account.signed.failed")}>
     <div className="panel stack">
-      {confirmed && <><p>O Asaas confirmou o pagamento. Seu acesso vitalício está ativo.</p><button type="button" className="btn btn-primary" onClick={() => navigate("/app")}>Entrar na Voxelia</button></>}
-      {!confirmed && result === "sucesso" && <><p className="waiting"><span className="spinner" aria-hidden="true"/> Recebemos seu retorno. O acesso é liberado somente quando o Asaas confirma o pagamento — no Pix costuma ser imediato; no cartão, alguns instantes.</p>
-        {tries >= 40 && <p>A confirmação ainda não chegou. Você pode fechar esta página: o acesso será liberado automaticamente quando o pagamento for confirmado.</p>}
-        <button type="button" className="btn btn-secondary" onClick={() => reload()}>Verificar agora</button></>}
-      {!confirmed && result !== "sucesso" && <><p>Nenhum pagamento foi confirmado. Você pode tentar de novo quando quiser.</p><button type="button" className="btn btn-primary" onClick={() => navigate("/acesso-pendente")}>Voltar à compra</button></>}
+      {confirmed && <><p>{t("account.signed.confirmedText")}</p><button type="button" className="btn btn-primary" onClick={() => navigate("/app")}>{t("common.enterVoxelia")}</button></>}
+      {!confirmed && result === "sucesso" && <><p className="waiting"><span className="spinner" aria-hidden="true"/> {t("account.signed.waiting")}</p>
+        {tries >= 40 && <p>{t("account.signed.late")}</p>}
+        <button type="button" className="btn btn-secondary" onClick={() => reload()}>{t("account.signed.check")}</button></>}
+      {!confirmed && result !== "sucesso" && <><p>{t("account.signed.none")}</p><button type="button" className="btn btn-primary" onClick={() => navigate("/acesso-pendente")}>{t("account.signed.backToBuy")}</button></>}
     </div>
   </Shell>;
 }
 
 // Conta sem licença: mostra pedido pendente ou a oferta da edição à venda.
 export function AccessPendingPage({ account, error, reload }) {
+  const { t } = useT();
   const [editions, setEditions] = useState(null);
   const [busy, setBusy] = useState(false);
   const [buyError, setBuyError] = useState("");
   useEffect(() => { fetch("/api/editions").then((r) => (r.ok ? r.json() : { editions: [] })).then((d) => setEditions(d.editions || [])).catch(() => setEditions([])); }, []);
   const edition = editions?.[0];
   const buy = async () => { setBusy(true); setBuyError(""); try { await purchase(edition.code, { signedIn: true }); } catch (e) { setBuyError(e.message); setBusy(false); } };
-  return <Shell eyebrow="Acesso" title={account?.pendingOrder ? "Pagamento em andamento" : "Garanta seu acesso vitalício"}>
-    {error && <p className="form-error" role="alert">Não foi possível verificar sua conta: {error.message} <button type="button" className="link" onClick={() => reload()}>Tentar de novo</button></p>}
-    {account?.license && !account.access && <p className="notice">Situação da licença: {account.license.statusLabel}. Fale com o suporte se precisar.</p>}
-    {account?.pendingOrder && <div className="panel stack"><p>Você iniciou um pagamento que ainda não foi confirmado.</p><a className="btn btn-primary" href={account.pendingOrder.url}>Continuar pagamento</a><button type="button" className="btn btn-secondary" onClick={() => reload()}>Já paguei — verificar</button></div>}
+  return <Shell eyebrow={t("account.pending.eyebrow")} title={account?.pendingOrder ? t("account.pending.inProgress") : t("account.pending.title")}>
+    {error && <p className="form-error" role="alert">{t("account.pending.verifyFailed")} {error.message} <button type="button" className="link" onClick={() => reload()}>{t("account.pending.retry")}</button></p>}
+    {account?.license && !account.access && <p className="notice">{t("account.pending.license", { status: account.license.statusLabel })}</p>}
+    {account?.pendingOrder && <div className="panel stack"><p>{t("account.pending.started")}</p><a className="btn btn-primary" href={account.pendingOrder.url}>{t("account.pending.continue")}</a><button type="button" className="btn btn-secondary" onClick={() => reload()}>{t("account.pending.paidCheck")}</button></div>}
     {!account?.pendingOrder && <div className="panel stack">
-      {editions == null ? <p className="muted">Carregando…</p> : edition ? <>
+      {editions == null ? <p className="muted">{t("common.loading")}</p> : edition ? <>
         <p className="eyebrow">{edition.name}</p>
-        <p className="l-price"><b>{formatPrice(edition.priceCents)}</b><span>pagamento único</span></p>
-        <p className="muted">Acesso vitalício à edição adquirida. Sem mensalidade. Pix ou cartão pelo Asaas.</p>
-        <button type="button" className="btn btn-primary" onClick={buy} disabled={busy}>{busy ? "Abrindo pagamento…" : "Comprar agora"}</button>
-      </> : <p>As vendas ainda não foram abertas. Assim que a edição estiver disponível, você poderá comprar por aqui.</p>}
+        <p className="l-price"><b>{formatPrice(edition.priceCents)}</b><span>{t("common.oneTime")}</span></p>
+        <p className="muted">{t("account.pending.offer")}</p>
+        <button type="button" className="btn btn-primary" onClick={buy} disabled={busy}>{busy ? t("common.openingPayment") : t("account.pending.buy")}</button>
+      </> : <p>{t("account.pending.closed")}</p>}
       {buyError && <p className="form-error" role="alert">{buyError}</p>}
     </div>}
   </Shell>;
@@ -110,37 +116,34 @@ export function AccessPendingPage({ account, error, reload }) {
 
 // Visualização pública de coleção compartilhada: só títulos; não abre conteúdo pago.
 export function SharedCollectionPage({ token }) {
+  const { t } = useT();
   const [state, setState] = useState({ loading: true });
   useEffect(() => {
     const meta = document.createElement("meta"); meta.name = "robots"; meta.content = "noindex, nofollow"; document.head.append(meta);
     fetch(`/api/shared?token=${encodeURIComponent(token)}`).then(async (r) => { const d = await r.json(); if (!r.ok) throw new Error(d.message); setState({ data: d }); }).catch((e) => setState({ error: e }));
     return () => meta.remove();
   }, [token]);
-  return <Shell eyebrow="Coleção compartilhada" title={state.data?.name || (state.error ? "Link indisponível" : "Carregando…")}>
+  return <Shell eyebrow={t("account.shared.eyebrow")} title={state.data?.name || (state.error ? t("account.shared.unavailable") : t("common.loading"))}>
     {state.error && <p className="muted">{state.error.message}</p>}
     {state.data && <>{state.data.description && <p className="muted">{state.data.description}</p>}
-      <ol className="col-items">{state.data.items.map((item) => <li key={item.id} className="col-item"><div className="col-item-main"><b>{item.title}</b><span className="muted small">{typeLabel[item.type]} · {categoryLabel[item.category]}</span></div></li>)}</ol>
-      <p className="small muted">Para abrir os recursos é preciso ter acesso à Voxelia. <Link className="link" to="/">Conheça</Link></p></>}
+      <ol className="col-items">{state.data.items.map((item) => <li key={item.id} className="col-item"><div className="col-item-main"><b>{item.title}</b><span className="muted small">{t(`type.${item.type}`)} · {t(`cat.${item.category}`)}</span></div></li>)}</ol>
+      <p className="small muted">{t("account.shared.needAccess")} <Link className="link" to="/">{t("account.shared.meet")}</Link></p></>}
   </Shell>;
 }
 
-const legal = {
-  termos: { title: "Termos de uso", sections: ["Objeto do serviço e descrição da plataforma", "Cadastro e responsabilidades do usuário", "Licença vitalícia por edição: alcance e limites", "Conteúdo de terceiros e licenças dos repositórios indexados", "Disponibilidade, manutenção e suporte", "Limitação de responsabilidade", "Foro e legislação aplicável"] },
-  privacidade: { title: "Política de privacidade", sections: ["Dados coletados (e-mail, favoritos, histórico, coleções, dados de pagamento recebidos do Asaas)", "Finalidade e base legal (LGPD)", "Operadores (Supabase, Asaas, Vercel, Meta)", "Cookies de marketing: Pixel e API de Conversões do Meta, só com consentimento, revogável em Preferências de cookies", "Compartilhamento opcional de coleções", "Direitos do titular e canal de contato", "Retenção e exclusão"] },
-  "compra-e-reembolso": { title: "Compra e reembolso", sections: ["Preço, pagamento único e meios de pagamento", "Liberação do acesso após confirmação", "Upgrades opcionais e cálculo da diferença", "Direito de arrependimento (CDC) e reembolsos", "Contestações e estornos", "Contato para cobrança"] },
-};
-
 // Documentos jurídicos: estrutura preparada, sem texto fictício.
 export function LegalPage({ slug }) {
-  const doc = legal[slug];
-  return <Shell eyebrow="Documento" title={doc.title}>
-    <p className="notice" role="note">Documento pendente de aprovação do proprietário. O texto final ainda não foi redigido e esta página não tem valor jurídico.</p>
+  const { t } = useT();
+  const doc = t(`account.legal.${slug}`);
+  return <Shell eyebrow={t("account.legal.eyebrow")} title={doc.title}>
+    <p className="notice" role="note">{t("account.legal.pending")}</p>
     <ol className="legal-outline">{doc.sections.map((s) => <li key={s}>{s}</li>)}</ol>
-    <Link className="link" to="/">← Voltar ao início</Link>
+    <Link className="link" to="/">{t("common.backHome")}</Link>
   </Shell>;
 }
 
 export function NotFound({ inApp = false }) {
-  const body = <div className="empty"><h3>Página não encontrada.</h3><p>O endereço não existe nesta versão.</p><Link className="btn btn-secondary btn-sm" to={inApp ? "/app" : "/"}>Voltar</Link></div>;
-  return inApp ? <div className="page">{body}</div> : <Shell title="Página não encontrada">{body}</Shell>;
+  const { t } = useT();
+  const body = <div className="empty"><h3>{t("account.notFound.heading")}</h3><p>{t("account.notFound.text")}</p><Link className="btn btn-secondary btn-sm" to={inApp ? "/app" : "/"}>{t("common.back")}</Link></div>;
+  return inApp ? <div className="page">{body}</div> : <Shell title={t("account.notFound.title")}>{body}</Shell>;
 }

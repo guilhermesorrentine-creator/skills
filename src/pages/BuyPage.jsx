@@ -5,27 +5,17 @@ import { formatPrice } from "../lib/billing-client.js";
 import { apiFetch } from "../lib/auth.jsx";
 import { track, trackingForCheckout } from "../lib/meta-pixel.js";
 import { funnel } from "../lib/funnel.js";
+import { useT } from "../i18n/index.js";
 
 const isAsaas = (value) => {
   try { const url = new URL(value); return url.protocol === "https:" && (url.hostname === "asaas.com" || url.hostname.endsWith(".asaas.com")); } catch { return false; }
 };
 const maskCpf = (value) => value.replace(/\D/g, "").slice(0, 11).replace(/(\d{3})(\d)/, "$1.$2").replace(/(\d{3})(\d)/, "$1.$2").replace(/(\d{3})(\d{1,2})$/, "$1-$2");
 
-// Texto de venda por produto: vitalício (acervo) ou Pro (acervo + conexão com a IA por 12 meses).
-const COPY = {
-  pro: {
-    title: "Dê superpoderes à sua IA",
-    points: ["Conecte a Voxelia no Claude, no ChatGPT e no Claude Code (12 meses)", "Menos resposta genérica e menos token desperdiçado: a IA usa a skill certa", "2 mil skills com guias em português, com acesso vitalício", "15 dias de garantia"],
-  },
-  lifetime: {
-    title: "Garanta seu acesso",
-    points: ["2 mil skills organizadas por objetivo", "Guias passo a passo em português", "15 dias de garantia"],
-  },
-};
-
 // Compra direta: e-mail (sem login), nome e CPF (exigidos pelo Asaas). Pix mostra o QR aqui; cartão abre a
 // fatura do Asaas em outra aba (o Pro parcela em 12x). Esta página confirma sozinha o pagamento.
 export default function BuyPage({ signedIn }) {
+  const { t } = useT();
   const code = new URLSearchParams(location.search).get("edicao") || "edicao-1";
   const [edition, setEdition] = useState(null);
   const [form, setForm] = useState({ email: "", name: "", document: "" });
@@ -57,7 +47,8 @@ export default function BuyPage({ signedIn }) {
 
   const field = (name) => (event) => setForm((f) => ({ ...f, [name]: name === "document" ? maskCpf(event.target.value) : event.target.value }));
   const installments = edition?.installments || 1;
-  const copy = edition?.mcp ? COPY.pro : COPY.lifetime;
+  // Texto de venda por produto: vitalício (acervo) ou Pro (acervo + conexão com a IA por 12 meses).
+  const copy = edition?.mcp ? { title: t("buy.proTitle"), points: t("buy.proPoints") } : { title: t("buy.title"), points: t("buy.points") };
   const perMonth = edition ? Math.round(edition.priceCents / installments) : 0;
 
   const pay = async (method, event) => {
@@ -73,12 +64,12 @@ export default function BuyPage({ signedIn }) {
       else {
         const response = await fetch("/api/checkout/guest", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ ...payload, email: form.email }) });
         data = await response.json();
-        if (!response.ok) { setExists(data.error === "account_exists"); throw new Error(data.message || "Não foi possível iniciar o pagamento."); }
+        if (!response.ok) { setExists(data.error === "account_exists"); throw new Error(data.message || t("buy.startFailed")); }
       }
       try { localStorage.setItem("vx-claim", JSON.stringify({ order: data.order, key: data.key })); } catch { /* sem armazenamento: o retorno usa a URL */ }
       funnel("checkout", { order: data.order });
       if (data.pix || isAsaas(data.url)) { setCharge(data); setBusy(""); return; }
-      throw new Error("Endereço de pagamento inesperado.");
+      throw new Error(t("common.unexpectedPayment"));
     } catch (cause) { setError(cause.message); setBusy(""); }
   };
 
@@ -92,44 +83,45 @@ export default function BuyPage({ signedIn }) {
       <Brand/>
       {!charge ? <>
         <h1>{copy.title}</h1>
-        <p className="buy-price">{!edition ? "Carregando…" : installments > 1
-          ? <><b>{installments}x de {formatPrice(perMonth)}</b> no cartão · ou {formatPrice(edition.priceCents)} à vista no Pix</>
-          : <><b>{formatPrice(edition.priceCents)}</b> pagamento único · acesso vitalício</>}</p>
-        {edition?.mcp && signedIn && <p className="small muted">Já tem o acesso vitalício? O valor que você pagou é descontado.</p>}
+        <p className="buy-price">{!edition ? t("common.loading") : installments > 1
+          ? <><b>{t("buy.installments", { n: installments, price: formatPrice(perMonth) })}</b> {t("buy.installmentsNote", { price: formatPrice(edition.priceCents) })}</>
+          : <><b>{formatPrice(edition.priceCents)}</b> {t("buy.priceNote")}</>}</p>
+        {edition && t("buy.currencyNote") && <p className="small muted">{t("buy.currencyNote")}</p>}
+        {edition?.mcp && signedIn && <p className="small muted">{t("buy.credit")}</p>}
         <ul className="buy-points">{copy.points.map((p) => <li key={p}>{p}</li>)}</ul>
         <form id="buy-form" onSubmit={(e) => pay(installments > 1 ? "card" : "pix", e)} className="stack">
-          {!signedIn && <><label htmlFor="buy-email">Seu e-mail <span className="muted small">(é o seu login)</span></label>
-            <input id="buy-email" className="input buy-input" type="email" inputMode="email" autoComplete="email" required value={form.email} onChange={field("email")} placeholder="voce@email.com"/></>}
-          <label htmlFor="buy-name">Nome completo</label>
+          {!signedIn && <><label htmlFor="buy-email">{t("buy.email")} <span className="muted small">{t("buy.emailHint")}</span></label>
+            <input id="buy-email" className="input buy-input" type="email" inputMode="email" autoComplete="email" required value={form.email} onChange={field("email")} placeholder={t("buy.emailPlaceholder")}/></>}
+          <label htmlFor="buy-name">{t("buy.name")}</label>
           <input id="buy-name" className="input buy-input" autoComplete="name" required minLength={3} value={form.name} onChange={field("name")}/>
-          <label htmlFor="buy-cpf">CPF <span className="muted small">(exigido pelo meio de pagamento)</span></label>
+          <label htmlFor="buy-cpf">{t("buy.cpf")} <span className="muted small">{t("buy.cpfHint")}</span></label>
           <input id="buy-cpf" className="input buy-input" inputMode="numeric" autoComplete="off" required value={form.document} onChange={field("document")} placeholder="000.000.000-00"/>
-          {error && <p className="notice" role="alert">{error} {exists && <Link className="link" to={`/entrar?next=${encodeURIComponent(`/comprar?edicao=${code}`)}`}>Entrar</Link>}</p>}
+          {error && <p className="notice" role="alert">{error} {exists && <Link className="link" to={`/entrar?next=${encodeURIComponent(`/comprar?edicao=${code}`)}`}>{t("common.enter")}</Link>}</p>}
           {installments > 1 ? <>
-            <button type="submit" className="btn btn-primary buy-submit" disabled={Boolean(busy) || !edition}>{busy === "card" ? "Gerando pagamento…" : `Pagar ${installments}x de ${formatPrice(perMonth)} no cartão`}</button>
-            <button type="button" className="btn btn-ghost buy-submit" disabled={Boolean(busy) || !edition} onClick={(e) => pay("pix", e)}>{busy === "pix" ? "Gerando Pix…" : `Pagar à vista no Pix (${formatPrice(edition.priceCents)})`}</button>
-          </> : <button type="submit" className="btn btn-primary buy-submit" disabled={Boolean(busy) || !edition}>{busy ? "Gerando pagamento…" : "Pagar com Pix ou cartão"}</button>}
+            <button type="submit" className="btn btn-primary buy-submit" disabled={Boolean(busy) || !edition}>{busy === "card" ? t("buy.busy") : t("buy.payCard", { n: installments, price: formatPrice(perMonth) })}</button>
+            <button type="button" className="btn btn-ghost buy-submit" disabled={Boolean(busy) || !edition} onClick={(e) => pay("pix", e)}>{busy === "pix" ? t("buy.busyPix") : t("buy.payPix", { price: formatPrice(edition?.priceCents || 0) })}</button>
+          </> : <button type="submit" className="btn btn-primary buy-submit" disabled={Boolean(busy) || !edition}>{busy ? t("buy.busy") : t("buy.submit")}</button>}
         </form>
-        <p className="small muted">Pagamento seguro pelo Asaas. {signedIn ? "A liberação é automática." : "Depois do pagamento você cria sua senha na hora, sem esperar e-mail."}</p>
-        <button type="button" className="link small" onClick={() => navigate("/")}>← Conhecer a Voxelia</button>
+        <p className="small muted">{t("buy.secure")} {signedIn ? t("buy.autoRelease") : t("buy.afterPay")}</p>
+        <button type="button" className="link small" onClick={() => navigate("/")}>{t("buy.about")}</button>
       </> : cardCharge ? <>
-        <h1>Finalize no cartão</h1>
-        <p className="buy-price"><b>{charge.installments}x de {formatPrice(Math.round(charge.amountCents / charge.installments))}</b> · total {formatPrice(charge.amountCents)}</p>
-        <a className="btn btn-primary buy-submit" href={charge.url} target="_blank" rel="noopener noreferrer">Abrir pagamento no cartão</a>
-        <p className="waiting small"><span className="spinner" aria-hidden="true"/> Aguardando o pagamento. Esta página avança sozinha.</p>
-        <button type="button" className="link small" onClick={() => pay("pix")}>Prefiro pagar à vista no Pix</button>
+        <h1>{t("buy.cardTitle")}</h1>
+        <p className="buy-price"><b>{t("buy.installments", { n: charge.installments, price: formatPrice(Math.round(charge.amountCents / charge.installments)) })}</b> · {t("buy.total", { price: formatPrice(charge.amountCents) })}</p>
+        <a className="btn btn-primary buy-submit" href={charge.url} target="_blank" rel="noopener noreferrer">{t("buy.openCard")}</a>
+        <p className="waiting small"><span className="spinner" aria-hidden="true"/> {t("buy.waiting")}</p>
+        <button type="button" className="link small" onClick={() => pay("pix")}>{t("buy.preferPix")}</button>
       </> : <>
-        <h1>Pague com Pix</h1>
-        <p className="buy-price"><b>{formatPrice(charge.amountCents || edition?.priceCents || 0)}</b> · abra o app do banco e escaneie</p>
+        <h1>{t("buy.pixTitle")}</h1>
+        <p className="buy-price"><b>{formatPrice(charge.amountCents || edition?.priceCents || 0)}</b> · {t("buy.pixHint")}</p>
         {charge.pix ? <>
-          <img className="buy-qr" src={`data:image/png;base64,${charge.pix.image}`} alt="QR Code do Pix" width="220" height="220"/>
-          <button type="button" className="btn btn-primary buy-submit" onClick={copyPix}>{copied ? "Código copiado!" : "Copiar código Pix (copia e cola)"}</button>
-        </> : <p className="notice">O QR não carregou. Use o botão abaixo para pagar pela fatura.</p>}
-        <p className="waiting small"><span className="spinner" aria-hidden="true"/> Aguardando o pagamento. Esta página avança sozinha.</p>
+          <img className="buy-qr" src={`data:image/png;base64,${charge.pix.image}`} alt={t("buy.qrAlt")} width="220" height="220"/>
+          <button type="button" className="btn btn-primary buy-submit" onClick={copyPix}>{copied ? t("buy.pixCopied") : t("buy.copyPix")}</button>
+        </> : <p className="notice">{t("buy.noQr")}</p>}
+        <p className="waiting small"><span className="spinner" aria-hidden="true"/> {t("buy.waiting")}</p>
         {installments > 1
-          ? <button type="button" className="btn btn-ghost buy-submit" onClick={() => pay("card")}>Prefiro {installments}x no cartão</button>
-          : isAsaas(charge.url) && <a className="btn btn-ghost buy-submit" href={charge.url} target="_blank" rel="noopener noreferrer">Prefiro pagar no cartão de crédito</a>}
-        <p className="small muted">Pagou no cartão em outra aba? Volte para esta página: ela confirma sozinha.</p>
+          ? <button type="button" className="btn btn-ghost buy-submit" onClick={() => pay("card")}>{t("buy.preferCard", { n: installments })}</button>
+          : isAsaas(charge.url) && <a className="btn btn-ghost buy-submit" href={charge.url} target="_blank" rel="noopener noreferrer">{t("buy.card")}</a>}
+        <p className="small muted">{t("buy.cardReturn")}</p>
       </>}
     </div>
   </main>;

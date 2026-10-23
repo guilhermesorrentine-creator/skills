@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { queryTerms } from "../lib/search.js";
+import { useT } from "../i18n/index.js";
 
 export async function copyText(text) {
   if (navigator.clipboard?.writeText) {
@@ -11,14 +12,15 @@ export async function copyText(text) {
   const copied = document.execCommand("copy"); field.remove(); return copied;
 }
 
-export function CopyButton({ value, children = "Copiar", className = "" }) {
+export function CopyButton({ value, children, className = "" }) {
+  const { t } = useT();
   const [state, setState] = useState("idle");
   const onCopy = async () => {
     setState(await copyText(value) ? "copied" : "failed");
     window.setTimeout(() => setState("idle"), 1800);
   };
-  const label = state === "copied" ? "Copiado ✓" : state === "failed" ? "Falha ao copiar" : children;
-  return <button type="button" className={`copy-button ${state === "copied" ? "is-copied" : ""} ${className}`} onClick={onCopy}>{label}<span className="sr-only" role="status">{state === "copied" ? "Copiado para a área de transferência" : state === "failed" ? "Não foi possível copiar; selecione o texto manualmente." : ""}</span></button>;
+  const label = state === "copied" ? t("common.copied") : state === "failed" ? t("common.copyFailed") : children ?? t("common.copy");
+  return <button type="button" className={`copy-button ${state === "copied" ? "is-copied" : ""} ${className}`} onClick={onCopy}>{label}<span className="sr-only" role="status">{state === "copied" ? t("common.copiedSr") : state === "failed" ? t("common.copyFailedSr") : ""}</span></button>;
 }
 
 export function Highlight({ text = "", query = "" }) {

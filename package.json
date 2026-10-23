@@ -9,7 +9,7 @@
     "prebuild": "node scripts/validate-catalog.mjs && node scripts/build-demo-data.mjs",
     "build": "vite build",
     "preview": "vite preview --host 0.0.0.0",
-    "test": "node --test src/lib/*.test.js server/*.test.js",
+    "test": "node --test src/lib/*.test.js src/i18n/*.test.js server/*.test.js",
     "validate:catalog": "node scripts/validate-catalog.mjs",
     "data:repos": "node scripts/build-repo-pages.mjs",
     "postbuild": "node scripts/prerender.mjs"
