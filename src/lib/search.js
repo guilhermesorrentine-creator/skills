@@ -4,7 +4,7 @@ const synonyms = {
   site: ["website", "web", "landing", "frontend"],
   landing: ["site", "website", "web", "frontend", "webpage"],
   pagina: ["page", "website", "landing", "frontend"],
-  page: ["website", "landing", "frontend", "webpage"],
+  page: ["website", "webpage"],
   aplicativo: ["app", "application"],
   desenvolver: ["develop", "build", "code"],
   automatizar: ["automation", "automate", "workflow"],
@@ -134,8 +134,11 @@ export function normalize(value = "") {
 
 const terms = (value) => normalize(value).split(/\s+/).filter(Boolean);
 
+// Expressões de duas palavras que valem como um conceito só ("landing page" é site, não "página" genérica).
+const phrases = [[/\blanding pages?\b/g, "landing"], [/\bpagina de vendas\b/g, "landing vendas"], [/\bsales pages?\b/g, "landing sales"]];
+
 export function queryTerms(query = "") {
-  const all = terms(query);
+  const all = terms(phrases.reduce((text, [pattern, concept]) => text.replace(pattern, concept), normalize(query)));
   const meaningful = all.filter((term) => !stopwords.has(term));
   return meaningful.length ? meaningful : all;
 }
