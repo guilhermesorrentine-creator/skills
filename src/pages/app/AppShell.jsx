@@ -51,6 +51,10 @@ export default function AppShell({ path, account, children }) {
       <nav><ul>{visibleMenu.map((item) => <li key={item.to}><Link to={item.to} className="app-link" aria-current={active(item.to) ? "page" : undefined}>
         <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d={item.icon} fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round" strokeLinecap="round"/></svg>{item.label}
       </Link></li>)}</ul></nav>
+      <Link to="/app/conectar-ia" className="app-connect-cta" aria-current={active("/app/conectar-ia") ? "page" : undefined}>
+        <svg width="19" height="19" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 7a4 4 0 0 1 8 0v2m-8 0V7m8 2V7M5 10h14v10H5zM9 14h.01M15 14h.01M9 18h6" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round" strokeLinecap="round"/></svg>
+        <span>Conectar minha IA</span>
+      </Link>
       <div className="app-side-foot">
         <Link to="/app/minha-licenca" className="app-license" aria-current={active("/app/minha-licenca") ? "page" : undefined}>
           <span className="tag-mono">Licença</span><b>{account?.edition?.name || (account?.accessReason === "dev" ? "Modo desenvolvimento" : "Edição")}</b>

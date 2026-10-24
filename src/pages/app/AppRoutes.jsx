@@ -8,6 +8,8 @@ import LicensePage from "./LicensePage.jsx";
 import { ComparePage, FavoritesPage, RecentPage, ResourceListPage } from "./ListPages.jsx";
 import { CollectionPage, CollectionsPage } from "./CollectionPages.jsx";
 import { NotFound } from "../AccountPages.jsx";
+import AiConnect from "./AiConnect.jsx";
+import { Link } from "../../lib/router.jsx";
 
 // Sistema autenticado (/app/*). A licença já foi validada no servidor antes de chegar aqui.
 export default function AppRoutes({ path, account }) {
@@ -25,6 +27,7 @@ export default function AppRoutes({ path, account }) {
   else if (path === "/app/recentes") page = <RecentPage/>;
   else if (path === "/app/comparar") page = <ComparePage/>;
   else if (path === "/app/minha-licenca") page = <LicensePage account={account}/>;
+  else if (path === "/app/conectar-ia") page = <div className="page"><header className="page-head"><h1>Conectar minha IA</h1><p className="muted">Use a Voxelia no Claude, ChatGPT ou Claude Code.</p></header>{account?.mcp?.active ? <AiConnect until={account.mcp.until}/> : <section className="panel"><h2>{account?.renewal ? "Sua conexão precisa ser renovada" : "Conexão incluída no Voxelia Pro"}</h2><p>{account?.renewal ? "Renove o Pro para voltar a usar a Voxelia na sua IA." : "Ative o Voxelia Pro para gerar seu link pessoal de conexão."}</p><Link className="btn btn-primary" to="/app/minha-licenca">{account?.renewal ? "Ver renovação" : "Ver opção de upgrade"}</Link></section>}</div>;
   else page = <NotFound inApp/>;
   return <LibraryProvider><AppShell path={path} account={account}>{page}</AppShell></LibraryProvider>;
 }
