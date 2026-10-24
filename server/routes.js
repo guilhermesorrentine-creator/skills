@@ -139,9 +139,9 @@ export function createApi({ store, commerce, onboarding = null, library, me, mcp
       const { from, to, today } = dashboardPeriod(request);
       const goal = await store.getDashboardSettings();
       const force = param(request, "refresh") === "1";
-      const [orders, payments, profiles, editions, expenses, notes, links, funnel, asaasData] = await Promise.all([
+      const [orders, payments, profiles, editions, expenses, links, funnel, asaasData] = await Promise.all([
         store.listOrders(), store.listPayments(), store.listProfiles(), store.listEditions({ onSaleOnly: false }),
-        store.listDashboardExpenses(), store.listDashboardNotes(), store.listDashboardAdLinks(),
+        store.listDashboardExpenses(), store.listDashboardAdLinks(),
         store.listFunnelEvents(`${[from, goal.goal_starts_on].sort()[0]}T00:00:00-03:00`), cached("asaas-payments", () => loadAsaasPayments(asaas), force),
       ]);
       const metaFrom = [from, goal.goal_starts_on].sort()[0];
@@ -158,7 +158,7 @@ export function createApi({ store, commerce, onboarding = null, library, me, mcp
         metrics.goal = { ...metrics.goal, profitCents: null, consolidatedCents: null, guaranteeCents: null, remainingCents: null, projectedCents: null, projectedDate: null };
       }
       const stageData = summarizeStages(funnel, orders, from, to);
-      return ok({ from, to, updatedAt: new Date().toISOString(), metrics, stages: stageData, payments: ledger.paymentRows, receivable: ledger.receivable, refunds: ledger.refunds, salesLedger: ledger.sales, orders: ledger.orderRows, expenses, goal, notes, links, ads: metaData.rows || [], funnel: funnel.map((event) => ({ at: event.at, on: businessDay(event.at), name: event.name, path: event.path, source: event.source, campaign: event.campaign, content: event.content, orderId: event.order_id, sid: event.sid })),
+      return ok({ from, to, updatedAt: new Date().toISOString(), metrics, stages: stageData, payments: ledger.paymentRows, receivable: ledger.receivable, refunds: ledger.refunds, salesLedger: ledger.sales, orders: ledger.orderRows, expenses, goal, links, ads: metaData.rows || [], funnel: funnel.map((event) => ({ at: event.at, on: businessDay(event.at), name: event.name, path: event.path, source: event.source, campaign: event.campaign, content: event.content, orderId: event.order_id, sid: event.sid })),
         connections: { asaas: { checkedAt: asaasData.checkedAt, error: asaasData.error || (ledger.incomplete || orders.length >= 1000 || payments.length >= 1000 ? "Dados de cobranças parciais; confira o Asaas." : null), ageSeconds: asaasData.ageSeconds, cached: asaasData.cached }, meta: { checkedAt: metaData.checkedAt, error: metaData.error, ageSeconds: metaData.ageSeconds, cached: metaData.cached }, funnel: { checkedAt: new Date().toISOString(), error: funnel.length === 20000 ? "Limite de eventos atingido; período parcial." : null } } });
     },
     "GET /api/admin/dashboard/organic": async (request) => {

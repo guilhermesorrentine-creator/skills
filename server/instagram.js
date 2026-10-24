@@ -7,21 +7,36 @@ const metricValue = (insight) => {
   return value != null && Number.isFinite(Number(value)) ? Number(value) : null;
 };
 
+async function instagramAccountId(graph, token, fetchImpl) {
+  let next = `${graph}/me/accounts?${new URLSearchParams({ fields: "instagram_business_account{id,username}", limit: "100", access_token: token })}`;
+  for (let page = 0; page < 10 && next; page++) {
+    const response = await fetchImpl(next);
+    const payload = await response.json();
+    if (!response.ok) throw new Error("O token da Meta Ads não permite consultar as Páginas vinculadas. Autorize pages_show_list, instagram_basic e instagram_manage_insights para ler o Orgânico.");
+    const account = payload.data?.map((item) => item.instagram_business_account).find((item) => item?.username?.toLowerCase() === "voxelia.ia" && /^\d+$/.test(String(item.id)));
+    if (account) return String(account.id);
+    next = payload.paging?.next || null;
+    if (next && !next.startsWith(graphHost)) throw new Error("Paginação inesperada da Meta.");
+  }
+  throw new Error("A conta @voxelia.ia não apareceu nas Páginas acessíveis ao token da Meta. Confira o vínculo e a permissão pages_show_list.");
+}
+
 export async function loadInstagramReels(config, from, to, fetchImpl = fetch) {
-  if (!config.instagramToken || !/^\d+$/.test(config.instagramUserId || ""))
-    return { rows: [], error: "Configure META_INSTAGRAM_TOKEN e META_INSTAGRAM_USER_ID no servidor.", checkedAt: null };
-  const token = config.instagramToken;
+  const token = config.instagramToken || config.adsToken;
+  if (!token) return { rows: [], error: "Configure o token da Meta Ads ou do Instagram no servidor.", checkedAt: null };
   const version = /^v\d+\.\d+$/.test(config.graphVersion || "") ? config.graphVersion : "v24.0";
   const graph = `${graphHost}${version}`;
   const params = new URLSearchParams({ fields: "id,caption,media_type,media_product_type,permalink,timestamp,like_count,comments_count", limit: "50", access_token: token });
-  let next = `${graph}/${config.instagramUserId}/media?${params}`;
+  let next = null;
   const rows = [];
   let warning = null;
   try {
+    const accountId = /^\d+$/.test(config.instagramUserId || "") ? config.instagramUserId : await instagramAccountId(graph, token, fetchImpl);
+    next = `${graph}/${accountId}/media?${params}`;
     for (let page = 0; page < 20 && next; page++) {
       const response = await fetchImpl(next);
       const payload = await response.json();
-      if (!response.ok) throw new Error(payload.error?.message || `Instagram respondeu ${response.status}.`);
+      if (!response.ok) throw new Error("O token da Meta não permite ler os Reels de @voxelia.ia. Confira instagram_basic e o vínculo com a Página.");
       const media = Array.isArray(payload.data) ? payload.data : [];
       for (const item of media) {
         if (item.media_product_type !== "REELS" || !item.timestamp) continue;

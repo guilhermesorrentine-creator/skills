@@ -66,7 +66,7 @@ function Period({ value, onChange }) {
   </div>;
 }
 
-function MetricTerm({ label }) { const meaning = definitions[label]; return meaning ? <details className="dash-term"><summary title={meaning}>{label} <CircleHelp size={13} aria-hidden="true"/></summary><span>{meaning}</span></details> : label; }
+function MetricTerm({ label }) { const meaning = definitions[label]; return meaning ? <abbr className="dash-term" title={meaning} aria-label={`${label}: ${meaning}`} tabIndex={0}>{label} <CircleHelp size={13} aria-hidden="true"/></abbr> : label; }
 function Metric({ label, value, note, tone }) { return <div className={`dash-card dash-metric${tone ? ` dash-metric-${tone}` : ""}`}><MetricTerm label={label}/><strong>{value}</strong>{note && <small>{note}</small>}</div>; }
 
 function SalesChart({ daily }) {
@@ -83,8 +83,8 @@ function Donut({ metrics }) {
   const [selected, setSelected] = useState(null);
   if (metrics.adCents == null || metrics.metaSalesCents == null) return <div className="dash-card"><h2>Retorno dos anúncios</h2><p>Indisponível até as conexões voltarem.</p></div>;
   const parts = [
-    ["Meta Ads", metrics.donut.adsCents, "#7445c7"], ["Taxas do Asaas", metrics.donut.feesCents, "#e79836"],
-    ["Lucro atribuído", metrics.donut.profitCents, "#2b9b73"], ["Prejuízo", metrics.donut.lossCents, "#c55269"],
+    ["Meta Ads", metrics.donut.adsCents, "#b9c0c4"], ["Taxas do Asaas", metrics.donut.feesCents, "#747d82"],
+    ["Lucro atribuído", metrics.donut.profitCents, "#79dda7"], ["Prejuízo", metrics.donut.lossCents, "#ff8c8c"],
     ].filter((part) => part[1] > 0 && part[0] !== "Prejuízo");
   const total = parts.reduce((sum, part) => sum + part[1], 0);
   let offset = 0;
@@ -158,32 +158,32 @@ function MetaAds({ data, range, refresh }) {
   const [campaignId, setCampaignId] = useState("");
   const [adsetId, setAdsetId] = useState("");
   const [selected, setSelected] = useState(null);
-  const [form, setForm] = useState({ utmCampaign: "", utmContent: "", notePaths: [] });
+  const [form, setForm] = useState({ utmCampaign: "", utmContent: "" });
   const [status, setStatus] = useState("");
   const campaigns = useMemo(() => aggregateAds(data.ads, "campaign", range), [data.ads, range]);
   const adsets = useMemo(() => aggregateAds(data.ads.filter((row) => row.campaignId === campaignId), "adset", range), [data.ads, campaignId, range]);
   const ads = useMemo(() => aggregateAds(data.ads.filter((row) => row.adsetId === adsetId), "ad", range), [data.ads, adsetId, range]);
   const current = level === "campaign" ? campaigns : level === "adset" ? adsets : ads;
   const match = (item) => data.links.find((link) => link.entity_kind === level && link.entity_id === item.id);
-  const selectItem = (item) => { setSelected(item); const link = match(item); setForm({ utmCampaign: link?.utm_campaign || "", utmContent: link?.utm_content || "", notePaths: link?.note_paths || [] }); };
-  const save = async (event) => { event.preventDefault(); if (!selected) return; try { await apiFetch("/api/admin/dashboard/links", { method: "POST", body: { entityKind: level, entityId: selected.id, ...form } }); setStatus("Vínculo salvo."); await refresh(false); } catch (error) { setStatus(error.message); } };
+  const selectItem = (item) => { setSelected(item); const link = match(item); setForm({ utmCampaign: link?.utm_campaign || "", utmContent: link?.utm_content || "" }); };
+  const save = async (event) => { event.preventDefault(); if (!selected) return; try { await apiFetch("/api/admin/dashboard/links", { method: "POST", body: { entityKind: level, entityId: selected.id, ...form, notePaths: match(selected)?.note_paths || [] } }); setStatus("Vínculo salvo."); await refresh(false); } catch (error) { setStatus(error.message); } };
   return <div className="dash-stack"><div className="dash-card"><div className="dash-levels">
     <button type="button" aria-pressed={level === "campaign"} onClick={() => { setLevel("campaign"); setCampaignId(""); setAdsetId(""); }}>Campanhas</button>
     <ChevronRight size={15}/><button type="button" aria-pressed={level === "adset"} disabled={!campaignId} onClick={() => { setLevel("adset"); setAdsetId(""); }}>Conjuntos</button>
     <ChevronRight size={15}/><button type="button" aria-pressed={level === "ad"} disabled={!adsetId} onClick={() => setLevel("ad")}>Anúncios individuais</button>
-  </div><p className="dash-note">Selecione uma linha para ler a estratégia ao lado. O botão de nível abre os conjuntos ou anúncios.</p>
+  </div><p className="dash-note">Selecione uma linha para conferir o vínculo UTM. O botão de nível abre os conjuntos ou anúncios.</p>
   {data.connections.meta.error && <p role="status" className="dash-error">Meta Ads indisponível: {data.connections.meta.error}</p>}
-  <Table headers={[level === "campaign" ? "Campanha" : level === "adset" ? "Conjunto" : "Anúncio", "Leitura", "Estratégia", "Gasto", "Impressões", "Cliques", "CTR", "CTR de link", "CPC", "Visitas Meta", "Visitas site", "Cliques comprar", "Vendas", "Valor", "Custo/venda"]} rows={current.map((item) => {
+  <Table headers={[level === "campaign" ? "Campanha" : level === "adset" ? "Conjunto" : "Anúncio", "Leitura", "Gasto", "Impressões", "Cliques", "CTR", "CTR de link", "CPC", "Visitas Meta", "Visitas site", "Cliques comprar", "Vendas", "Valor", "Custo/venda"]} rows={current.map((item) => {
     const link = match(item); const linked = link?.utm_campaign && (level !== "ad" || link?.utm_content);
     const hits = linked ? data.funnel.filter((event) => inRange(event.on, range) && event.source?.toLowerCase() === "meta" && event.campaign === link.utm_campaign && (level === "campaign" || event.content === link.utm_content)) : [];
     const sold = linked ? data.salesLedger.filter((sale) => inRange(sale.on, range) && sale.source?.toLowerCase() === "meta" && sale.campaign === link.utm_campaign && (level === "campaign" || sale.content === link.utm_content)) : [];
     const refundedCount = linked ? data.orders.filter((order) => inRange(order.refundedOn, range) && order.refundedCents >= order.amountCents && order.source?.toLowerCase() === "meta" && order.campaign === link.utm_campaign && (level === "campaign" || order.content === link.utm_content)).length : 0;
     const count = sold.reduce((total, sale) => total + sale.count, 0) - refundedCount;
     const signal = campaignSignalFor(data, item, link, range, level);
-    return [<div><button className="dash-row-link" type="button" onClick={() => selectItem(item)}>{item.name}</button>{level !== "ad" && <button type="button" className="dash-row-link" onClick={() => { if (level === "campaign") { setCampaignId(item.id); setLevel("adset"); } else { setAdsetId(item.id); setLevel("ad"); } setSelected(null); }}>Abrir nível</button>}</div>, <span className={`dash-pill dash-pill-${signal.tone}`} title={signal.detail}>{signal.title}</span>, link?.note_paths?.length ? `${link.note_paths.length} nota(s)` : "Sem nota", money(item.spendCents), item.impressions, item.clicks,
+    return [<div><button className="dash-row-link" type="button" onClick={() => selectItem(item)}>{item.name}</button>{level !== "ad" && <button type="button" className="dash-row-link" onClick={() => { if (level === "campaign") { setCampaignId(item.id); setLevel("adset"); } else { setAdsetId(item.id); setLevel("ad"); } setSelected(null); }}>Abrir nível</button>}</div>, <span className={`dash-pill dash-pill-${signal.tone}`} title={signal.detail}>{signal.title}</span>, money(item.spendCents), item.impressions, item.clicks,
       item.impressions ? pct(item.clicks / item.impressions) : "—", item.impressions && item.linkClicks != null ? pct(item.linkClicks / item.impressions) : "—", item.clicks ? money(item.spendCents / item.clicks) : "—", item.landingViews, linked ? new Set(hits.filter((hit) => hit.name === "view").map((hit) => hit.sid)).size : "Sem UTM vinculada", linked ? new Set(hits.filter((hit) => hit.name === "buy_click").map((hit) => hit.sid)).size : "—", linked ? count : "—", linked ? money(sold.reduce((sum, sale) => sum + sale.amountCents, 0)) : "—", linked && count ? money(item.spendCents / count) : "—"];
   })}/></div>
-  {selected && <div className="dash-card"><h2>{selected.name}</h2><form className="dash-form" onSubmit={save}><label>UTM campanha<input value={form.utmCampaign} onChange={(e) => setForm({ ...form, utmCampaign: e.target.value })}/></label>{level === "ad" && <label>UTM criativo<input value={form.utmContent} onChange={(e) => setForm({ ...form, utmContent: e.target.value })}/></label>}<fieldset className="dash-notes"><legend>Notas do Obsidian</legend>{data.notes.map((note) => <label key={note.path}><input type="checkbox" checked={form.notePaths.includes(note.path)} onChange={(e) => setForm({ ...form, notePaths: e.target.checked ? [...form.notePaths, note.path] : form.notePaths.filter((path) => path !== note.path) })}/>{note.title}</label>)}</fieldset><button className="btn btn-primary" type="submit">Salvar vínculo</button>{status && <p role="status">{status}</p>}</form>{(match(selected)?.note_paths || []).map((path) => { const note = data.notes.find((entry) => entry.path === path); return note && <article key={path} className="dash-imported-note"><h3>{note.title}</h3><small>Importada em {new Date(note.imported_at).toLocaleString("pt-BR")} · Atualizada na origem: {dateBR(note.source_updated_on)}</small><pre>{note.content}</pre></article>; })}</div>}</div>;
+  {selected && <div className="dash-card"><h2>{selected.name}</h2><form className="dash-form" onSubmit={save}><label>UTM campanha<input value={form.utmCampaign} onChange={(e) => setForm({ ...form, utmCampaign: e.target.value })}/></label>{level === "ad" && <label>UTM criativo<input value={form.utmContent} onChange={(e) => setForm({ ...form, utmContent: e.target.value })}/></label>}<button className="btn btn-primary" type="submit">Salvar vínculo</button>{status && <p role="status">{status}</p>}</form></div>}</div>;
 }
 
 function Organic({ range, refreshKey }) {
@@ -215,7 +215,7 @@ function Organic({ range, refreshKey }) {
   const sorted = mature.map((row) => row.views).sort((a, b) => a - b);
   const referenceViews = sorted.length >= 5 ? sorted[Math.floor(sorted.length / 2)] : null;
   return <div className="dash-stack">
-    {result?.connection.error && <div className="dash-card dash-connection-message" role="status"><strong>Instagram ainda não conectado</strong><span>{result.connection.error}</span><small>O painel exibirá as visualizações assim que a credencial de Insights for configurada no servidor.</small></div>}
+    {result?.connection.error && <div className="dash-card dash-connection-message" role="status"><strong>Não foi possível consultar o Instagram</strong><span>{result.connection.error}</span><small>O painel tenta reutilizar o token da Meta Ads. Para os Reels, ele também precisa de acesso à conta Instagram e aos Insights.</small></div>}
     {result?.warning && <p className="dash-status" role="status">{result.warning}</p>}
     <div className="dash-organic-stats"><Metric label="Reels publicados" value={result?.connection.error ? "Indisponível" : rows.length}/><Metric label="Visualizações" value={known.length ? total.toLocaleString("pt-BR") : result?.connection.error ? "Indisponível" : "—"}/><Metric label="Horas assistidas" value={knownWatch.length ? `${watchHours.toLocaleString("pt-BR", { maximumFractionDigits: 1 })} h` : "Indisponível"}/><Metric label="Mais visto" value={best ? best.views.toLocaleString("pt-BR") : "—"} note={best ? dateBR(best.on) : ""}/></div>
     {rows.length > 0 && <section className="dash-card"><h2>Visualizações e horas dos Reels</h2><p className="dash-note">Cada linha representa um Reel publicado no período. Os números são acumulados até a última atualização do Instagram.</p><div className="dash-organic-chart">{[...rows].reverse().slice(0, 12).map((row) => <div className="dash-organic-chart-row" key={row.id}><span>{dateBR(row.on)}</span><div><span>Visualizações</span><div className="dash-organic-track"><i style={{ width: `${row.views == null ? 0 : Math.max(2, row.views / Math.max(1, ...known.map((item) => item.views)) * 100)}%` }}/></div><b>{row.views == null ? "—" : row.views.toLocaleString("pt-BR")}</b></div><div><span>Horas</span><div className="dash-organic-track dash-organic-track-hours"><i style={{ width: `${row.watchMs == null ? 0 : Math.max(2, row.watchMs / Math.max(1, ...knownWatch.map((item) => item.watchMs)) * 100)}%` }}/></div><b>{row.watchMs == null ? "—" : (row.watchMs / 3600000).toLocaleString("pt-BR", { maximumFractionDigits: 1 })}</b></div></div>)}</div></section>}
@@ -273,12 +273,8 @@ function Orders({ data, range }) { return <div className="dash-card"><h2>Pedidos
 function Config({ data, refresh }) {
   const [form, setForm] = useState({ goalCents: data.goal.goal_cents / 100, startsOn: data.goal.goal_starts_on, endsOn: data.goal.goal_ends_on });
   const [status, setStatus] = useState("");
-  const [files, setFiles] = useState([]);
-  const [noteFolder, setNoteFolder] = useState("Marketing/");
   const save = async (event) => { event.preventDefault(); try { await apiFetch("/api/admin/dashboard/goal", { method: "POST", body: { goalCents: Math.round(Number(form.goalCents) * 100), startsOn: form.startsOn, endsOn: form.endsOn } }); setStatus("Meta salva."); await refresh(); } catch (error) { setStatus(error.message); } };
-  const importNotes = async (event) => { event.preventDefault(); try { for (const file of files) { const path = `${noteFolder.replace(/\/?$/, "/")}${file.name}`; if (!path.startsWith("Marketing/")) throw new Error("Informe a pasta relativa dentro de Marketing."); await apiFetch("/api/admin/dashboard/notes", { method: "POST", body: { path, content: await file.text() } }); } setStatus(`${files.length} nota(s) importada(s).`); await refresh(false); } catch (error) { setStatus(error.message); } };
   return <div className="dash-stack"><div className="dash-card"><h2>Meta de lucro</h2><form className="dash-form" onSubmit={save}><label>Valor (R$)<input type="number" min="0.01" step="0.01" value={form.goalCents} onChange={(e) => setForm({ ...form, goalCents: e.target.value })} required/></label><label>Começa<input type="date" value={form.startsOn} onChange={(e) => setForm({ ...form, startsOn: e.target.value })} required/></label><label>Termina<input type="date" value={form.endsOn} onChange={(e) => setForm({ ...form, endsOn: e.target.value })} required/></label><button className="btn btn-primary" type="submit">Salvar meta</button>{status && <p role="status">{status}</p>}</form></div>
-    <div className="dash-card"><h2>Importar notas do Obsidian</h2><p className="dash-note">Informe a pasta relativa do cofre e selecione os arquivos Markdown. Reimportar substitui a versão anterior.</p><form className="dash-form" onSubmit={importNotes}><label>Pasta no cofre<input value={noteFolder} onChange={(event) => setNoteFolder(event.target.value)} placeholder="Marketing/Campanhas/2026-10 Teste R$60 - Trafego oferta/"/></label><label>Arquivos<input type="file" accept=".md,text/markdown" multiple onChange={(event) => setFiles([...event.target.files])}/></label><button className="btn btn-primary" type="submit" disabled={!files.length}>Importar</button></form><Table headers={["Nota", "Importada", "Atualizada na origem"]} rows={data.notes.map((note) => [note.path, new Date(note.imported_at).toLocaleString("pt-BR"), dateBR(note.source_updated_on)])}/></div>
     <div className="dash-card"><h2>Conexões</h2><div className="dash-connections">{[["Asaas", data.connections.asaas], ["Meta Ads", data.connections.meta], ["Funil próprio", data.connections.funnel]].map(([name, connection]) => <div key={name}><strong>{name}</strong><span className={connection.error ? "dash-bad" : "dash-good"}>{connection.error ? "Atenção" : "Conectado"}</span><small>{connection.checkedAt ? `Atualizado ${new Date(connection.checkedAt).toLocaleString("pt-BR")}` : "Sem atualização"}{connection.ageSeconds != null ? ` · cache: ${Math.round(connection.ageSeconds / 60)} min` : ""}</small>{connection.error && <p>{connection.error}</p>}</div>)}</div><button className="btn btn-ghost" type="button" onClick={() => refresh(true)}><RefreshCw size={16}/> Atualizar agora</button></div></div>;
 }
 
