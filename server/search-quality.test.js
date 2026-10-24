@@ -8,7 +8,8 @@ import { buildResourceIndex, searchResources } from "../src/lib/search.js";
 
 const catalog = JSON.parse(readFileSync(new URL("../src/data/catalog.json", import.meta.url), "utf8"));
 const index = buildResourceIndex(skillResources(catalog));
-const top = (query, n) => searchResources(index, query).slice(0, n).map((item) => `${item.source_name}/${item.title}`);
+// Uma por nome e fonte, como o MCP devolve (alguns repositórios repetem a mesma skill em várias pastas).
+const top = (query, n) => [...new Set(searchResources(index, query).map((item) => `${item.source_name}/${item.title}`))].slice(0, n);
 
 test("pedidos comuns em português acham a skill certa no acervo real", () => {
   const cases = [
@@ -21,9 +22,10 @@ test("pedidos comuns em português acham a skill certa no acervo real", () => {
     ["revisão de literatura", /literature/],
     ["clonar voz", /voice|tts|speech|elevenlabs/],
     ["criar uma landing page", /frontend|website|web-design/],
+    ["proposta para um cliente", /offer|proposal|pitch/, 5],
   ];
-  for (const [query, expected] of cases) {
-    const found = top(query, 3);
+  for (const [query, expected, n = 3] of cases) {
+    const found = top(query, n);
     assert.ok(found.some((name) => expected.test(name)), `"${query}" trouxe: ${found.join(", ")}`);
   }
 });
