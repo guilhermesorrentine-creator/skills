@@ -8,6 +8,8 @@ Orgânico lê os Reels da conta profissional `@voxelia.ia` pelo Instagram Graph 
 
 As consultas ao Asaas e Meta Ads usam cache privado de dez minutos; Atualizar agora o ignora. Falha da fonte ou limite de registros bloqueia os indicadores dependentes. A consulta da Meta requer `META_ADS_TOKEN` com `ads_read` e `META_AD_ACCOUNT_ID` no servidor. O token é separado do `META_CAPI_TOKEN`.
 
+Recargas por Pix à Meta são lançadas no Financeiro como saída de caixa avulsa. Não entram nas despesas do lucro: o custo dos anúncios já é o gasto efetivo informado pelos Insights da Meta. Ao lado do título Meta Ads, **Saldo estimado Meta** soma as recargas registradas e subtrai o gasto diário desde a primeira recarga. O valor depende do histórico cadastrado e dos Insights disponíveis; não é o saldo oficial da conta de anúncios.
+
 O vínculo UTM é cadastrado explicitamente, sem adivinhar pela nomenclatura. A interface de notas foi removida por enquanto; dados já importados continuam preservados no banco.
 
 Para publicar: aplicar `supabase/migrations/20261024180000_owner_dashboard.sql`, configurar o token da Meta, cadastrar os vínculos UTM e verificar um ciclo real de Pix, parcelamento e estorno no Asaas. Executar `npm test` e `npm run build`; revisar o painel em celular e desktop.

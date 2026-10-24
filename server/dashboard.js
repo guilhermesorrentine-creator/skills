@@ -8,6 +8,7 @@ const between = (value, from, to) => value && value >= from && value <= to;
 export function expenseOccurrences(expenses, from, to) {
   const result = [];
   for (const expense of expenses) {
+    if (expense.kind === "meta_deposit") continue;
     if (!expense.recurring) {
       if (between(expense.starts_on, from, to)) result.push({ ...expense, on: expense.starts_on });
       continue;
@@ -25,6 +26,15 @@ export function expenseOccurrences(expenses, from, to) {
     }
   }
   return result;
+}
+
+export function estimateMetaBalance(expenses, ads, today, error = null) {
+  const deposits = expenses.filter((entry) => entry.kind === "meta_deposit" && entry.starts_on <= today);
+  const since = deposits.map((entry) => entry.starts_on).sort()[0] || null;
+  const depositedCents = sum(deposits, "amount_cents");
+  if (!since || error) return { estimatedCents: null, depositedCents, spentCents: null, since };
+  const spentCents = sum(ads.filter((entry) => between(entry.on, since, today)), "spendCents");
+  return { estimatedCents: depositedCents - spentCents, depositedCents, spentCents, since };
 }
 
 export function paymentRows(remote, orders, localPayments, profiles, editions, funnel) {

@@ -81,6 +81,11 @@
 .dash-term-help { display: none; max-width: 260px; padding: 9px 11px; border: 1px solid var(--line-strong); border-radius: 8px; background: var(--surface-muted); color: var(--text); box-shadow: var(--shadow-1); font-size: 12px; font-weight: 400; line-height: 1.5; text-align: left; white-space: normal; overflow-wrap: break-word; }
 .dash-term:hover .dash-term-help, .dash-term:focus .dash-term-help { display: block; }
 .dash-table-wrap .dash-term-help { max-width: 190px; }
+.dash-heading-title { display: flex; align-items: center; flex-wrap: wrap; gap: 14px; }
+.dash-meta-balance { display: inline-flex; align-items: center; gap: 9px; padding: 7px 11px; border: 1px solid var(--line-strong); border-radius: 9px; background: var(--surface); font-size: 12px; }
+.dash-meta-balance strong { color: var(--text); font-size: 15px; }
+.dash-meta-balance .dash-term-help { max-width: 230px; }
+.dash-form select { width: 100%; min-width: 0; min-height: 40px; padding: 8px 10px; border: 1px solid var(--line-strong); border-radius: 8px; background: var(--surface); color: var(--text); font-size: 13px; }
 .dash-metric strong, .dash-stage-grid strong, .dash-goal strong { overflow-wrap: anywhere; }
 .dash-table-wrap table { min-width: max-content; }
 .dash-table-wrap th, .dash-table-wrap td { min-width: 94px; max-width: 260px; padding: 13px 15px; line-height: 1.5; overflow-wrap: anywhere; }

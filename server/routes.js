@@ -3,7 +3,7 @@
 import { publicEdition } from "./commerce.js";
 import { validateResource } from "./library.js";
 import { readTracking } from "./meta.js";
-import { expenseOccurrences, loadAsaasPayments, loadMetaAds, summarizeStages } from "./dashboard.js";
+import { estimateMetaBalance, expenseOccurrences, loadAsaasPayments, loadMetaAds, summarizeStages } from "./dashboard.js";
 import { buildLedger, businessDay, summarizeLedger } from "./dashboard-ledger.js";
 import { loadInstagramReels } from "./instagram.js";
 
@@ -144,7 +144,8 @@ export function createApi({ store, commerce, onboarding = null, library, me, mcp
         store.listDashboardExpenses(), store.listDashboardAdLinks(),
         store.listFunnelEvents(`${[from, goal.goal_starts_on].sort()[0]}T00:00:00-03:00`), cached("asaas-payments", () => loadAsaasPayments(asaas), force),
       ]);
-      const metaFrom = [from, goal.goal_starts_on].sort()[0];
+      const firstDeposit = estimateMetaBalance(expenses, [], today).since;
+      const metaFrom = [from, goal.goal_starts_on, firstDeposit].filter(Boolean).sort()[0];
       const metaTo = [to, goal.goal_ends_on].sort().at(-1) > today ? today : [to, goal.goal_ends_on].sort().at(-1);
       const metaData = await cached(`meta-${dashboardConfig.adsAccountId}-${metaFrom}-${metaTo}`, () => loadMetaAds(dashboardConfig, metaFrom, metaTo), force);
       const ledger = buildLedger({ orders, remotePayments: asaasData.rows, localPayments: payments, profiles, editions, funnel });
@@ -158,7 +159,8 @@ export function createApi({ store, commerce, onboarding = null, library, me, mcp
         metrics.goal = { ...metrics.goal, profitCents: null, consolidatedCents: null, guaranteeCents: null, remainingCents: null, projectedCents: null, projectedDate: null };
       }
       const stageData = summarizeStages(funnel, orders, from, to);
-      return ok({ from, to, updatedAt: new Date().toISOString(), metrics, stages: stageData, payments: ledger.paymentRows, receivable: ledger.receivable, refunds: ledger.refunds, salesLedger: ledger.sales, orders: ledger.orderRows, expenses, goal, links, ads: metaData.rows || [], funnel: funnel.map((event) => ({ at: event.at, on: businessDay(event.at), name: event.name, path: event.path, source: event.source, campaign: event.campaign, content: event.content, orderId: event.order_id, sid: event.sid })),
+      const metaBalance = estimateMetaBalance(expenses, metaData.rows || [], today, metaData.error);
+      return ok({ from, to, updatedAt: new Date().toISOString(), metrics, metaBalance, stages: stageData, payments: ledger.paymentRows, receivable: ledger.receivable, refunds: ledger.refunds, salesLedger: ledger.sales, orders: ledger.orderRows, expenses, goal, links, ads: metaData.rows || [], funnel: funnel.map((event) => ({ at: event.at, on: businessDay(event.at), name: event.name, path: event.path, source: event.source, campaign: event.campaign, content: event.content, orderId: event.order_id, sid: event.sid })),
         connections: { asaas: { checkedAt: asaasData.checkedAt, error: asaasData.error || (ledger.incomplete || orders.length >= 1000 || payments.length >= 1000 ? "Dados de cobranças parciais; confira o Asaas." : null), ageSeconds: asaasData.ageSeconds, cached: asaasData.cached }, meta: { checkedAt: metaData.checkedAt, error: metaData.error, ageSeconds: metaData.ageSeconds, cached: metaData.cached }, funnel: { checkedAt: new Date().toISOString(), error: funnel.length === 20000 ? "Limite de eventos atingido; período parcial." : null } } });
     },
     "GET /api/admin/dashboard/organic": async (request) => {
@@ -177,8 +179,10 @@ export function createApi({ store, commerce, onboarding = null, library, me, mcp
       if (!title || !Number.isInteger(amount) || amount <= 0 || !/^\d{4}-\d{2}-\d{2}$/.test(input.startsOn || "") || (input.endsOn && input.endsOn < input.startsOn)) throw httpError(400, "invalid_expense", "Confira nome, valor e datas da despesa.");
       const id = input.id ? String(input.id) : undefined;
       if (id && !/^[0-9a-f-]{36}$/i.test(id)) throw httpError(400, "invalid_expense", "Identificador inválido.");
+      const kind = input.kind || "expense";
+      if (!["expense", "meta_deposit"].includes(kind) || (kind === "meta_deposit" && input.recurring)) throw httpError(400, "invalid_expense", "Recarga Meta deve ser avulsa.");
       const expense = await store.saveDashboardExpense({ ...(id ? { id } : {}), title, category: String(input.category || "Sistema").trim().slice(0, 60), amount_cents: amount,
-        starts_on: input.startsOn, recurring: Boolean(input.recurring), ends_on: input.endsOn || null });
+        starts_on: input.startsOn, recurring: Boolean(input.recurring), ends_on: input.endsOn || null, kind });
       await store.insertAudit({ actor_id: admin.id, action: "dashboard_expense_save", details: { expense_id: expense.id } });
       return ok({ expense });
     },

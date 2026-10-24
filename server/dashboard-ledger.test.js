@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { buildLedger, businessDay, summarizeLedger } from "./dashboard-ledger.js";
+import { estimateMetaBalance, expenseOccurrences } from "./dashboard.js";
 
 const goal = { goal_cents: 1500000, goal_starts_on: "2026-10-01", goal_ends_on: "2026-12-05" };
 const order = (patch = {}) => ({ id: "o1", user_id: "u1", edition_id: "e1", status: "paid", amount_cents: 59880,
@@ -14,6 +15,19 @@ const summary = (ledger, from = "2026-10-01", to = "2026-10-31") => summarizeLed
 
 test("fuso de Brasília mantém venda às 22h no mesmo dia", () => {
   assert.equal(businessDay("2026-10-24T01:00:00Z"), "2026-10-23");
+});
+
+test("recarga de R$ 60 não duplica o custo dos anúncios no lucro", () => {
+  const expenses = [{ kind: "meta_deposit", title: "Recarga Meta Ads via Pix", amount_cents: 6000, starts_on: "2026-10-23", recurring: false }];
+  const ads = [{ on: "2026-10-23", spendCents: 306 }];
+  const occurrences = expenseOccurrences(expenses, "2026-10-23", "2026-10-24");
+  const metrics = summarizeLedger({ ledger: build([], []), expenses: occurrences, ads, funnel: [], from: "2026-10-23", to: "2026-10-24", goal,
+    now: new Date("2026-10-24T15:00:00Z") });
+  assert.equal(metrics.expenseCents, 0);
+  assert.equal(metrics.adCents, 306);
+  assert.equal(metrics.profitCents, -306);
+  assert.deepEqual(estimateMetaBalance(expenses, ads, "2026-10-24"), { estimatedCents: 5694, depositedCents: 6000, spentCents: 306, since: "2026-10-23" });
+  assert.equal(estimateMetaBalance(expenses, ads, "2026-10-24", "Meta indisponível").estimatedCents, null);
 });
 
 test("Pix confirmado entra em Vendas; só crédito entra no Caixa", () => {
