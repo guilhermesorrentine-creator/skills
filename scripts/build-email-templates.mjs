@@ -11,6 +11,7 @@ const templates = [
   {
     file: "confirmacao.html",
     slot: "Confirm signup",
+    link: "/entrar?token_hash={{ .TokenHash }}&type=email",
     subject: "Confirme seu e-mail — Voxelia",
     preheader: "Falta só um passo para ativar sua conta.",
     title: "Confirme seu e-mail",
@@ -21,6 +22,7 @@ const templates = [
   {
     file: "recuperacao-senha.html",
     slot: "Reset Password",
+    link: "/redefinir-senha?token_hash={{ .TokenHash }}&type=recovery",
     subject: "Redefina sua senha — Voxelia",
     preheader: "Recebemos um pedido para redefinir sua senha.",
     title: "Redefina sua senha",
@@ -31,6 +33,7 @@ const templates = [
   {
     file: "troca-email.html",
     slot: "Change Email Address",
+    link: "/entrar?token_hash={{ .TokenHash }}&type=email_change",
     subject: "Confirme seu novo e-mail — Voxelia",
     preheader: "Confirme a troca do e-mail da sua conta.",
     title: "Confirme seu novo e-mail",
@@ -40,10 +43,12 @@ const templates = [
   },
 ];
 
-// Variáveis do Supabase: {{ .ConfirmationURL }}, {{ .SiteURL }}, {{ .Email }}, {{ .NewEmail }}.
+// Variáveis do Supabase: {{ .TokenHash }}, {{ .SiteURL }}, {{ .Email }}, {{ .NewEmail }}.
+// O botão abre a nossa página com o token "hasheado" em vez de {{ .ConfirmationURL }}: o site só verifica
+// quando a pessoa clica/envia a senha, então prévias do WhatsApp e robôs de e-mail não gastam o link.
 const page = (t) => renderEmail({
   ...t,
-  url: "{{ .ConfirmationURL }}",
+  url: `{{ .SiteURL }}${t.link}`,
   siteUrl: "{{ .SiteURL }}",
   artUrl: "{{ .SiteURL }}/email/personagens.png",
   note: `${t.note} Por segurança, o link expira depois de um tempo.`,

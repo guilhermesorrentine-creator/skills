@@ -24,7 +24,8 @@ test("convite cria a conta, libera todas as edições, audita e envia o link de 
   assert.equal(mailer.sent.length, 1);
   assert.equal(mailer.sent[0].to, "novo@x.com");
   assert.match(mailer.sent[0].html, /Criar minha senha e entrar/);
-  assert.match(mailer.sent[0].html, /https:\/\/arsenal\.example\/criar-senha#convite-local-/);
+  assert.match(mailer.sent[0].html, /https:\/\/arsenal\.example\/criar-senha\?token_hash=local-/);
+  assert.match(mailer.sent[0].html, /type=invite/, "convite verificado só quando a pessoa envia a senha");
   assert.match(mailer.sent[0].html, /personagens\.png/);
   assert.ok(!/senha:\s*\S/i.test(mailer.sent[0].text), "nenhuma senha vai no e-mail");
   const actions = (await store.listAudit()).map((row) => row.action);
@@ -89,7 +90,7 @@ test("reconvidar quem nunca entrou manda um link novo de criar senha", async () 
   const again = await onboarding.inviteUser({ email: "novo@x.com", reason: "Cortesia autorizada pelo dono", actorId: "adm" });
   assert.equal(again.created, false);
   assert.match(mailer.sent[1].html, /Criar minha senha e entrar/);
-  assert.match(mailer.sent[1].html, /novo-link-local/);
+  assert.match(mailer.sent[1].html, /criar-senha\?token_hash=local-[^"]*type=recovery/);
 });
 
 test("quem já usa a conta recebe só o botão de entrar", async () => {
