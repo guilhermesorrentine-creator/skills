@@ -121,7 +121,7 @@ export function createCommerce({ store, asaas, config, onboarding = null, conver
     const remote = await asaas.getPayment?.(paymentId).catch(() => null);
     if (remote?.installment) await asaas.refundInstallment(remote.installment);
     else await asaas.refundPayment(paymentId, { description: `Garantia Voxelia${reason ? `: ${reason}` : ""}`.slice(0, 500) });
-    await store.updateOrder(order.id, { status: "refunded", refunded_at: now().toISOString(), error: null });
+    await store.updateOrder(order.id, { status: "refunded", refunded_cents: order.amount_cents, refunded_at: now().toISOString(), error: null });
     await recomputeLicense(order.user_id, "refunded");
     await store.insertAudit({ actor_id: actorId, action: "refund", target_user_id: order.user_id, details: { order_id: order.id, payment: paymentId, reason } });
     return { refunded: true };
@@ -433,10 +433,21 @@ export function createCommerce({ store, asaas, config, onboarding = null, conver
       await reportPurchase(order);
       return finish(row, "processed", "Licença ativada pela confirmação da cobrança.");
     }
-    if (REFUND_EVENTS.has(payload.event) && order?.status === "paid") {
-      await store.updateOrder(order.id, { status: "refunded", refunded_at: now().toISOString() });
-      await recomputeLicense(profile.id, "refunded");
-      return finish(row, "processed", "Pedido estornado; licença recalculada.");
+    if (REFUND_EVENTS.has(payload.event) && order && ["paid", "refunded"].includes(order.status)) {
+      const refunded = Array.isArray(payment.refunds)
+        ? payment.refunds.filter((item) => item.status === "DONE").reduce((sum, item) => sum + Math.round(Number(item.value || 0) * 100), 0)
+        : payload.event === "PAYMENT_REFUNDED" ? valueCents : 0;
+      const previous = Number(existing?.refunded_cents || 0);
+      const total = Math.min(order.amount_cents, Number(order.refunded_cents || 0) + Math.max(0, refunded - previous));
+      await store.upsertPayment({ asaas_payment_id: payment.id, order_id: order.id, user_id: profile.id, asaas_customer_id: payment.customer,
+        status: payment.status, value_cents: valueCents, billing_type: payment.billingType || null,
+        confirmed_at: payment.confirmedDate || payment.paymentDate || null, refunded_cents: refunded, invoice_url: safeAsaasUrl(payment.invoiceUrl) });
+      // Qualquer estorno (inclusive parcial ou de uma parcela) encerra o acesso, como antes (PR #10);
+      // `refunded_cents` guarda só o valor efetivamente devolvido, para o painel financeiro.
+      const full = total >= order.amount_cents;
+      await store.updateOrder(order.id, { refunded_cents: total, status: "refunded", ...(order.status !== "refunded" && { refunded_at: now().toISOString() }) });
+      if (order.status !== "refunded") await recomputeLicense(profile.id, "refunded");
+      return finish(row, "processed", full ? "Pedido estornado; licença recalculada." : "Reembolso parcial registrado; licença recalculada.");
     }
     if (DISPUTE.has(payload.event)) {
       const license = await store.getLicense(profile.id);

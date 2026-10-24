@@ -65,8 +65,8 @@ export function createSupabaseStore({ url, serviceKey }) {
     getPayment: (id) => one(db.from("payments").select("*").eq("asaas_payment_id", id)),
     findPaymentByOrder: (orderId) => one(db.from("payments").select("*").eq("order_id", orderId).order("created_at", { ascending: false }).limit(1)),
     upsertPayment: async (row) => {
-      const existing = await one(db.from("payments").select("order_id").eq("asaas_payment_id", row.asaas_payment_id));
-      await run(db.from("payments").upsert({ ...row, order_id: row.order_id || existing?.order_id || null, updated_at: now() }, { onConflict: "asaas_payment_id" }));
+      const existing = await one(db.from("payments").select("order_id,refunded_cents").eq("asaas_payment_id", row.asaas_payment_id));
+      await run(db.from("payments").upsert({ ...row, refunded_cents: row.refunded_cents ?? existing?.refunded_cents ?? 0, order_id: row.order_id || existing?.order_id || null, updated_at: now() }, { onConflict: "asaas_payment_id" }));
     },
     listPayments: () => many(db.from("payments").select("*").order("created_at", { ascending: false }).limit(1000)),
 
@@ -98,6 +98,20 @@ export function createSupabaseStore({ url, serviceKey }) {
     insertFunnelEvent: (row) => run(db.from("funnel_events").insert(row)),
     listFunnelEvents: (since) => many(db.from("funnel_events").select("*").gte("at", since).order("at", { ascending: false }).limit(20000)),
     listAudit: ({ limit = 100 } = {}) => many(db.from("audit_logs").select("*").order("created_at", { ascending: false }).limit(limit)),
+    listDashboardExpenses: () => many(db.from("dashboard_expenses").select("*").order("starts_on", { ascending: false })),
+    saveDashboardExpense: async (row) => {
+      if (row.id) return must(await db.from("dashboard_expenses").update({ ...row, updated_at: now() }).eq("id", row.id).select().single());
+      return must(await db.from("dashboard_expenses").insert(row).select().single());
+    },
+    deleteDashboardExpense: (id) => one(db.from("dashboard_expenses").delete().eq("id", id).select()),
+    getDashboardSettings: () => one(db.from("dashboard_settings").select("*").eq("id", true)),
+    saveDashboardSettings: async (row) => must(await db.from("dashboard_settings").upsert({ id: true, ...row, updated_at: now() }).select().single()),
+    listDashboardNotes: () => many(db.from("dashboard_notes").select("*").order("path")),
+    saveDashboardNote: async (row) => must(await db.from("dashboard_notes").upsert({ ...row, imported_at: now() }, { onConflict: "path" }).select().single()),
+    listDashboardAdLinks: () => many(db.from("dashboard_ad_links").select("*")),
+    saveDashboardAdLink: async (row) => must(await db.from("dashboard_ad_links").upsert({ ...row, updated_at: now() }, { onConflict: "entity_kind,entity_id" }).select().single()),
+    getDashboardCache: (key) => one(db.from("dashboard_cache").select("*").eq("key", key)),
+    saveDashboardCache: (key, payload) => run(db.from("dashboard_cache").upsert({ key, payload, checked_at: now() }, { onConflict: "key" })),
 
     listResources: ({ status } = {}) => { let query = db.from("resources").select("*").order("title"); if (status) query = query.eq("status", status); return many(query); },
     getResource: (id) => one(db.from("resources").select("*").eq("id", id)),

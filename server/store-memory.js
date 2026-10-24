@@ -6,7 +6,8 @@ export function createMemoryStore(seed = {}) {
   const db = {
     profiles: [...(seed.profiles || [])], editions: [...(seed.editions || [])], orders: [], payments: [], licenses: [], licenseEvents: [],
     events: [], grants: [], audit: [], funnel: [], resources: [...(seed.resources || [])], relations: [...(seed.relations || [])], paths: [...(seed.paths || [])],
-    collections: [], items: [], favorites: [], recent: [],
+    collections: [], items: [], favorites: [], recent: [], dashboardExpenses: [], dashboardNotes: [], dashboardAdLinks: [], dashboardCache: [],
+    dashboardSettings: { goal_cents: 1500000, goal_starts_on: "2026-10-22", goal_ends_on: "2026-12-05" },
   };
   const clone = (value) => (value === undefined || value === null ? null : structuredClone(value));
   const stamp = () => new Date().toISOString();
@@ -88,6 +89,21 @@ export function createMemoryStore(seed = {}) {
     insertFunnelEvent: async (row) => { db.funnel.push({ id: db.funnel.length + 1, at: stamp(), ...row }); },
     listFunnelEvents: async (since) => clone(db.funnel.filter((item) => item.at >= since)),
     listAudit: async ({ limit = 100 } = {}) => clone(db.audit.slice(-limit).reverse()),
+    listDashboardExpenses: async () => clone(db.dashboardExpenses),
+    saveDashboardExpense: async (row) => {
+      const item = row.id && db.dashboardExpenses.find((entry) => entry.id === row.id);
+      if (item) Object.assign(item, row); else db.dashboardExpenses.push({ id: randomUUID(), ...row });
+      return clone(item || db.dashboardExpenses.at(-1));
+    },
+    deleteDashboardExpense: async (id) => { const item = db.dashboardExpenses.find((entry) => entry.id === id); db.dashboardExpenses = db.dashboardExpenses.filter((entry) => entry.id !== id); return clone(item); },
+    getDashboardSettings: async () => clone(db.dashboardSettings),
+    saveDashboardSettings: async (row) => clone(Object.assign(db.dashboardSettings, row)),
+    listDashboardNotes: async () => clone(db.dashboardNotes),
+    saveDashboardNote: async (row) => { const item = db.dashboardNotes.find((entry) => entry.path === row.path); if (item) Object.assign(item, row, { imported_at: stamp() }); else db.dashboardNotes.push({ ...row, imported_at: stamp() }); return clone(item || db.dashboardNotes.at(-1)); },
+    listDashboardAdLinks: async () => clone(db.dashboardAdLinks),
+    saveDashboardAdLink: async (row) => { const item = db.dashboardAdLinks.find((entry) => entry.entity_kind === row.entity_kind && entry.entity_id === row.entity_id); if (item) Object.assign(item, row); else db.dashboardAdLinks.push(row); return clone(item || row); },
+    getDashboardCache: async (key) => clone(db.dashboardCache.find((entry) => entry.key === key)),
+    saveDashboardCache: async (key, payload) => { const item = db.dashboardCache.find((entry) => entry.key === key); if (item) Object.assign(item, { payload, checked_at: stamp() }); else db.dashboardCache.push({ key, payload, checked_at: stamp() }); },
 
     listResources: async ({ status } = {}) => clone(db.resources.filter((item) => !status || item.status === status)),
     getResource: async (id) => clone(db.resources.find((item) => item.id === id)),

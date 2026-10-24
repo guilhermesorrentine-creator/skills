@@ -9,6 +9,7 @@ import { funnel } from "./lib/funnel.js";
 
 const AppRoutes = lazy(() => import("./pages/app/AppRoutes.jsx"));
 const AdminPage = lazy(() => import("./pages/AdminPage.jsx"));
+const DashboardPage = lazy(() => import("./pages/DashboardPage.jsx"));
 const RepoPage = lazy(() => import("./pages/RepoPage.jsx"));
 const BuyPage = lazy(() => import("./pages/BuyPage.jsx"));
 const ConnectPage = lazy(() => import("./pages/ConnectPage.jsx"));
@@ -82,6 +83,7 @@ function Routes() {
     return <Suspense fallback={<Loading/>}><AppRoutes path={path} account={account}/></Suspense>;
   });
   if (path === "/admin") return requireSession(() => <Suspense fallback={<Loading/>}><AdminPage/></Suspense>);
+  if (path === "/admin/painel") return requireSession(() => <Suspense fallback={<Loading/>}><DashboardPage/></Suspense>);
   const kit = matchPath("/kit/:slug", path);
   if (kit) return <Suspense fallback={<Loading/>}><KitPage slug={kit.slug} onEnter={enter}/></Suspense>;
   if (path === "/links") return <Suspense fallback={<Loading/>}><LinksPage/></Suspense>;
