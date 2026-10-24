@@ -1,6 +1,8 @@
 # Dashboard Voxelia v2
 
-O painel privado fica em `/admin/dashboard` e usa a autorização do Admin atual. As sete janelas são Visão geral, Analytics, Meta Ads, Funil, Financeiro, Clientes e pedidos e Configurações. Os valores de negócio usam centavos inteiros e dias de Brasília.
+O painel privado fica em `/admin/dashboard` e usa a autorização do Admin atual. As janelas são Visão geral, Analytics, Meta Ads, Orgânico, Funil, Financeiro, Clientes e pedidos, Índices e Configurações. Os valores de negócio usam centavos inteiros e dias de Brasília.
+
+Orgânico lê os Reels da conta profissional `@voxelia.ia` pelo Instagram Graph API. Requer `META_INSTAGRAM_TOKEN` com acesso às mídias e Insights, além de `META_INSTAGRAM_USER_ID`. O gráfico mostra visualizações e horas assistidas acumuladas de cada Reel publicado no período escolhido; não representa visualizações ocorridas naquele dia. Quando um Insight falha, a métrica aparece indisponível e não entra no total. A Visão geral prioriza faturamento e lucro, e os sinais de campanha usam cores e texto. A aba Índices explica os termos usados no painel e as métricas da Meta; os nomes nas telas oferecem ajuda ao toque, teclado e mouse.
 
 **Vendas** registra o valor integral do pedido na confirmação e lança reembolsos como valores negativos na data do estorno. **Caixa** registra o líquido disponibilizado no saldo Asaas por parcela; um estorno debitado aparece como saída. **A receber** lista parcelas ainda sem crédito. Lucro, ROAS e meta usam Vendas, gasto Meta, taxas e despesas por competência. A meta começa em R$ 15.000 de lucro entre 22/10 e 05/12/2026 e pode ser editada.
 

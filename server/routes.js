@@ -5,6 +5,7 @@ import { validateResource } from "./library.js";
 import { readTracking } from "./meta.js";
 import { expenseOccurrences, loadAsaasPayments, loadMetaAds, summarizeStages } from "./dashboard.js";
 import { buildLedger, businessDay, summarizeLedger } from "./dashboard-ledger.js";
+import { loadInstagramReels } from "./instagram.js";
 
 const noStore = { "Cache-Control": "private, no-store", "Content-Type": "application/json; charset=utf-8" };
 export const json = (status, body, headers = {}) => new Response(JSON.stringify(body), { status, headers: { ...noStore, ...headers } });
@@ -56,6 +57,15 @@ export function createApi({ store, commerce, onboarding = null, library, me, mcp
       return { ...result, ageSeconds: 0, cached: false };
     }
     return previous ? { ...previous.payload, error: result.error, checkedAt: previous.checked_at, ageSeconds: Math.floor(age / 1000), cached: true, stale: true } : result;
+  }
+  function dashboardPeriod(request) {
+    const date = (value, fallback) => /^\d{4}-\d{2}-\d{2}$/.test(value || "") && !Number.isNaN(Date.parse(value)) ? value : fallback;
+    const today = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Sao_Paulo", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date());
+    const fromDefault = new Date(`${today}T12:00:00Z`); fromDefault.setUTCDate(fromDefault.getUTCDate() - 6);
+    const from = date(param(request, "from"), fromDefault.toISOString().slice(0, 10));
+    const to = date(param(request, "to"), today);
+    if (from > to || (Date.parse(to) - Date.parse(from)) / 86400000 > 366) throw httpError(400, "invalid_range", "Escolha até 366 dias em ordem cronológica.");
+    return { from, to, today };
   }
 
   const routes = {
@@ -126,12 +136,7 @@ export function createApi({ store, commerce, onboarding = null, library, me, mcp
     },
     "GET /api/admin/dashboard": async (request) => {
       await requireAdmin(request);
-      const date = (value, fallback) => /^\d{4}-\d{2}-\d{2}$/.test(value || "") && !Number.isNaN(Date.parse(value)) ? value : fallback;
-      const today = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Sao_Paulo", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date());
-      const fromDefault = new Date(`${today}T12:00:00Z`); fromDefault.setUTCDate(fromDefault.getUTCDate() - 6);
-      const from = date(param(request, "from"), fromDefault.toISOString().slice(0, 10));
-      const to = date(param(request, "to"), today);
-      if (from > to || (Date.parse(to) - Date.parse(from)) / 86400000 > 366) throw httpError(400, "invalid_range", "Escolha até 366 dias em ordem cronológica.");
+      const { from, to, today } = dashboardPeriod(request);
       const goal = await store.getDashboardSettings();
       const force = param(request, "refresh") === "1";
       const [orders, payments, profiles, editions, expenses, notes, links, funnel, asaasData] = await Promise.all([
@@ -155,6 +160,14 @@ export function createApi({ store, commerce, onboarding = null, library, me, mcp
       const stageData = summarizeStages(funnel, orders, from, to);
       return ok({ from, to, updatedAt: new Date().toISOString(), metrics, stages: stageData, payments: ledger.paymentRows, receivable: ledger.receivable, refunds: ledger.refunds, salesLedger: ledger.sales, orders: ledger.orderRows, expenses, goal, notes, links, ads: metaData.rows || [], funnel: funnel.map((event) => ({ at: event.at, on: businessDay(event.at), name: event.name, path: event.path, source: event.source, campaign: event.campaign, content: event.content, orderId: event.order_id, sid: event.sid })),
         connections: { asaas: { checkedAt: asaasData.checkedAt, error: asaasData.error || (ledger.incomplete || orders.length >= 1000 || payments.length >= 1000 ? "Dados de cobranças parciais; confira o Asaas." : null), ageSeconds: asaasData.ageSeconds, cached: asaasData.cached }, meta: { checkedAt: metaData.checkedAt, error: metaData.error, ageSeconds: metaData.ageSeconds, cached: metaData.cached }, funnel: { checkedAt: new Date().toISOString(), error: funnel.length === 20000 ? "Limite de eventos atingido; período parcial." : null } } });
+    },
+    "GET /api/admin/dashboard/organic": async (request) => {
+      await requireAdmin(request);
+      const { from, to } = dashboardPeriod(request);
+      const result = await cached(`instagram-reels-${dashboardConfig.instagramUserId}-${from}-${to}`,
+        () => loadInstagramReels(dashboardConfig, from, to), param(request, "refresh") === "1");
+      return ok({ from, to, rows: result.rows || [], warning: result.warning || null,
+        connection: { checkedAt: result.checkedAt || null, error: result.error || null, ageSeconds: result.ageSeconds ?? null, cached: Boolean(result.cached) } });
     },
     "POST /api/admin/dashboard/expenses": async (request) => {
       const admin = await requireAdmin(request);

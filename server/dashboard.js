@@ -117,7 +117,7 @@ export async function loadMetaAds(config, from, to, fetchImpl = fetch) {
   try {
     const rows = [];
     let next = `https://graph.facebook.com/${config.graphVersion}/act_${config.adsAccountId}/insights?${new URLSearchParams({
-      level: "ad", time_increment: "1", limit: "500", fields: "campaign_id,campaign_name,adset_id,adset_name,ad_id,ad_name,spend,impressions,clicks,actions,date_start",
+      level: "ad", time_increment: "1", limit: "500", fields: "campaign_id,campaign_name,adset_id,adset_name,ad_id,ad_name,spend,impressions,clicks,inline_link_clicks,actions,date_start",
       time_range: JSON.stringify({ since: from, until: to }), access_token: config.adsToken,
     })}`;
     for (let page = 0; page < 20 && next; page++) {
@@ -126,7 +126,7 @@ export async function loadMetaAds(config, from, to, fetchImpl = fetch) {
       if (!response.ok) throw new Error(data.error?.message || `Meta respondeu ${response.status}.`);
       rows.push(...(data.data || []).map((row) => ({ on: row.date_start, campaignId: row.campaign_id, campaign: row.campaign_name,
         adsetId: row.adset_id, adset: row.adset_name, adId: row.ad_id, ad: row.ad_name, spendCents: cents(row.spend),
-        impressions: Number(row.impressions || 0), clicks: Number(row.clicks || 0), landingViews: Number(row.actions?.find((action) => action.action_type === "landing_page_view")?.value || 0) })));
+        impressions: Number(row.impressions || 0), clicks: Number(row.clicks || 0), linkClicks: row.inline_link_clicks == null ? null : Number(row.inline_link_clicks), landingViews: Number(row.actions?.find((action) => action.action_type === "landing_page_view")?.value || 0) })));
       next = data.paging?.next || null;
       if (next && !next.startsWith("https://graph.facebook.com/")) throw new Error("Paginação inesperada da Meta.");
     }
