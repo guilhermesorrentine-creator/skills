@@ -127,11 +127,11 @@ export function SharedCollectionPage({ token }) {
 
 // Textos jurídicos. Os dados de quem vende vêm do ambiente (src/lib/seller.js).
 const UPDATED = "23 de outubro de 2026";
-const who = () => sellerLine() || "o responsável pela Voxelia (dados em cadastro)";
+const who = () => sellerLine() || "dados em cadastro";
 const contact = () => seller.email || "o e-mail de suporte indicado no rodapé";
 const legal = {
   termos: { title: "Termos de uso", sections: () => [
-    ["1. Quem somos", `A Voxelia é uma plataforma operada por ${who()}. Ao criar uma conta ou comprar, você concorda com estes termos.`],
+    ["1. Quem somos", `A Voxelia é uma plataforma de Agent Skills organizadas em português. Responsável: ${who()}. Ao criar uma conta ou comprar, você concorda com estes termos.`],
     ["2. O que é o serviço", "A Voxelia organiza Agent Skills e outros recursos de repositórios públicos para o Claude, o ChatGPT e outros agentes de IA, com busca por objetivo e guias passo a passo em português. As skills não são exclusivas: vêm de projetos públicos, sempre com a fonte e o autor creditados. O que vendemos é a curadoria, a organização, a busca e os guias."],
     ["3. Conta", "Você é responsável pelo e-mail informado e pela senha da sua conta. A licença é pessoal: não compartilhe o acesso nem o link de conexão com a IA."],
     ["4. Licença vitalícia", "A compra de uma edição dá acesso por tempo indeterminado aos recursos daquela edição, enquanto a Voxelia estiver em operação. Edições futuras podem trazer recursos extras mediante upgrade opcional, pagando a diferença."],
@@ -143,7 +143,7 @@ const legal = {
     ["10. Lei e foro", "Aplica-se a lei brasileira. Fica eleito o foro do domicílio do consumidor."],
   ] },
   privacidade: { title: "Política de privacidade", sections: () => [
-    ["1. Controlador", `${who()} é o controlador dos dados tratados na Voxelia, nos termos da LGPD (Lei 13.709/2018). Contato do encarregado: ${contact()}.`],
+    ["1. Controlador", `Controlador dos dados tratados na Voxelia, nos termos da LGPD (Lei 13.709/2018): ${who()}. Contato do encarregado: ${contact()}.`],
     ["2. Dados que coletamos", "E-mail e senha da conta; nome e CPF na compra (exigidos pelo meio de pagamento); dados do pedido e do pagamento informados pelo Asaas; favoritos, histórico e coleções que você cria; um identificador anônimo de navegação com a origem da visita (campanha e anúncio), sem dado pessoal."],
     ["3. Para que usamos", "Executar o contrato (liberar e manter o acesso, processar pagamento, reembolso e suporte), cumprir obrigações legais e fiscais e, com o seu consentimento, medir anúncios."],
     ["4. Com quem compartilhamos", "Operadores que nos ajudam a prestar o serviço: Supabase (conta e banco de dados), Asaas (pagamentos), Vercel (hospedagem), Resend (e-mails) e Meta (medição de anúncios, só com consentimento). Não vendemos seus dados."],
