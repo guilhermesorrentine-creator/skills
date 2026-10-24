@@ -16,12 +16,16 @@ const iso = (value) => String(value || "").replace(" ", "T");
 export function buildLedger({ orders, remotePayments, localPayments, profiles, editions, funnel }) {
   const byOrder = new Map(orders.map((order) => [order.id, order]));
   const byLocalPayment = new Map(localPayments.map((payment) => [payment.asaas_payment_id, payment.order_id]));
+  // Pedidos pagos pelo Checkout do Asaas (fluxo antigo) não têm cobrança local: a ligação vem da sessão de checkout.
+  const byCheckout = new Map(orders.filter((order) => order.asaas_checkout_id).map((order) => [order.asaas_checkout_id, order.id]));
+  const directOrder = (payment) => (byOrder.has(payment.externalReference) ? payment.externalReference : null)
+    || byLocalPayment.get(payment.id) || byCheckout.get(payment.checkoutSession);
   const installmentOrder = new Map();
-  for (const payment of remotePayments) if (payment.installment && byOrder.has(payment.externalReference || byLocalPayment.get(payment.id)))
-    installmentOrder.set(payment.installment, payment.externalReference || byLocalPayment.get(payment.id));
+  for (const payment of remotePayments) if (payment.installment && byOrder.has(directOrder(payment)))
+    installmentOrder.set(payment.installment, directOrder(payment));
   const orderPayments = new Map();
   for (const payment of remotePayments) {
-    const orderId = payment.externalReference || byLocalPayment.get(payment.id) || installmentOrder.get(payment.installment);
+    const orderId = directOrder(payment) || installmentOrder.get(payment.installment);
     if (!byOrder.has(orderId)) continue;
     if (!orderPayments.has(orderId)) orderPayments.set(orderId, []);
     orderPayments.get(orderId).push(payment);
