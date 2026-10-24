@@ -23,7 +23,7 @@ function assemble(store, asaas, config, extra = {}) {
   const onboarding = createOnboarding({ store, mailer: createMailer(config.email), config });
   const commerce = createCommerce({ store, asaas, config, onboarding, conversions: createConversions(config.meta) });
   const mcp = createMcp({ store, commerce, library, loadCatalog, config });
-  return createApi({ store, commerce, onboarding, library, me: createMe({ store, library }), mcp, ...extra });
+  return createApi({ store, commerce, onboarding, library, me: createMe({ store, library }), mcp, asaas, dashboardConfig: config.meta, ...extra });
 }
 
 function build() {

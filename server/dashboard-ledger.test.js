@@ -1,0 +1,60 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import { buildLedger, businessDay, summarizeLedger } from "./dashboard-ledger.js";
+
+const goal = { goal_cents: 1500000, goal_starts_on: "2026-10-01", goal_ends_on: "2026-12-05" };
+const order = (patch = {}) => ({ id: "o1", user_id: "u1", edition_id: "e1", status: "paid", amount_cents: 59880,
+  created_at: "2026-10-20T15:00:00Z", paid_at: "2026-10-20T15:00:00Z", refunded_cents: 0, ...patch });
+const payment = (id, patch = {}) => ({ id, externalReference: "o1", installment: "ins1", status: "PENDING", value: 49.9,
+  netValue: 47.9, confirmedDate: null, creditDate: null, estimatedCreditDate: "2026-11-20", refunds: [], ...patch });
+const build = (orders, remotePayments) => buildLedger({ orders, remotePayments, localPayments: [], profiles: [{ id: "u1", email: "a@example.com" }],
+  editions: [{ id: "e1", name: "Pro" }], funnel: [{ name: "checkout", order_id: "o1", source: "meta", campaign: "teste60", content: "A" }] });
+const summary = (ledger, from = "2026-10-01", to = "2026-10-31") => summarizeLedger({ ledger, expenses: [], ads: [], funnel: [], from, to, goal,
+  now: new Date("2026-10-24T15:00:00Z") });
+
+test("fuso de Brasília mantém venda às 22h no mesmo dia", () => {
+  assert.equal(businessDay("2026-10-24T01:00:00Z"), "2026-10-23");
+});
+
+test("Pix confirmado entra em Vendas; só crédito entra no Caixa", () => {
+  const ledger = build([order({ amount_cents: 9790 })], [payment("pix", { installment: null, value: 97.9, netValue: 95.9, status: "CONFIRMED", confirmedDate: "2026-10-20", creditDate: null })]);
+  assert.equal(summary(ledger).salesCents, 9790);
+  assert.equal(summary(ledger).cashCents, 0);
+  assert.equal(summary(ledger).receivableCents, 9790);
+});
+
+test("Pro 12x registra venda integral, uma parcela no caixa e onze a receber", () => {
+  const parts = Array.from({ length: 12 }, (_, i) => payment(`p${i}`, i === 0 ? { status: "RECEIVED", confirmedDate: "2026-10-20", creditDate: "2026-10-22" } : {}));
+  const ledger = build([order()], parts);
+  const result = summary(ledger);
+  assert.equal(result.salesCents, 59880);
+  assert.equal(result.cashCents, 4790);
+  assert.equal(result.receivableCents, 54890);
+  assert.equal(result.feesCents, 2400);
+  assert.equal(result.goal.guaranteeCents, 57480);
+});
+
+test("Pix reembolsado no mesmo dia zera Vendas e mantém taxa no Caixa", () => {
+  const ledger = build([order({ amount_cents: 9790, status: "refunded", refunded_cents: 9790, refunded_at: "2026-10-20T20:00:00Z" })],
+    [payment("pix", { installment: null, value: 97.9, netValue: 95.9, status: "REFUNDED", confirmedDate: "2026-10-20", creditDate: "2026-10-20", refunds: [{ status: "DONE", value: 97.9, dateCreated: "2026-10-20" }] })]);
+  assert.equal(summary(ledger).salesCents, 0);
+  assert.equal(summary(ledger).cashCents, -200);
+  assert.equal(summary(ledger).sales, 0);
+  assert.equal(ledger.sales.length, 2);
+});
+
+test("reembolso parcial e reembolso em outro mês são lançamentos negativos na data", () => {
+  const ledger = build([order({ amount_cents: 9790, refunded_cents: 3000, refunded_at: "2026-11-04T15:00:00Z" })],
+    [payment("pix", { installment: null, value: 97.9, netValue: 95.9, status: "PARTIALLY_REFUNDED", confirmedDate: "2026-10-20", creditDate: "2026-10-22", refunds: [{ status: "DONE", value: 30, dateCreated: "2026-11-04" }] })]);
+  assert.equal(summary(ledger).salesCents, 9790);
+  assert.equal(summary(ledger, "2026-11-01", "2026-11-30").salesCents, -3000);
+  assert.equal(summary(ledger, "2026-11-01", "2026-11-30").sales, 0);
+});
+
+test("reembolso de 12x após uma parcela cancela o futuro a receber", () => {
+  const parts = Array.from({ length: 12 }, (_, i) => payment(`p${i}`, i === 0 ? { status: "REFUNDED", confirmedDate: "2026-10-20", creditDate: "2026-10-22", refunds: [{ status: "DONE", value: 49.9, dateCreated: "2026-11-04" }] } : {}));
+  const ledger = build([order({ status: "refunded", refunded_cents: 59880, refunded_at: "2026-11-04T15:00:00Z" })], parts);
+  assert.equal(summary(ledger).receivableCents, 0);
+  assert.equal(summary(ledger, "2026-11-01", "2026-11-30").salesCents, -59880);
+  assert.equal(summary(ledger, "2026-11-01", "2026-11-30").cashCents, -4990);
+});

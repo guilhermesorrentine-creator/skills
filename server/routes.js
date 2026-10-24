@@ -3,6 +3,8 @@
 import { publicEdition } from "./commerce.js";
 import { validateResource } from "./library.js";
 import { readTracking } from "./meta.js";
+import { expenseOccurrences, loadAsaasPayments, loadMetaAds, summarizeStages } from "./dashboard.js";
+import { buildLedger, businessDay, summarizeLedger } from "./dashboard-ledger.js";
 
 const noStore = { "Cache-Control": "private, no-store", "Content-Type": "application/json; charset=utf-8" };
 export const json = (status, body, headers = {}) => new Response(JSON.stringify(body), { status, headers: { ...noStore, ...headers } });
@@ -13,7 +15,7 @@ const fail = (error) => {
 };
 const httpError = (status, code, message) => Object.assign(new Error(message), { status, code });
 
-export function createApi({ store, commerce, onboarding = null, library, me, mcp = null, verifyToken, devUser = null }) {
+export function createApi({ store, commerce, onboarding = null, library, me, mcp = null, asaas = null, dashboardConfig = {}, verifyToken, devUser = null }) {
   async function requireUser(request) {
     if (devUser) return devUser;
     const header = request.headers.get("authorization") || "";
@@ -44,6 +46,17 @@ export function createApi({ store, commerce, onboarding = null, library, me, mcp
   const body = async (request) => { try { return await request.json(); } catch { return {}; } };
   const param = (request, name) => new URL(request.url).searchParams.get(name);
   const ok = (data = { ok: true }) => json(200, data);
+  async function cached(key, fetchFresh, force) {
+    const previous = await store.getDashboardCache(key);
+    const age = previous ? Date.now() - new Date(previous.checked_at).getTime() : Infinity;
+    if (!force && age < 600000) return { ...previous.payload, checkedAt: previous.checked_at, ageSeconds: Math.floor(age / 1000), cached: true };
+    const result = await fetchFresh();
+    if (!result.error) {
+      await store.saveDashboardCache(key, result);
+      return { ...result, ageSeconds: 0, cached: false };
+    }
+    return previous ? { ...previous.payload, error: result.error, checkedAt: previous.checked_at, ageSeconds: Math.floor(age / 1000), cached: true, stale: true } : result;
+  }
 
   const routes = {
     // Público
@@ -110,6 +123,84 @@ export function createApi({ store, commerce, onboarding = null, library, me, mcp
         store.listEvents({ limit: 100 }), store.listGrants(), store.listAudit({ limit: 50 }), store.listResources(), store.listRelations(), store.listGoalPaths(),
       ]);
       return ok({ profiles, editions, orders, payments, licenses, licenseEvents, events: events.map(({ payload, ...event }) => ({ ...event, summary: summarize(payload) })), grants, audit, resources, relations, paths });
+    },
+    "GET /api/admin/dashboard": async (request) => {
+      await requireAdmin(request);
+      const date = (value, fallback) => /^\d{4}-\d{2}-\d{2}$/.test(value || "") && !Number.isNaN(Date.parse(value)) ? value : fallback;
+      const today = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Sao_Paulo", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date());
+      const fromDefault = new Date(`${today}T12:00:00Z`); fromDefault.setUTCDate(fromDefault.getUTCDate() - 6);
+      const from = date(param(request, "from"), fromDefault.toISOString().slice(0, 10));
+      const to = date(param(request, "to"), today);
+      if (from > to || (Date.parse(to) - Date.parse(from)) / 86400000 > 366) throw httpError(400, "invalid_range", "Escolha até 366 dias em ordem cronológica.");
+      const goal = await store.getDashboardSettings();
+      const force = param(request, "refresh") === "1";
+      const [orders, payments, profiles, editions, expenses, notes, links, funnel, asaasData] = await Promise.all([
+        store.listOrders(), store.listPayments(), store.listProfiles(), store.listEditions({ onSaleOnly: false }),
+        store.listDashboardExpenses(), store.listDashboardNotes(), store.listDashboardAdLinks(),
+        store.listFunnelEvents(`${[from, goal.goal_starts_on].sort()[0]}T00:00:00-03:00`), cached("asaas-payments", () => loadAsaasPayments(asaas), force),
+      ]);
+      const metaFrom = [from, goal.goal_starts_on].sort()[0];
+      const metaTo = [to, goal.goal_ends_on].sort().at(-1) > today ? today : [to, goal.goal_ends_on].sort().at(-1);
+      const metaData = await cached(`meta-${dashboardConfig.adsAccountId}-${metaFrom}-${metaTo}`, () => loadMetaAds(dashboardConfig, metaFrom, metaTo), force);
+      const ledger = buildLedger({ orders, remotePayments: asaasData.rows, localPayments: payments, profiles, editions, funnel });
+      const occurrences = expenseOccurrences(expenses, [from, goal.goal_starts_on].sort()[0], [to, goal.goal_ends_on].sort().at(-1));
+      const metrics = summarizeLedger({ ledger, expenses: occurrences, ads: metaData.rows || [], funnel, from, to, goal });
+      if (asaasData.error || ledger.incomplete || orders.length >= 1000 || payments.length >= 1000) {
+        for (const key of ["salesCents", "cashCents", "receivableCents", "refundsCents", "feesCents", "profitCents", "roas", "costPerSaleCents", "metaSalesCents"]) metrics[key] = null;
+        metrics.goal = { ...metrics.goal, profitCents: null, consolidatedCents: null, guaranteeCents: null, remainingCents: null, projectedCents: null, projectedDate: null };
+      } else if (metaData.error) {
+        for (const key of ["adCents", "profitCents", "roas", "costPerSaleCents", "metaProfitCents"]) metrics[key] = null;
+        metrics.goal = { ...metrics.goal, profitCents: null, consolidatedCents: null, guaranteeCents: null, remainingCents: null, projectedCents: null, projectedDate: null };
+      }
+      const stageData = summarizeStages(funnel, orders, from, to);
+      return ok({ from, to, updatedAt: new Date().toISOString(), metrics, stages: stageData, payments: ledger.paymentRows, receivable: ledger.receivable, refunds: ledger.refunds, salesLedger: ledger.sales, orders: ledger.orderRows, expenses, goal, notes, links, ads: metaData.rows || [], funnel: funnel.map((event) => ({ at: event.at, on: businessDay(event.at), name: event.name, path: event.path, source: event.source, campaign: event.campaign, content: event.content, orderId: event.order_id, sid: event.sid })),
+        connections: { asaas: { checkedAt: asaasData.checkedAt, error: asaasData.error || (ledger.incomplete || orders.length >= 1000 || payments.length >= 1000 ? "Dados de cobranças parciais; confira o Asaas." : null), ageSeconds: asaasData.ageSeconds, cached: asaasData.cached }, meta: { checkedAt: metaData.checkedAt, error: metaData.error, ageSeconds: metaData.ageSeconds, cached: metaData.cached }, funnel: { checkedAt: new Date().toISOString(), error: funnel.length === 20000 ? "Limite de eventos atingido; período parcial." : null } } });
+    },
+    "POST /api/admin/dashboard/expenses": async (request) => {
+      const admin = await requireAdmin(request);
+      const input = await body(request);
+      const title = String(input.title || "").trim().slice(0, 120);
+      const amount = Number(input.amountCents);
+      if (!title || !Number.isInteger(amount) || amount <= 0 || !/^\d{4}-\d{2}-\d{2}$/.test(input.startsOn || "") || (input.endsOn && input.endsOn < input.startsOn)) throw httpError(400, "invalid_expense", "Confira nome, valor e datas da despesa.");
+      const id = input.id ? String(input.id) : undefined;
+      if (id && !/^[0-9a-f-]{36}$/i.test(id)) throw httpError(400, "invalid_expense", "Identificador inválido.");
+      const expense = await store.saveDashboardExpense({ ...(id ? { id } : {}), title, category: String(input.category || "Sistema").trim().slice(0, 60), amount_cents: amount,
+        starts_on: input.startsOn, recurring: Boolean(input.recurring), ends_on: input.endsOn || null });
+      await store.insertAudit({ actor_id: admin.id, action: "dashboard_expense_save", details: { expense_id: expense.id } });
+      return ok({ expense });
+    },
+    "POST /api/admin/dashboard/expenses/delete": async (request) => {
+      const admin = await requireAdmin(request); const id = String((await body(request)).id || "");
+      if (!/^[0-9a-f-]{36}$/i.test(id) || !(await store.deleteDashboardExpense(id))) throw httpError(404, "not_found", "Despesa não encontrada.");
+      await store.insertAudit({ actor_id: admin.id, action: "dashboard_expense_delete", details: { expense_id: id } }); return ok();
+    },
+    "POST /api/admin/dashboard/goal": async (request) => {
+      const admin = await requireAdmin(request); const input = await body(request); const amount = Number(input.goalCents);
+      if (!Number.isInteger(amount) || amount <= 0 || !/^\d{4}-\d{2}-\d{2}$/.test(input.startsOn || "") || !/^\d{4}-\d{2}-\d{2}$/.test(input.endsOn || "") || input.endsOn < input.startsOn) throw httpError(400, "invalid_goal", "Confira valor e prazo da meta.");
+      const goal = await store.saveDashboardSettings({ goal_cents: amount, goal_starts_on: input.startsOn, goal_ends_on: input.endsOn });
+      await store.insertAudit({ actor_id: admin.id, action: "dashboard_goal_save", details: { goal_cents: amount, goal_ends_on: input.endsOn } }); return ok({ goal });
+    },
+    "POST /api/admin/dashboard/notes": async (request) => {
+      const admin = await requireAdmin(request); const input = await body(request);
+      const path = String(input.path || "").replaceAll("\\", "/").trim();
+      const content = String(input.content || "");
+      if (!path.startsWith("Marketing/") || path.includes("..") || !/\.md$/i.test(path) || path.length > 300 || !content.trim() || content.length > 200000)
+        throw httpError(400, "invalid_note", "Escolha uma nota Markdown de Marketing com até 200 KB.");
+      const sourceDate = content.match(/^atualizado_em:\s*(\d{4}-\d{2}-\d{2})\s*$/m)?.[1] || null;
+      const note = await store.saveDashboardNote({ path, title: path.split("/").at(-1).replace(/\.md$/i, ""), content, source_updated_on: sourceDate });
+      await store.insertAudit({ actor_id: admin.id, action: "dashboard_note_import", details: { path } }); return ok({ note });
+    },
+    "POST /api/admin/dashboard/links": async (request) => {
+      const admin = await requireAdmin(request); const input = await body(request);
+      const kind = input.entityKind, id = String(input.entityId || "").trim();
+      const campaign = String(input.utmCampaign || "").trim(), content = String(input.utmContent || "").trim();
+      const paths = Array.isArray(input.notePaths) ? [...new Set(input.notePaths)] : [];
+      if (!["campaign", "ad"].includes(kind) || !/^\d{1,40}$/.test(id) || campaign.length > 120 || content.length > 120 || paths.length > 10 || paths.some((path) => typeof path !== "string" || path.length > 300))
+        throw httpError(400, "invalid_link", "Confira o item, a UTM e as notas.");
+      const available = new Set((await store.listDashboardNotes()).map((note) => note.path));
+      if (paths.some((path) => !available.has(path))) throw httpError(400, "invalid_link", "Importe as notas antes de vinculá-las.");
+      const link = await store.saveDashboardAdLink({ entity_kind: kind, entity_id: id, utm_campaign: campaign, utm_content: content, note_paths: paths });
+      await store.insertAudit({ actor_id: admin.id, action: "dashboard_ad_link_save", details: { kind, id } }); return ok({ link });
     },
     "POST /api/admin/editions": async (request) => {
       const admin = await requireAdmin(request);
