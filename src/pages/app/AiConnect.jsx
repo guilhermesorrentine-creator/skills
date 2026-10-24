@@ -26,11 +26,11 @@ export default function AiConnect({ until }) {
     {!url ? <button type="button" className="btn btn-primary" onClick={() => load(false)} disabled={busy}>{busy ? "Gerando…" : "Gerar meu link de conexão"}</button> : <div className="stack">
       <label htmlFor="mcp-url">Seu link pessoal <span className="muted small">(não compartilhe: ele dá acesso à sua licença)</span></label>
       <div className="row"><input id="mcp-url" className="input" readOnly value={url} onFocus={(e) => e.target.select()}/><button type="button" className="btn btn-ghost" onClick={() => copy(url, "link")}>{copied === "link" ? "Copiado!" : "Copiar"}</button></div>
-      <ol className="ai-steps">
-        <li><b>Claude</b> (claude.ai ou app): Configurações → Conectores → Adicionar conector personalizado → cole o link.</li>
-        <li><b>ChatGPT</b>: Configurações → Apps e conectores → modo desenvolvedor → Criar → cole o link (sem autenticação).</li>
-        <li><b>Claude Code</b>: rode no terminal <code>{cli}</code> <button type="button" className="link small" onClick={() => copy(cli, "cli")}>{copied === "cli" ? "copiado" : "copiar comando"}</button></li>
-      </ol>
+      <div className="ai-connection-options">
+        <section><h3>Claude no navegador ou aplicativo</h3><ol className="ai-steps"><li>Abra <b>Personalizar → Conectores</b> na sua conta Claude.</li><li>Clique em <b>+</b> ao lado de Conectores e escolha <b>Adicionar conector personalizado</b>.</li><li>Nomeie como <b>Voxelia</b>, cole seu link pessoal e confirme. Se perguntar sobre autenticação, escolha <b>sem login</b>.</li></ol></section>
+        <section><h3>ChatGPT</h3><p>O aplicativo do ChatGPT para computador não oferece a criação desse conector. A OpenAI disponibiliza a conexão MCP personalizada no <b>ChatGPT pela web</b>, para contas Business ou Enterprise/Edu com permissão do administrador. Se você usa um plano pessoal ou não vê “Plugins”, essa opção não estará disponível na sua conta.</p><p>Em um workspace compatível, abra o ChatGPT no navegador e vá a <b>Plugins → + → Adicionar servidor MCP personalizado</b>. Cole seu link como endereço HTTPS do servidor.</p></section>
+        <section><h3>Claude Code</h3><p>No terminal, rode <code>{cli}</code> <button type="button" className="link small" onClick={() => copy(cli, "cli")}>{copied === "cli" ? "copiado" : "copiar comando"}</button></p></section>
+      </div>
       <p className="small muted">Os nomes dos menus podem variar conforme o plano e a versão de cada app. Link vazou? <button type="button" className="link small" onClick={() => load(true)} disabled={busy}>Gerar um novo</button></p>
     </div>}
     {error && <p className="form-error" role="alert">{error}</p>}
