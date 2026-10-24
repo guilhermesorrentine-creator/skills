@@ -2,6 +2,11 @@
 // Esquema e RLS: `supabase/migrations/`.
 import { createClient } from "@supabase/supabase-js";
 
+// Link de criar/redefinir senha: nossa página com o token "hasheado". A verificação só acontece quando a
+// pessoa envia a senha, então prévias do WhatsApp e robôs de e-mail abrem o link sem gastar o uso único
+// (o link padrão do Supabase é consumido no primeiro acesso, e a pessoa via "link expirado").
+const passwordLink = (page, tokenHash, type) => `${page}?${new URLSearchParams({ token_hash: tokenHash, type })}`;
+
 export function createSupabaseStore({ url, serviceKey }) {
   const db = createClient(url, serviceKey, { auth: { persistSession: false, autoRefreshToken: false } });
   const must = ({ data, error }) => { if (error) throw Object.assign(new Error(error.message), { status: 500, code: "db_error" }); return data; };
@@ -18,17 +23,17 @@ export function createSupabaseStore({ url, serviceKey }) {
   return {
     getProfile: (id) => one(db.from("profiles").select("*").eq("id", id)),
     findProfileByEmail: (email) => one(db.from("profiles").select("*").eq("email", email.toLowerCase())),
-    // Cria a conta pelo Auth sem enviar o e-mail padrão do Supabase; devolve o link de uso único.
+    // Cria a conta pelo Auth sem enviar o e-mail padrão do Supabase; devolve o link de criar senha.
     createInvitedUser: async (email, redirectTo) => {
       const { data, error } = await db.auth.admin.generateLink({ type: "invite", email, options: { redirectTo } });
       if (error) throw Object.assign(new Error(error.message), { status: 400, code: "invite_failed" });
-      return { userId: data.user.id, actionUrl: data.properties.action_link };
+      return { userId: data.user.id, actionUrl: passwordLink(redirectTo, data.properties.hashed_token, "invite") };
     },
     // Conta criada mas nunca usada: novo link de uso único para criar a senha (convite reenviado).
     createPasswordLink: async (email, redirectTo) => {
       const { data, error } = await db.auth.admin.generateLink({ type: "recovery", email, options: { redirectTo } });
       if (error) throw Object.assign(new Error(error.message), { status: 400, code: "invite_failed" });
-      return data.properties.action_link;
+      return passwordLink(redirectTo, data.properties.hashed_token, "recovery");
     },
     // Versão do link de conexão MCP (nos metadados do usuário): trocar o link invalida o anterior.
     getMcpVersion: async (userId) => {

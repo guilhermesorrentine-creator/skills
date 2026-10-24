@@ -20,9 +20,9 @@ export function createMemoryStore(seed = {}) {
     createInvitedUser: async (email, redirectTo) => {
       const id = randomUUID();
       db.profiles.push({ id, email, is_admin: false, created_at: stamp() });
-      return { userId: id, actionUrl: `${redirectTo}#convite-local-${id}` };
+      return { userId: id, actionUrl: `${redirectTo}?token_hash=local-${id}&type=invite` };
     },
-    createPasswordLink: async (email, redirectTo) => `${redirectTo}#novo-link-local-${encodeURIComponent(email)}`,
+    createPasswordLink: async (email, redirectTo) => `${redirectTo}?token_hash=local-${encodeURIComponent(email)}&type=recovery`,
     getMcpVersion: async (userId) => { const profile = db.profiles.find((item) => item.id === userId); return profile ? profile.mcp_v || 1 : 0; },
     setMcpVersion: async (userId, version) => { const profile = db.profiles.find((item) => item.id === userId); if (profile) profile.mcp_v = version; },
     hasSignedIn: async (userId) => Boolean(db.profiles.find((item) => item.id === userId)?.last_sign_in_at),

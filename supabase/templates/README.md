@@ -9,3 +9,5 @@ Gerados por `node scripts/build-email-templates.mjs` a partir de um layout únic
 | Change Email Address | `troca-email.html` | Confirme seu novo e-mail — Voxelia |
 
 Como aplicar: Supabase → Authentication → Emails → Templates → cole o assunto e o HTML de cada arquivo. A edição dos modelos exige SMTP próprio configurado (Authentication → SMTP Settings), com domínio e remetente definidos.
+
+Os botões usam `{{ .SiteURL }}/…?token_hash={{ .TokenHash }}&type=…`: confira em Authentication → URL Configuration que o **Site URL** é o domínio de produção.

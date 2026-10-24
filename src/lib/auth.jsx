@@ -8,9 +8,21 @@ export const authConfigured = Boolean(supabase);
 // Sem Supabase em desenvolvimento local, a API pode usar o atalho BT_DEV_BYPASS do servidor.
 const devMode = !authConfigured && import.meta.env.DEV;
 
-// Chegada pelo link de convite: o Supabase traz `type=invite` no endereço e abre a sessão;
-// a pessoa ainda não tem senha, então o site leva para "Crie sua senha".
-const arrivedFromInvite = typeof window !== "undefined" && /type=invite/.test(window.location.hash + window.location.search);
+// Chegada por link de e-mail. Os nossos links trazem `token_hash` e `type` na consulta e só são verificados
+// quando a pessoa envia o formulário (prévias do WhatsApp e robôs de e-mail abrem o link sem gastá-lo).
+// Links do Supabase trazem a sessão ou o erro (ex.: otp_expired) no fragmento, que ele limpa ao iniciar:
+// por isso a chegada é lida aqui, antes disso. Convite (`type=invite`) leva para "Crie sua senha".
+function readArrival() {
+  if (typeof window === "undefined") return { path: "", type: "", error: "" };
+  const query = new URLSearchParams(window.location.search);
+  const hash = new URLSearchParams(window.location.hash.slice(1));
+  return {
+    path: window.location.pathname,
+    type: query.get("type") || hash.get("type") || "",
+    error: hash.get("error_code") || query.get("error_code") || hash.get("error") || query.get("error") || "",
+  };
+}
+export const arrival = readArrival();
 
 const AuthContext = createContext(null);
 
@@ -18,7 +30,7 @@ export function AuthProvider({ children }) {
   const [session, setSession] = useState(null);
   const [loading, setLoading] = useState(authConfigured);
   const [recovery, setRecovery] = useState(false);
-  const [invited, setInvited] = useState(arrivedFromInvite);
+  const [invited, setInvited] = useState(arrival.type === "invite");
   useEffect(() => {
     if (!supabase) return;
     supabase.auth.getSession().then(({ data }) => { setSession(data.session); setLoading(false); });
@@ -40,6 +52,8 @@ const translate = (message = "") => {
   if (/already registered|already been registered/i.test(message)) return "Este e-mail já tem cadastro. Entre ou recupere a senha.";
   if (/password should be at least/i.test(message)) return "A senha precisa ter pelo menos 8 caracteres.";
   if (/rate limit|too many/i.test(message)) return "Muitas tentativas. Aguarde alguns minutos.";
+  if (/auth session missing|otp_expired|has expired|invalid or has expired/i.test(message)) return "Este link expirou ou já foi usado. Peça um link novo.";
+  if (/should be different from the old password/i.test(message)) return "A nova senha precisa ser diferente da anterior.";
   return message || "Não foi possível concluir. Tente novamente.";
 };
 const requireClient = () => { if (!supabase) throw new Error("Login indisponível: o Supabase ainda não foi configurado."); return supabase; };
@@ -49,6 +63,8 @@ export const authActions = {
   signIn: (email, password) => run(requireClient().auth.signInWithPassword({ email, password })),
   signUp: (email, password) => run(requireClient().auth.signUp({ email, password, options: { emailRedirectTo: `${location.origin}/entrar` } })),
   recover: (email) => run(requireClient().auth.resetPasswordForEmail(email, { redirectTo: `${location.origin}/redefinir-senha` })),
+  // Verifica o link de e-mail (`token_hash`) e abre a sessão: convite, recuperação ou confirmação de cadastro.
+  verifyLink: (tokenHash, type) => run(requireClient().auth.verifyOtp({ token_hash: tokenHash, type })),
   updatePassword: (password) => run(requireClient().auth.updateUser({ password })),
   signOut: () => (supabase ? supabase.auth.signOut() : Promise.resolve()),
 };

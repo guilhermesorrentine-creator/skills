@@ -262,7 +262,7 @@ test("compra sem cadastro: só e-mail, retorno com chave e link de senha após o
   await ctx.hook({ id: "evt_guest", event: "CHECKOUT_PAID", checkout: { id: row.asaas_checkout_id, customer: "cus_guest", items: [{ value: 97.9, quantity: 1 }] } });
   const claimed = await ctx.call("POST", "/api/checkout/claim", { body: { order, key } });
   assert.equal(claimed.data.status, "paid");
-  assert.ok(claimed.data.url.includes("/criar-senha"));
+  assert.match(claimed.data.url, /\/criar-senha\?token_hash=.+&type=recovery$/, "link de criar senha resistente a prévia");
 
   ctx.store.db.profiles.find((item) => item.email === "nova@exemplo.com").last_sign_in_at = "2026-10-22T00:00:00Z";
   assert.deepEqual((await ctx.call("POST", "/api/checkout/claim", { body: { order, key } })).data, { status: "paid", login: true });
