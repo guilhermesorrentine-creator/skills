@@ -12,7 +12,8 @@ const HOOKS = {
   A: { eyebrow: "Para quem usa IA todo dia", title: "Pare de pagar a sua IA para adivinhar.", lead: "Toda conversa você explica de novo o que quer, e ela gasta tokens tentando. Com a Voxelia conectada, a IA segue o método certo desde a primeira resposta." },
   B: { eyebrow: "Chega de texto com cara de IA", title: "Sua IA escreve igual a todo mundo?", lead: "O problema não é a IA. É que ela não tem o método. Com a Voxelia conectada, ela usa skills de especialistas em cada pedido." },
   C: { eyebrow: "Claude · ChatGPT · Claude Code", title: "Dê superpoderes para a sua IA.", lead: "Conecte uma vez e a sua IA passa a usar 2 mil skills de especialistas, com o passo a passo certo para cada pedido." },
-  D: { eyebrow: "Feito com uma skill", title: "Este vídeo foi feito pelo Claude.", lead: "Com uma skill. Na Voxelia são 2 mil skills assim, organizadas por objetivo e com guia em português." },
+  // D é o vídeo do dono ("eu organizei..."), que vende o vitalício: pagamento único, acervo para sempre.
+  D: { eyebrow: "Pagamento único · acesso para sempre", title: "Mais de 2 mil skills de IA num lugar só.", lead: "Cada uma com o passo a passo em português e o comando pronto para copiar. Você diz o que quer criar, e a Voxelia mostra qual usar." },
 };
 const PAINS = [
   ["Texto genérico", "Você pede e recebe a resposta \"de manual\", igual à de todo mundo."],
