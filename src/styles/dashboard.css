@@ -75,8 +75,12 @@
 .dash-pill-good { background: var(--ok-bg); color: var(--ok); }.dash-pill-warn { background: var(--danger-bg); color: var(--danger); }.dash-pill-neutral { background: var(--warn-bg); color: var(--warn); }
 .dash-goal-facts { display: flex; flex-wrap: wrap; gap: 14px; }.dash-goal-facts span { font-size: 12px; }.dash-goal-facts b { color: var(--text); }
 .dash-more summary { color: var(--primary); cursor: pointer; font-size: 12px; }.dash-more p { margin-top: 8px; }
-.dash-term { display: inline-flex; align-items: center; gap: 4px; max-width: 100%; color: inherit; text-decoration: underline dotted var(--text-3); text-underline-offset: 3px; cursor: help; white-space: normal; }
+.dash-term { display: inline-grid; gap: 6px; max-width: 100%; color: inherit; cursor: help; white-space: normal; }
+.dash-term-label { display: inline-flex; align-items: center; gap: 4px; width: fit-content; text-decoration: underline dotted var(--text-3); text-underline-offset: 3px; }
 .dash-term svg { flex: none; color: var(--text-3); }
+.dash-term-help { display: none; max-width: 260px; padding: 9px 11px; border: 1px solid var(--line-strong); border-radius: 8px; background: var(--surface-muted); color: var(--text); box-shadow: var(--shadow-1); font-size: 12px; font-weight: 400; line-height: 1.5; text-align: left; white-space: normal; overflow-wrap: break-word; }
+.dash-term:hover .dash-term-help, .dash-term:focus .dash-term-help { display: block; }
+.dash-table-wrap .dash-term-help { max-width: 190px; }
 .dash-metric strong, .dash-stage-grid strong, .dash-goal strong { overflow-wrap: anywhere; }
 .dash-table-wrap table { min-width: max-content; }
 .dash-table-wrap th, .dash-table-wrap td { min-width: 94px; max-width: 260px; padding: 13px 15px; line-height: 1.5; overflow-wrap: anywhere; }

@@ -66,7 +66,7 @@ function Period({ value, onChange }) {
   </div>;
 }
 
-function MetricTerm({ label }) { const meaning = definitions[label]; return meaning ? <abbr className="dash-term" title={meaning} aria-label={`${label}: ${meaning}`} tabIndex={0}>{label} <CircleHelp size={13} aria-hidden="true"/></abbr> : label; }
+function MetricTerm({ label }) { const meaning = definitions[label]; return meaning ? <span className="dash-term" aria-label={`${label}: ${meaning}`} tabIndex={0}><span className="dash-term-label">{label} <CircleHelp size={13} aria-hidden="true"/></span><span className="dash-term-help" role="tooltip">{meaning}</span></span> : label; }
 function Metric({ label, value, note, tone }) { return <div className={`dash-card dash-metric${tone ? ` dash-metric-${tone}` : ""}`}><MetricTerm label={label}/><strong>{value}</strong>{note && <small>{note}</small>}</div>; }
 
 function SalesChart({ daily }) {
