@@ -43,7 +43,7 @@ Landing pública em `/` e sistema em `/app` para quem tem licença. Contas no Su
 
 Backend em `server/`, publicado por uma única Vercel Function (`api/index.js` + rewrite de `/api/*`); migrações em `supabase/migrations/`. Arquitetura, modelo comercial, webhooks, administração, homologação e recuperação: [`docs/comercial-asaas.md`](docs/comercial-asaas.md). Variáveis: [`.env.example`](.env.example).
 
-No menu do sistema, **Conectar minha IA** abre `/app/conectar-ia`: quem tem Pro ativo gera o link pessoal; quem precisa de upgrade ou renovação vê a opção em Minha licença.
+No menu do sistema, **Conectar minha IA** abre `/app/conectar-ia`: quem tem Pro ativo gera o link pessoal; quem precisa de upgrade ou renovação vê a opção em Minha licença. O tutorial distingue Claude de ChatGPT: a criação de conexão MCP personalizada no ChatGPT exige um workspace Business ou Enterprise/Edu com permissão e ocorre na web, não no aplicativo de computador.
 
 Sem Supabase, é possível ver o sistema localmente com `BT_DEV_BYPASS=1` em `.env.development.local` (ignorado na Vercel e em produção).
 
