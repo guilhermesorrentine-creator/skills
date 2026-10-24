@@ -58,3 +58,11 @@ test("reembolso de 12x após uma parcela cancela o futuro a receber", () => {
   assert.equal(summary(ledger, "2026-11-01", "2026-11-30").salesCents, -59880);
   assert.equal(summary(ledger, "2026-11-01", "2026-11-30").cashCents, -4990);
 });
+
+test("pedido pago pelo Checkout do Asaas (sem cobrança local) é ligado pela sessão de checkout", () => {
+  const ledger = build([order({ amount_cents: 9790, asaas_checkout_id: "chk_1" })],
+    [payment("pix", { externalReference: "sessao-do-checkout", checkoutSession: "chk_1", installment: null, value: 97.9, netValue: 95.9, status: "RECEIVED", confirmedDate: "2026-10-22", creditDate: "2026-10-22" })]);
+  assert.equal(ledger.incomplete, false);
+  assert.equal(summary(ledger).salesCents, 9790);
+  assert.equal(summary(ledger).cashCents, 9590);
+});
