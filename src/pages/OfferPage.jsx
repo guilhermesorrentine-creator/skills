@@ -56,9 +56,9 @@ const LABELS = {
 export default function OfferPage({ signedIn }) {
   const params = new URLSearchParams(location.search);
   const variant = String(params.get("utm_content") || "").toUpperCase();
-  const hook = HOOKS[variant] || HOOKS.C;
   const lifetimeFirst = params.get("plano") === "vitalicio" || variant === "D";
   const [choice, setChoice] = useState(lifetimeFirst ? "lifetime" : "monthly");
+  const hook = choice === "lifetime" ? HOOKS.D : variant !== "D" ? HOOKS[variant] || HOOKS.C : HOOKS.C;
   const checkoutRef = useRef(null);
   const [atCheckout, setAtCheckout] = useState(false);
   const [videoOk, setVideoOk] = useState(true);
