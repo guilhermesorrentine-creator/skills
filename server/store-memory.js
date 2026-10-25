@@ -68,6 +68,13 @@ export function createMemoryStore(seed = {}) {
     },
     getSubscriptionPayment: async (id) => clone(db.subscriptionPayments.find((item) => item.asaas_payment_id === id)),
     listSubscriptionPayments: async (subscriptionId) => clone(db.subscriptionPayments.filter((item) => !subscriptionId || item.subscription_id === subscriptionId)),
+    claimSubscriptionPurchase: async (id, attemptedAt, staleBefore) => {
+      const item = db.subscriptionPayments.find((entry) => entry.asaas_payment_id === id);
+      if (!item || item.meta_purchase_sent_at || item.meta_purchase_attempted_at && item.meta_purchase_attempted_at >= staleBefore) return null;
+      item.meta_purchase_attempted_at = attemptedAt; item.meta_purchase_error = null;
+      return clone(item);
+    },
+    finishSubscriptionPurchase: async (id, patch) => { Object.assign(db.subscriptionPayments.find((item) => item.asaas_payment_id === id) || {}, patch); },
 
     getOpenOrder: async (userId, now) => clone(db.orders.filter((item) => item.user_id === userId && isOpen(item, now)).sort(newest("created_at"))[0]),
     insertOrder: async (row) => {

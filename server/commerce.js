@@ -21,7 +21,7 @@ const DISPUTE = new Set(["PAYMENT_CHARGEBACK_REQUESTED", "PAYMENT_CHARGEBACK_DIS
 
 // Pagamento único por edição (Asaas Checkout avulso) e licença vitalícia.
 export function createCommerce({ store, asaas, config, onboarding = null, conversions = null, now = () => new Date() }) {
-  const subscriptions = createSubscriptions({ store, asaas, config, now });
+  const subscriptions = createSubscriptions({ store, asaas, config, conversions, now });
   async function userEntitlement(userId) {
     const [license, grants, editions, monthly] = await Promise.all([store.getLicense(userId), store.listGrants(userId), store.listEditions({ onSaleOnly: false }), subscriptions.status(userId)]);
     const permanent = entitlement({ license, grants, editions, now: now() });

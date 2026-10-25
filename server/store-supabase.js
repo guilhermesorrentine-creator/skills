@@ -85,6 +85,10 @@ export function createSupabaseStore({ url, serviceKey }) {
     },
     getSubscriptionPayment: (id) => one(db.from("payment_records").select("*").eq("asaas_payment_id", id)),
     listSubscriptionPayments: (subscriptionId) => { let query = db.from("payment_records").select("*").order("confirmed_at").limit(subscriptionId ? 100 : 1000); if (subscriptionId) query = query.eq("subscription_id", subscriptionId); return many(query); },
+    claimSubscriptionPurchase: (id, attemptedAt, staleBefore) => one(db.from("payment_records")
+      .update({ meta_purchase_attempted_at: attemptedAt, meta_purchase_error: null }).eq("asaas_payment_id", id)
+      .is("meta_purchase_sent_at", null).or(`meta_purchase_attempted_at.is.null,meta_purchase_attempted_at.lt.${staleBefore}`).select()),
+    finishSubscriptionPurchase: (id, patch) => run(db.from("payment_records").update(patch).eq("asaas_payment_id", id)),
 
     getOpenOrder: (userId, at) => one(db.from("orders").select("*").eq("user_id", userId).in("status", ["creating", "pending"]).or(`expires_at.is.null,expires_at.gt.${new Date(at).toISOString()}`).order("created_at", { ascending: false }).limit(1)),
     insertOrder: (row) => insertOrNull("orders", row),

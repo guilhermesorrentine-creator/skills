@@ -25,35 +25,39 @@ export function readTracking(input, request) {
 
 export function createConversions({ pixelId, token, testEventCode }, fetcher = fetch) {
   if (!pixelId || !token) return null;
+  async function sendPurchase({ id, userId, tracking, email, amountCents, contentId, eventTime, attribution }) {
+    if (!tracking?.consent) return false;
+    const userData = { external_id: [sha256(userId)] };
+    if (email) userData.em = [sha256(email)];
+    if (tracking.fbp) userData.fbp = tracking.fbp;
+    if (tracking.fbc) userData.fbc = tracking.fbc;
+    if (tracking.ip) userData.client_ip_address = tracking.ip;
+    if (tracking.userAgent) userData.client_user_agent = tracking.userAgent;
+    const customData = { currency: "BRL", value: amountCents / 100, content_ids: contentId ? [contentId] : [], content_type: "product" };
+    if (attribution?.source) customData.utm_source = attribution.source;
+    if (attribution?.campaign) customData.utm_campaign = attribution.campaign;
+    if (attribution?.content) customData.utm_content = attribution.content;
+    const event = { event_name: "Purchase", event_time: Math.floor(eventTime.getTime() / 1000), event_id: id,
+      action_source: "website", user_data: userData, custom_data: customData };
+    if (tracking.pageUrl) event.event_source_url = tracking.pageUrl;
+    const body = { data: [event], access_token: token };
+    if (testEventCode) body.test_event_code = testEventCode;
+    const response = await fetcher(`${GRAPH}/${encodeURIComponent(pixelId)}/events`, {
+      method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
+    });
+    if (!response.ok) throw new Error(`Meta recusou o evento (${response.status}).`);
+    return true;
+  }
   return {
     // `order.ad_tracking` vem de readTracking; sem consentimento, não envia.
     async purchase({ order, email, editionCode, eventTime }) {
-      const tracking = order.ad_tracking;
-      if (!tracking?.consent) return false;
-      const userData = { external_id: [sha256(order.user_id)] };
-      if (email) userData.em = [sha256(email)];
-      if (tracking.fbp) userData.fbp = tracking.fbp;
-      if (tracking.fbc) userData.fbc = tracking.fbc;
-      if (tracking.ip) userData.client_ip_address = tracking.ip;
-      if (tracking.userAgent) userData.client_user_agent = tracking.userAgent;
-      const event = {
-        event_name: "Purchase",
-        event_time: Math.floor(eventTime.getTime() / 1000),
-        event_id: `purchase-${order.id}`,
-        action_source: "website",
-        user_data: userData,
-        custom_data: { currency: "BRL", value: order.amount_cents / 100, content_ids: editionCode ? [editionCode] : [], content_type: "product" },
-      };
-      if (tracking.pageUrl) event.event_source_url = tracking.pageUrl;
-      const body = { data: [event], access_token: token };
-      if (testEventCode) body.test_event_code = testEventCode;
-      const response = await fetcher(`${GRAPH}/${encodeURIComponent(pixelId)}/events`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      });
-      if (!response.ok) throw new Error(`Meta recusou o evento (${response.status}).`);
-      return true;
+      return sendPurchase({ id: `purchase-${order.id}`, userId: order.user_id, tracking: order.ad_tracking, email,
+        amountCents: order.amount_cents, contentId: editionCode, eventTime });
+    },
+    async subscriptionPurchase({ subscription, payment, email, eventTime }) {
+      return sendPurchase({ id: `purchase-subscription-${payment.asaas_payment_id}`, userId: subscription.user_id,
+        tracking: subscription.ad_tracking, email, amountCents: payment.value_cents, contentId: "voxelia-mensal",
+        eventTime, attribution: subscription.attribution });
     },
   };
 }
