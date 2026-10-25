@@ -11,15 +11,10 @@ import { seller, sellerLine } from "../lib/seller.js";
 const HOOKS = {
   A: { eyebrow: "Para quem usa IA todo dia", title: "Pare de pagar a sua IA para adivinhar.", lead: "Toda conversa você explica de novo o que quer, e ela gasta tokens tentando. Com a Voxelia conectada, a IA segue o método certo desde a primeira resposta." },
   B: { eyebrow: "Chega de texto com cara de IA", title: "Sua IA escreve igual a todo mundo?", lead: "O problema não é a IA. É que ela não tem o método. Com a Voxelia conectada, ela usa skills de especialistas em cada pedido." },
-  C: { eyebrow: "Claude · ChatGPT · Claude Code", title: "Dê superpoderes para a sua IA.", lead: "Conecte uma vez e a sua IA passa a usar 2 mil skills de especialistas, com o passo a passo certo para cada pedido." },
+  C: { eyebrow: "Claude · ChatGPT · Claude Code", title: "Sua IA com um método para cada tarefa.", lead: "Conecte a Voxelia e deixe sua IA consultar mais de 2 mil skills com guias em português, em vez de começar cada pedido do zero." },
   // D é o vídeo do dono ("eu organizei..."), que vende o vitalício: pagamento único, acervo para sempre.
-  D: { eyebrow: "Pagamento único · acesso para sempre", title: "Mais de 2 mil skills de IA num lugar só.", lead: "Cada uma com o passo a passo em português e o comando pronto para copiar. Você diz o que quer criar, e a Voxelia mostra qual usar." },
+  D: { eyebrow: "Mais de 2 mil skills · acesso vitalício", title: "Encontre a skill certa para o que você quer criar.", lead: "Busque pelo seu objetivo, abra um guia em português e copie o comando pronto para usar na sua IA. O acervo fica seu com um pagamento único." },
 };
-const PAINS = [
-  ["Texto genérico", "Você pede e recebe a resposta \"de manual\", igual à de todo mundo."],
-  ["Resposta incompleta", "Falta o passo que importa e você volta três vezes para completar."],
-  ["Token desperdiçado", "Metade da conversa é você explicando para a IA como fazer o trabalho."],
-];
 const CASES = [
   ["\"Faça uma landing page.\"", "Layout genérico, sem método. Você gasta a tarde corrigindo.", "A IA encontra a skill de design, segue um sistema de design e entrega com estrutura e revisão."],
   ["\"Escreva a legenda do meu post.\"", "\"Descubra o poder transformador da IA e eleve seu negócio a outro nível.\"", "Gancho, lista e chamada para ação, com as fórmulas de gancho da skill de Instagram."],
@@ -30,7 +25,6 @@ const LIFETIME_RESULTS = [
   "Você copia as fórmulas de gancho da skill de Instagram para escrever uma legenda mais específica.",
   "Você segue o guia do Google Maps Scraper para montar uma lista real de empresas, com telefone e site.",
 ];
-const GETS = ["2 mil skills de projetos abertos, com a fonte e o autor creditados", "Guia passo a passo em português para cada skill, com o comando pronto para copiar", "Busca por objetivo: você diz o que quer e ela mostra a skill certa"];
 const STEPS = [
   ["Conecte uma vez", "Cole o seu link pessoal no Claude, no ChatGPT ou no Claude Code. O guia mostra cada clique."],
   ["Peça normalmente", "\"Quero criar uma landing page\", \"preciso prospectar clientes\", \"revise este artigo\"."],
@@ -59,8 +53,11 @@ export default function OfferPage({ signedIn }) {
   const lifetimeFirst = params.get("plano") === "vitalicio" || variant === "D";
   const [choice, setChoice] = useState(lifetimeFirst ? "lifetime" : "monthly");
   const hook = choice === "lifetime" ? HOOKS.D : variant !== "D" ? HOOKS[variant] || HOOKS.C : HOOKS.C;
+  const flow = choice === "lifetime" ? ["Diga o que quer fazer", "Encontre a skill", "Copie o comando"] : ["Diga o que quer fazer", "A IA consulta a skill", "Receba um resultado com método"];
+  const heroRef = useRef(null);
   const checkoutRef = useRef(null);
   const [atCheckout, setAtCheckout] = useState(false);
+  const [pastHero, setPastHero] = useState(false);
   const [videoOk, setVideoOk] = useState(true);
 
   useEffect(() => {
@@ -81,6 +78,14 @@ export default function OfferPage({ signedIn }) {
     return () => observer.disconnect();
   }, []);
 
+  useEffect(() => {
+    const node = heroRef.current;
+    if (!node || !("IntersectionObserver" in window)) return undefined;
+    const observer = new IntersectionObserver(([entry]) => setPastHero(!entry.isIntersecting));
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, []);
+
   const goCheckout = () => {
     funnel("buy_click");
     checkoutRef.current?.scrollIntoView({ behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "start" });
@@ -89,14 +94,22 @@ export default function OfferPage({ signedIn }) {
   return <div className="offer-page">
     <header className="offer-top"><Brand/></header>
     <main id="conteudo" className="offer-main">
-      <section className="offer-hero">
+      <section ref={heroRef} className="offer-hero">
         <p className="eyebrow">{hook.eyebrow}</p>
         <h1>{hook.title}</h1>
         <p className="offer-lead">{hook.lead}</p>
+        <ol className="offer-flow" aria-label="Como a Voxelia ajuda">{flow.map((step, index) => <li key={step}><span>{index + 1}</span>{step}</li>)}</ol>
         <p className="offer-hero-price"><b>{choice === "lifetime" ? "R$ 97,90" : "R$ 49,90/mês"}</b><span>{choice === "lifetime" ? "pagamento único · acervo vitalício" : "cartão · acervo e conexão enquanto pagar"}</span></p>
         <button type="button" className="btn btn-primary offer-cta" onClick={goCheckout}>{choice === "lifetime" ? "Quero o acesso vitalício" : "Quero começar por R$ 49,90/mês"}</button>
         <p className="small offer-assure">Acesso na hora · 15 dias de garantia</p>
       </section>
+
+      {videoOk && <section className="offer-video" aria-label="Vídeo: como a Voxelia funciona">
+        <div className="offer-video-head"><h2>Veja a Voxelia em ação</h2><p>Assista antes de escolher seu plano.</p></div>
+        <video controls playsInline preload="none" poster="/video/oferta-poster.jpg" onError={() => setVideoOk(false)}>
+          <source src="/video/oferta.mp4" type="video/mp4" onError={() => setVideoOk(false)}/>
+        </video>
+      </section>}
 
       <section id="checkout" ref={checkoutRef} className="offer-checkout" aria-label="Pagamento">
         <h2>Escolha seu acesso</h2>
@@ -107,17 +120,6 @@ export default function OfferPage({ signedIn }) {
         {choice === "monthly" ? <SubscriptionCheckout signedIn={signedIn}/> : <Checkout codes={["edicao-1"]} signedIn={signedIn} labels={LABELS}/>}
       </section>
 
-      {videoOk && <section className="offer-video" aria-label="Vídeo: como a Voxelia funciona">
-        <video controls playsInline preload="none" poster="/video/oferta-poster.jpg" onError={() => setVideoOk(false)}>
-          <source src="/video/oferta.mp4" type="video/mp4" onError={() => setVideoOk(false)}/>
-        </video>
-      </section>}
-
-      <section className="repo-block">
-        <h2>Sua IA está no modo básico</h2>
-        <ul className="connect-pains">{PAINS.map(([t, d]) => <li key={t}><b>{t}</b><span>{d}</span></li>)}</ul>
-      </section>
-
       <section className="repo-block">
         <h2>Como sair disso para isso</h2>
         <div className="offer-cases">{CASES.map(([ask, before, after], index) => <article key={ask} className="offer-case">
@@ -126,8 +128,6 @@ export default function OfferPage({ signedIn }) {
           <div className="offer-after"><b>{choice === "lifetime" ? "Com o acervo Voxelia" : "Com a Voxelia conectada"}</b><p>{choice === "lifetime" ? LIFETIME_RESULTS[index] : after}</p></div>
         </article>)}</div>
       </section>
-
-      <section className="repo-block"><h2>O que você recebe</h2><ul className="buy-points offer-gets">{GETS.map((g) => <li key={g}>{g}</li>)}</ul></section>
 
       <section className="repo-block">
         <h2>Como funciona</h2>
@@ -147,7 +147,7 @@ export default function OfferPage({ signedIn }) {
       </section>
     </main>
 
-    {!atCheckout && <div className="repo-cta offer-sticky" role="region" aria-label="Comprar">
+    {pastHero && !atCheckout && <div className="repo-cta offer-sticky" role="region" aria-label="Comprar">
       <button type="button" className="btn btn-primary" onClick={goCheckout}>{choice === "lifetime" ? "Quero o acervo vitalício · R$ 97,90" : "Assinar · R$ 49,90/mês"}</button>
     </div>}
 
