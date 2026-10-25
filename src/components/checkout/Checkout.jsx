@@ -13,7 +13,7 @@ const maskCpf = (value) => value.replace(/\D/g, "").slice(0, 11).replace(/(\d{3}
 // Pagamento direto: e-mail (sem login), nome e CPF (exigidos pelo Asaas). Pix mostra o QR aqui; cartão abre a
 // fatura do Asaas em outra aba (o Pro parcela em 12x). Confirma sozinho o pagamento.
 // Com mais de uma edição em `codes`, mostra a escolha do plano; `intro(edition)` vem antes do preço.
-export default function Checkout({ codes, signedIn, intro = null, labels = {} }) {
+export default function Checkout({ codes, signedIn, intro = null, labels = {}, hosted = false }) {
   const [code, setCode] = useState(codes[0]);
   const [editions, setEditions] = useState([]);
   const [form, setForm] = useState({ email: "", name: "", document: "" });
@@ -66,9 +66,10 @@ export default function Checkout({ codes, signedIn, intro = null, labels = {} })
       }
       try { localStorage.setItem("vx-claim", JSON.stringify({ order: data.order, key: data.key })); } catch { /* sem armazenamento: o retorno usa a URL */ }
       funnel("checkout", { order: data.order });
+      if (hosted && isAsaas(data.url)) { location.assign(data.url); return; }
       if (data.pix || isAsaas(data.url)) { setCharge(data); setBusy(""); return; }
       throw new Error("Endereço de pagamento inesperado.");
-    } catch (cause) { setError(cause.message); setBusy(""); }
+    } catch (cause) { setError(cause.message); setBusy(""); if (hosted) form_?.scrollIntoView({ block: "start" }); }
   };
 
   const copyPix = async () => {
@@ -112,10 +113,10 @@ export default function Checkout({ codes, signedIn, intro = null, labels = {} })
     <form id={formId} onSubmit={(e) => pay(installments > 1 ? "card" : "pix", e)} className="stack">
       {!signedIn && <><label htmlFor={`${formId}-email`}>Seu e-mail <span className="muted small">(é o seu login)</span></label>
         <input id={`${formId}-email`} className="input buy-input" type="email" inputMode="email" autoComplete="email" required value={form.email} onChange={field("email")} placeholder="voce@email.com"/></>}
-      <label htmlFor={`${formId}-name`}>Nome completo</label>
+      {!hosted && <><label htmlFor={`${formId}-name`}>Nome completo</label>
       <input id={`${formId}-name`} className="input buy-input" autoComplete="name" required minLength={3} value={form.name} onChange={field("name")}/>
       <label htmlFor={`${formId}-cpf`}>CPF <span className="muted small">(exigido pelo meio de pagamento)</span></label>
-      <input id={`${formId}-cpf`} className="input buy-input" inputMode="numeric" autoComplete="off" required value={form.document} onChange={field("document")} placeholder="000.000.000-00"/>
+      <input id={`${formId}-cpf`} className="input buy-input" inputMode="numeric" autoComplete="off" required value={form.document} onChange={field("document")} placeholder="000.000.000-00"/></>}
       {error && <p className="notice" role="alert">{error} {exists && <Link className="link" to={`/entrar?next=${encodeURIComponent(`/comprar?edicao=${edition?.code || code}`)}`}>Entrar</Link>}</p>}
       {installments > 1 ? <>
         <button type="submit" className="btn btn-primary buy-submit" disabled={Boolean(busy) || !edition}>{busy === "card" ? "Gerando pagamento…" : `Pagar ${installments}x de ${formatPrice(perMonth)} no cartão`}</button>

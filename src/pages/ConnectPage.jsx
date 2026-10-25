@@ -5,7 +5,6 @@ import CyberpunkCharacter from "../components/categories/CyberpunkCharacter.jsx"
 import { navigate } from "../lib/router.jsx";
 import { formatPrice } from "../lib/billing-client.js";
 import { track } from "../lib/meta-pixel.js";
-import { funnel } from "../lib/funnel.js";
 
 // Página de venda do Voxelia Pro (/conecta): dor → antes/depois → como funciona →
 // comparação com o vitalício (âncora) → garantia. Celular primeiro, CTA fixo no rodapé.
@@ -28,8 +27,8 @@ export default function ConnectPage({ onEnter }) {
     track("ViewContent", { content_ids: ["voxelia-mensal"], content_type: "product" });
   }, []);
   const lifetime = editions.find((e) => !e.mcp);
-  const buyPro = () => { funnel("buy_click"); navigate("/oferta?plano=mensal"); };
-  const buyLifetime = () => { funnel("buy_click"); navigate(`/comprar?edicao=${lifetime?.code || "edicao-1"}`); };
+  const buyPro = () => navigate("/oferta?plano=mensal&comprar=1");
+  const buyLifetime = () => navigate("/oferta?plano=vitalicio&comprar=1");
 
   return <div className="repo-page kit-page connect-page">
     <header className="repo-top"><Brand/><button type="button" className="btn btn-ghost btn-sm" onClick={() => onEnter()}>Entrar</button></header>

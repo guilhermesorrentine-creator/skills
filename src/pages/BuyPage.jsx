@@ -16,8 +16,11 @@ const COPY = {
 export default function BuyPage({ signedIn }) {
   const code = new URLSearchParams(location.search).get("edicao") || "edicao-1";
   useEffect(() => { funnel("buy_page"); }, []);
-  useEffect(() => { if (code === "pro-anual") location.replace("/oferta?plano=mensal"); }, [code]);
-  if (code === "pro-anual") return null;
+  useEffect(() => {
+    if (code === "pro-anual") location.replace("/oferta?plano=mensal&comprar=1");
+    if (code === "edicao-1") location.replace("/oferta?plano=vitalicio&comprar=1");
+  }, [code]);
+  if (["pro-anual", "edicao-1"].includes(code)) return null;
   return <main id="conteudo" className="auth-view">
     <div className="auth-card buy-card">
       <Brand/>

@@ -10,6 +10,7 @@ export default function SubscriptionCheckout({ signedIn }) {
   const [error, setError] = useState("");
   const [exists, setExists] = useState(false);
   const pay = async (event) => {
+    const form = event.currentTarget;
     event.preventDefault(); setBusy(true); setError(""); setExists(false);
     try {
       track("InitiateCheckout", { currency: "BRL", value: 49.9, content_ids: ["voxelia-mensal"], content_type: "product" });
@@ -26,7 +27,7 @@ export default function SubscriptionCheckout({ signedIn }) {
       if (data.session && data.key) try { localStorage.setItem("vx-claim", JSON.stringify({ session: data.session, key: data.key })); } catch { /* retorno contém a chave */ }
       funnel("checkout");
       location.assign(data.url);
-    } catch (cause) { setError(cause.message); setBusy(false); }
+    } catch (cause) { setError(cause.message); setBusy(false); form.scrollIntoView({ block: "start" }); }
   };
   return <form className="stack" onSubmit={pay}>
     <p className="buy-price"><b>R$ 49,90 por mês</b> no cartão · cobrança automática</p>

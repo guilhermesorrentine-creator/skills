@@ -72,7 +72,7 @@ function Routes() {
   if (path === "/") return <LandingPage account={signedIn ? account : null} signedIn={signedIn} onEnter={enter}/>;
   if (authModes[path]) return <AuthPage key={path} mode={authModes[path]} account={account} onAuthenticated={afterLogin}/>;
   if (path === "/conecta") return <Suspense fallback={<Loading/>}><ConnectPage onEnter={enter}/></Suspense>;
-  if (path === "/oferta") return <Suspense fallback={<Loading/>}><OfferPage signedIn={signedIn}/></Suspense>;
+  if (path === "/oferta") return <Suspense fallback={<Loading/>}><OfferPage signedIn={signedIn} authReady={!authLoading}/></Suspense>;
   if (path === "/comprar") return <Suspense fallback={<Loading/>}><BuyPage signedIn={signedIn} onEnter={enter}/></Suspense>;
   // Retorno do Asaas: compra sem cadastro (pedido + chave) não exige sessão; a compra logada sim.
   if (path === "/checkout/retorno") return claimFrom(location.search) ? <CheckoutReturnPage account={signedIn ? account : null} reload={reload}/> : requireSession(() => <CheckoutReturnPage account={account} reload={reload}/>);

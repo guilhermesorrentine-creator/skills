@@ -47,8 +47,9 @@ const LABELS = {
   "edicao-1": { name: "Só o acervo", note: "Você copia e cola os guias. Sem conexão com a IA." },
 };
 
-export default function OfferPage({ signedIn }) {
+export default function OfferPage({ signedIn, authReady = true }) {
   const params = new URLSearchParams(location.search);
+  const autoCheckout = params.get("comprar") === "1";
   const variant = String(params.get("utm_content") || "").toUpperCase();
   const lifetimeFirst = params.get("plano") === "vitalicio" || variant === "D";
   const [choice, setChoice] = useState(lifetimeFirst ? "lifetime" : "monthly");
@@ -56,6 +57,7 @@ export default function OfferPage({ signedIn }) {
   const flow = choice === "lifetime" ? ["Diga o que quer fazer", "Encontre a skill", "Copie o comando"] : ["Diga o que quer fazer", "A IA consulta a skill", "Receba um resultado com método"];
   const heroRef = useRef(null);
   const checkoutRef = useRef(null);
+  const autoStarted = useRef(false);
   const [atCheckout, setAtCheckout] = useState(false);
   const [pastHero, setPastHero] = useState(false);
 
@@ -87,8 +89,16 @@ export default function OfferPage({ signedIn }) {
 
   const goCheckout = () => {
     funnel("buy_click");
-    checkoutRef.current?.scrollIntoView({ behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "start" });
+    const form = checkoutRef.current?.querySelector("form");
+    if (form) form.requestSubmit();
+    else checkoutRef.current?.scrollIntoView({ block: "start" });
   };
+
+  useEffect(() => {
+    if (!autoCheckout || !authReady || autoStarted.current) return;
+    autoStarted.current = true;
+    goCheckout();
+  }, [autoCheckout, authReady]);
 
   return <div className="offer-page">
     <header className="offer-top"><Brand/></header>
@@ -109,7 +119,7 @@ export default function OfferPage({ signedIn }) {
           <label className={`plan-option${choice === "monthly" ? " is-on" : ""}`}><input type="radio" name="offer-plan" checked={choice === "monthly"} onChange={() => setChoice("monthly")}/><span className="plan-name">Mensal com IA</span><span className="plan-price"><b>R$ 49,90/mês</b> no cartão</span><span className="plan-note">Acervo e conexão com IA enquanto pagar. Cancelamento quando quiser.</span></label>
           <label className={`plan-option${choice === "lifetime" ? " is-on" : ""}`}><input type="radio" name="offer-plan" checked={choice === "lifetime"} onChange={() => setChoice("lifetime")}/><span className="plan-name">Acervo vitalício</span><span className="plan-price"><b>R$ 97,90</b> pagamento único</span><span className="plan-note">Guias para consultar e copiar. Sem conexão direta com IA.</span></label>
         </div>
-        {choice === "monthly" ? <SubscriptionCheckout signedIn={signedIn}/> : <Checkout codes={["edicao-1"]} signedIn={signedIn} labels={LABELS}/>}
+        {choice === "monthly" ? <SubscriptionCheckout signedIn={signedIn}/> : <Checkout codes={["edicao-1"]} signedIn={signedIn} labels={LABELS} hosted/>}
       </section>
 
       <section className="repo-block">

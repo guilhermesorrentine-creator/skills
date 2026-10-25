@@ -102,7 +102,7 @@ export function AccessPendingPage({ account, error, reload }) {
     {!account?.pendingOrder && <div className="panel stack">
       <p className="eyebrow">Acervo e conexão com IA</p>
       <p className="l-price"><b>R$ 49,90/mês</b><span>no cartão, enquanto quiser</span></p>
-      <Link className="btn btn-primary" to="/oferta?plano=mensal">Ver assinatura mensal</Link>
+      <Link className="btn btn-primary" to="/oferta?plano=mensal&comprar=1">Assinar por R$ 49,90/mês</Link>
       <hr/>
       {editions == null ? <p className="muted">Carregando…</p> : edition ? <>
         <p className="eyebrow">{edition.name}</p>

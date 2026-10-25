@@ -7,9 +7,8 @@ import { Link, navigate } from "../lib/router.jsx";
 import { formatPrice } from "../lib/billing-client.js";
 import { track } from "../lib/meta-pixel.js";
 import { NotFound } from "./AccountPages.jsx";
-import { funnel } from "../lib/funnel.js";
 
-const buy = () => { funnel("buy_click"); navigate("/comprar?edicao=edicao-1"); };
+const buy = () => navigate("/oferta?plano=vitalicio&comprar=1");
 
 // Página de venda por profissão (/kit/<slug>), destino de anúncios. Celular primeiro, CTA fixo.
 export default function KitPage({ slug, onEnter }) {
