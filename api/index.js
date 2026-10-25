@@ -4,7 +4,8 @@ import { createConversions } from "../server/meta.js";
 
 // Uma única função atende /api/* (limite de funções do plano Hobby). A rewrite em vercel.json
 // encaminha subcaminhos (ex.: /api/admin/overview) para cá; o roteamento usa a URL original.
-const validationHandle = async (request) => {
+export const GET = handle;
+export const POST = async (request) => {
   const url = new URL(request.url);
   if (process.env.VERCEL_ENV === "preview" && url.pathname === "/api/__validation/meta-purchase-20261025") {
     const config = readConfig();
@@ -24,5 +25,3 @@ const validationHandle = async (request) => {
   }
   return handle(request);
 };
-export const GET = validationHandle;
-export const POST = validationHandle;
