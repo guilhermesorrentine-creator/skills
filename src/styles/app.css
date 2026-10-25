@@ -322,6 +322,11 @@
 .offer-hero { display: grid; gap: 12px; padding: 26px 18px 22px; border-radius: var(--radius-lg); background: var(--tint-software); text-align: center; }
 .offer-hero .eyebrow { color: var(--ink-software); }
 .offer-hero h1 { font-size: clamp(30px, 8vw, 46px); line-height: 1.05; }
+.offer-hero-price { display: grid; gap: 2px; margin: 0; }
+.offer-hero-price b { font-size: clamp(26px, 7vw, 38px); line-height: 1.1; }
+.offer-hero-price span { font-size: 14px; color: var(--text-2); }
+.offer-plan-choices { display: grid; gap: 10px; }
+@media (min-width: 620px) { .offer-plan-choices { grid-template-columns: 1fr 1fr; } }
 .offer-lead { font-size: 17px; line-height: 1.55; color: var(--text-2); }
 .offer-cta { width: 100%; min-height: 54px; font-size: 17px; }
 .offer-assure { color: var(--text-2); }

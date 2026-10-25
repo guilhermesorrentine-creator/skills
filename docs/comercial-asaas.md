@@ -1,5 +1,7 @@
 # Voxelia 4.0 — arquitetura, comércio e operação
 
+> Este documento descreve a arquitetura original de compras avulsas. A assinatura mensal vigente e seus direitos estão em [assinatura-mensal.md](assinatura-mensal.md); o Pro anual aqui citado é histórico.
+
 ## Arquitetura
 
 - **Frontend:** React + Vite + Motion, roteamento por caminho (`src/lib/router.jsx`), SPA com fallback na Vercel.

@@ -31,23 +31,48 @@ export default function LicensePage({ account }) {
     } catch (e) { setError(e.message); }
     finally { setBusy(false); }
   };
+  const cancelMonthly = async () => {
+    setBusy(true); setError("");
+    try { await apiFetch("/api/subscription/cancel", { method: "POST" }); window.location.reload(); }
+    catch (cause) { setError(cause.message); setBusy(false); }
+  };
+  const refundMonthly = async () => {
+    setBusy(true); setError("");
+    try { await apiFetch("/api/subscription/refund", { method: "POST" }); window.location.reload(); }
+    catch (cause) { setError(cause.message); setBusy(false); }
+  };
   return <div className="page">
     <header className="page-head"><h1>Minha licença</h1></header>
     <section className="license-hero">
-      <p className="eyebrow">{account.edition?.name || "Sem edição"}</p>
-      <h2>{account.access ? "Seu acesso à edição adquirida é vitalício." : "Sua conta ainda não tem uma licença ativa."}</h2>
-      <p className="muted">Novas edições podem oferecer recursos extras mediante upgrade opcional.</p>
-      <dl className="license-facts">
+      <p className="eyebrow">{account.subscription?.active ? "Voxelia mensal" : account.edition?.name || "Sem edição"}</p>
+      <h2>{account.subscription?.active ? "Seu acervo e conexão com IA estão ativos." : account.access ? "Seu acesso à edição adquirida é vitalício." : "Sua conta ainda não tem acesso ativo."}</h2>
+      <p className="muted">{account.subscription?.active ? "O acesso acompanha o período pago da mensalidade." : "Novas edições podem oferecer recursos extras mediante upgrade opcional."}</p>
+      {!account.subscription?.active && <dl className="license-facts">
         <div><dt>Situação</dt><dd>{account.license?.statusLabel || (account.accessReason === "grant" ? "Acesso concedido pela administração" : account.accessReason === "dev" ? "Modo desenvolvimento" : "—")}</dd></div>
         <div><dt>Ativação</dt><dd>{when(account.license?.activatedAt)}</dd></div>
         <div><dt>Aquisição</dt><dd>{when(paid.at(-1)?.paidAt)}</dd></div>
         <div><dt>Total pago</dt><dd>{formatPrice(paid.reduce((sum, order) => sum + order.amountCents, 0))}</dd></div>
-      </dl>
+      </dl>}
     </section>
+
+    {account.subscription?.id && <section className="panel stack">
+      <h2>Assinatura mensal</h2>
+      <p>R$ 49,90 por mês no cartão. {account.subscription.active ? `Acesso pago até ${when(account.subscription.until)}.` : "Sem período pago ativo."}</p>
+      {account.subscription.canceled ? <p>Assinatura cancelada. Não haverá novas cobranças.</p>
+        : <button type="button" className="btn btn-ghost" onClick={cancelMonthly} disabled={busy}>{busy ? "Cancelando…" : "Cancelar cobrança automática"}</button>}
+      {account.subscription.refundUntil && <button type="button" className="link" onClick={refundMonthly} disabled={busy}>Pedir reembolso da primeira mensalidade (até {when(account.subscription.refundUntil)})</button>}
+      {error && <p className="form-error" role="alert">{error}</p>}
+    </section>}
 
     {account.edition?.features?.length > 0 && <section className="panel"><h2>Incluído na sua edição</h2><ul className="check-list">{account.edition.features.map((f) => <li key={f}>{f}</li>)}</ul></section>}
 
     {account.mcp?.active && <AiConnect until={account.mcp.until}/>}
+
+    {!account.mcp?.active && !account.subscription?.active && <section className="panel stack">
+      <h2>Conecte a Voxelia à sua IA</h2>
+      <p>Assine por R$ 49,90 por mês para usar o acervo e a conexão no Claude, ChatGPT ou Claude Code enquanto pagar. Seu acesso vitalício, se houver, continua válido.</p>
+      <a className="btn btn-primary" href="/oferta?plano=mensal">Ver assinatura mensal</a>
+    </section>}
 
     {account.renewal && <section className="panel upgrade-panel">
       <h2>{account.mcp?.active ? "Sua conexão com a IA vence em breve" : "Sua conexão com a IA venceu"}</h2>
@@ -66,7 +91,7 @@ export default function LicensePage({ account }) {
       <button type="button" className="btn btn-primary" onClick={upgrade} disabled={busy}>{busy ? "Abrindo pagamento…" : "Fazer upgrade"}</button>
       {error && <p className="form-error" role="alert">{error}</p>}
     </section>}
-    {!account.upgrade && account.latestEdition && account.access && <p className="muted">Você já tem a edição mais recente disponível ({account.latestEdition.name}).</p>}
+    {!account.subscription?.active && !account.upgrade && account.latestEdition && account.access && <p className="muted">Você já tem a edição mais recente disponível ({account.latestEdition.name}).</p>}
     {account.pendingOrder && <p className="notice">Há um pagamento em andamento. <a className="link" href={account.pendingOrder.url}>Continuar pagamento</a></p>}
 
     <section className="panel"><h2>Pedidos</h2>

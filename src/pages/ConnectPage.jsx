@@ -7,7 +7,7 @@ import { formatPrice } from "../lib/billing-client.js";
 import { track } from "../lib/meta-pixel.js";
 import { funnel } from "../lib/funnel.js";
 
-// Página de venda do Voxelia Pro (/conecta), destino dos anúncios: dor → antes/depois → como funciona →
+// Página de venda do Voxelia Pro (/conecta): dor → antes/depois → como funciona →
 // comparação com o vitalício (âncora) → garantia. Celular primeiro, CTA fixo no rodapé.
 const PAINS = [
   ["Texto genérico", "Você pede e recebe a resposta \"de manual\", igual à de todo mundo."],
@@ -25,12 +25,10 @@ export default function ConnectPage({ onEnter }) {
   useEffect(() => {
     document.title = "Voxelia Pro: dê superpoderes à sua IA";
     fetch("/api/editions").then((r) => (r.ok ? r.json() : { editions: [] })).then((d) => setEditions(d.editions || [])).catch(() => setEditions([]));
-    track("ViewContent", { content_ids: ["pro-anual"], content_type: "product" });
+    track("ViewContent", { content_ids: ["voxelia-mensal"], content_type: "product" });
   }, []);
-  const pro = editions.find((e) => e.mcp);
   const lifetime = editions.find((e) => !e.mcp);
-  const monthly = pro ? formatPrice(Math.round(pro.priceCents / (pro.installments || 1))) : "";
-  const buyPro = () => { funnel("buy_click"); navigate(`/comprar?edicao=${pro?.code || "pro-anual"}`); };
+  const buyPro = () => { funnel("buy_click"); navigate("/oferta?plano=mensal"); };
   const buyLifetime = () => { funnel("buy_click"); navigate(`/comprar?edicao=${lifetime?.code || "edicao-1"}`); };
 
   return <div className="repo-page kit-page connect-page">
@@ -41,8 +39,8 @@ export default function ConnectPage({ onEnter }) {
         <p className="eyebrow">Voxelia Pro</p>
         <h1>Conecte na sua IA. É como dar superpoderes a ela.</h1>
         <p>O Claude e o ChatGPT passam a usar 2 mil skills de especialistas, com o passo a passo certo para cada pedido.</p>
-        <button type="button" className="btn btn-primary kit-cta" onClick={buyPro}>{pro ? `Quero o Pro por ${pro.installments}x de ${monthly}` : "Quero o Pro"}</button>
-        <p className="small kit-terms">Cartão em 12x ou Pix à vista · 15 dias de garantia</p>
+        <button type="button" className="btn btn-primary kit-cta" onClick={buyPro}>Quero o Pro por R$ 49,90/mês</button>
+        <p className="small kit-terms">Cobrança mensal automática no cartão · cancele quando quiser</p>
       </section>
 
       <section className="repo-block">
@@ -66,8 +64,8 @@ export default function ConnectPage({ onEnter }) {
           <article className="connect-plan featured">
             <p className="eyebrow">Mais completo</p>
             <h3>Voxelia Pro</h3>
-            <p className="connect-price">{pro ? <><b>{pro.installments}x {monthly}</b><small>ou {formatPrice(pro.priceCents)} no Pix</small></> : "…"}</p>
-            <ul>{(pro?.features?.length ? pro.features : ["Conexão com a sua IA por 12 meses", "Acervo vitalício"]).map((f) => <li key={f}>{f}</li>)}</ul>
+            <p className="connect-price"><b>R$ 49,90/mês</b><small>cobrança automática no cartão</small></p>
+            <ul><li>Acervo e conexão com sua IA enquanto a assinatura estiver paga</li><li>Cancele quando quiser</li></ul>
             <button type="button" className="btn btn-primary" onClick={buyPro}>Quero o Pro</button>
           </article>
           <article className="connect-plan">
@@ -85,8 +83,8 @@ export default function ConnectPage({ onEnter }) {
       </section>
     </main>
     <div className="repo-cta" role="region" aria-label="Comprar">
-      <button type="button" className="btn btn-primary" onClick={buyPro}>{pro ? `Dar superpoderes à minha IA · ${pro.installments}x ${monthly}` : "Quero o Pro"}</button>
-      <span className="small muted">12x no cartão ou Pix · 15 dias de garantia</span>
+      <button type="button" className="btn btn-primary" onClick={buyPro}>Dar superpoderes à minha IA · R$ 49,90/mês</button>
+      <span className="small muted">Cartão · cancele quando quiser</span>
     </div>
     <SiteFooter onEnter={() => onEnter()}/>
   </div>;

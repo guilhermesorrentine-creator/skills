@@ -25,8 +25,9 @@ function Shell({ title, eyebrow, children }) {
 // Pedido e chave da compra sem cadastro: da URL de retorno ou, se faltar, do navegador que iniciou a compra.
 export function claimFrom(search) {
   const params = new URLSearchParams(search);
+  if (params.get("sessao") && params.get("chave")) return { session: params.get("sessao"), key: params.get("chave") };
   if (params.get("pedido") && params.get("chave")) return { order: params.get("pedido"), key: params.get("chave") };
-  try { const saved = JSON.parse(localStorage.getItem("vx-claim") || "null"); return saved?.order && saved?.key ? saved : null; } catch { return null; }
+  try { const saved = JSON.parse(localStorage.getItem("vx-claim") || "null"); return saved?.key && (saved.order || saved.session) ? saved : null; } catch { return null; }
 }
 
 // Compra sem cadastro: consulta o servidor até o pagamento confirmar e oferece o link para criar a senha.
@@ -37,7 +38,7 @@ function GuestReturn({ claim }) {
     if (state.status === "paid" || tries >= 60) return undefined;
     const id = window.setTimeout(async () => {
       try {
-        const response = await fetch("/api/checkout/claim", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(claim) });
+        const response = await fetch(claim.session ? "/api/subscription/claim" : "/api/checkout/claim", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(claim) });
         const data = await response.json();
         if (!response.ok) setState({ status: "error", message: data.message }); else setState(data);
       } catch { /* tenta de novo */ }
@@ -49,10 +50,10 @@ function GuestReturn({ claim }) {
   const paid = state.status === "paid";
   return <Shell eyebrow="Pagamento" title={paid ? "Pagamento confirmado!" : state.status === "error" ? "Link de retorno inválido" : "Confirmando seu pagamento…"}>
     <div className="panel stack">
-      {paid && state.url && <><p>Seu acesso vitalício está ativo. Falta só criar sua senha:</p><a className="btn btn-primary" href={state.url}>Criar minha senha e entrar</a></>}
+      {paid && state.url && <><p>{claim.session ? "Sua mensalidade foi confirmada e o acesso está ativo." : "Seu acesso vitalício está ativo."} Falta só criar sua senha:</p><a className="btn btn-primary" href={state.url}>Criar minha senha e entrar</a></>}
       {paid && state.login && <><p>Seu acesso está ativo. Entre com seu e-mail e senha.</p><Link className="btn btn-primary" to="/entrar?next=/app">Entrar na Voxelia</Link></>}
       {state.status === "error" && <p>{state.message}</p>}
-      {!paid && state.status !== "error" && <><p className="waiting"><span className="spinner" aria-hidden="true"/> No Pix costuma ser imediato; no cartão, alguns instantes. Não feche esta página.</p>
+      {!paid && state.status !== "error" && <><p className="waiting"><span className="spinner" aria-hidden="true"/> Aguardando a confirmação do Asaas. Não feche esta página.</p>
         {tries >= 60 && <p>A confirmação ainda não chegou. Guarde este endereço e volte a ele daqui a pouco: o acesso é liberado assim que o pagamento confirmar.</p>}</>}
     </div>
   </Shell>;
@@ -65,10 +66,11 @@ export function CheckoutReturnPage({ account, reload }) {
 }
 
 function SignedReturn({ account, reload }) {
-  const result = new URLSearchParams(location.search).get("resultado");
+  const params = new URLSearchParams(location.search);
+  const result = params.get("resultado");
   const [tries, setTries] = useState(0);
   const timer = useRef(0);
-  const confirmed = account?.access;
+  const confirmed = params.get("tipo") === "mensal" ? account?.subscription?.active : account?.access;
   useEffect(() => {
     if (confirmed || result !== "sucesso" || tries >= 40) return;
     timer.current = window.setTimeout(async () => { await reload(); setTries((v) => v + 1); }, 3000);
@@ -76,7 +78,7 @@ function SignedReturn({ account, reload }) {
   }, [confirmed, result, tries, reload]);
   return <Shell eyebrow="Pagamento" title={confirmed ? "Pagamento confirmado" : result === "sucesso" ? "Aguardando confirmação do pagamento" : result === "expirado" ? "O link de pagamento expirou" : "Pagamento não concluído"}>
     <div className="panel stack">
-      {confirmed && <><p>O Asaas confirmou o pagamento. Seu acesso vitalício está ativo.</p><button type="button" className="btn btn-primary" onClick={() => navigate("/app")}>Entrar na Voxelia</button></>}
+      {confirmed && <><p>O Asaas confirmou o pagamento. Seu acesso está ativo.</p><button type="button" className="btn btn-primary" onClick={() => navigate("/app")}>Entrar na Voxelia</button></>}
       {!confirmed && result === "sucesso" && <><p className="waiting"><span className="spinner" aria-hidden="true"/> Recebemos seu retorno. O acesso é liberado somente quando o Asaas confirma o pagamento — no Pix costuma ser imediato; no cartão, alguns instantes.</p>
         {tries >= 40 && <p>A confirmação ainda não chegou. Você pode fechar esta página: o acesso será liberado automaticamente quando o pagamento for confirmado.</p>}
         <button type="button" className="btn btn-secondary" onClick={() => reload()}>Verificar agora</button></>}
@@ -93,16 +95,20 @@ export function AccessPendingPage({ account, error, reload }) {
   useEffect(() => { fetch("/api/editions").then((r) => (r.ok ? r.json() : { editions: [] })).then((d) => setEditions(d.editions || [])).catch(() => setEditions([])); }, []);
   const edition = editions?.[0];
   const buy = async () => { setBusy(true); setBuyError(""); try { await purchase(edition.code, { signedIn: true }); } catch (e) { setBuyError(e.message); setBusy(false); } };
-  return <Shell eyebrow="Acesso" title={account?.pendingOrder ? "Pagamento em andamento" : "Garanta seu acesso vitalício"}>
+  return <Shell eyebrow="Acesso" title={account?.pendingOrder ? "Pagamento em andamento" : "Escolha seu acesso à Voxelia"}>
     {error && <p className="form-error" role="alert">Não foi possível verificar sua conta: {error.message} <button type="button" className="link" onClick={() => reload()}>Tentar de novo</button></p>}
     {account?.license && !account.access && <p className="notice">Situação da licença: {account.license.statusLabel}. Fale com o suporte se precisar.</p>}
     {account?.pendingOrder && <div className="panel stack"><p>Você iniciou um pagamento que ainda não foi confirmado.</p><a className="btn btn-primary" href={account.pendingOrder.url}>Continuar pagamento</a><button type="button" className="btn btn-secondary" onClick={() => reload()}>Já paguei — verificar</button></div>}
     {!account?.pendingOrder && <div className="panel stack">
+      <p className="eyebrow">Acervo e conexão com IA</p>
+      <p className="l-price"><b>R$ 49,90/mês</b><span>no cartão, enquanto quiser</span></p>
+      <Link className="btn btn-primary" to="/oferta?plano=mensal">Ver assinatura mensal</Link>
+      <hr/>
       {editions == null ? <p className="muted">Carregando…</p> : edition ? <>
         <p className="eyebrow">{edition.name}</p>
         <p className="l-price"><b>{formatPrice(edition.priceCents)}</b><span>pagamento único</span></p>
         <p className="muted">Acesso vitalício à edição adquirida. Sem mensalidade. Pix ou cartão pelo Asaas.</p>
-        <button type="button" className="btn btn-primary" onClick={buy} disabled={busy}>{busy ? "Abrindo pagamento…" : "Comprar agora"}</button>
+        <button type="button" className="btn btn-secondary" onClick={buy} disabled={busy}>{busy ? "Abrindo pagamento…" : "Comprar acervo vitalício"}</button>
       </> : <p>As vendas ainda não foram abertas. Assim que a edição estiver disponível, você poderá comprar por aqui.</p>}
       {buyError && <p className="form-error" role="alert">{buyError}</p>}
     </div>}
@@ -126,7 +132,7 @@ export function SharedCollectionPage({ token }) {
 }
 
 // Textos jurídicos. Os dados de quem vende vêm do ambiente (src/lib/seller.js).
-const UPDATED = "23 de outubro de 2026";
+const UPDATED = "25 de outubro de 2026";
 const who = () => sellerLine() || "dados em cadastro";
 const contact = () => seller.email || "o e-mail de suporte indicado no rodapé";
 const legal = {
@@ -134,8 +140,8 @@ const legal = {
     ["1. Quem somos", `A Voxelia é uma plataforma de Agent Skills organizadas em português. Responsável: ${who()}. Ao criar uma conta ou comprar, você concorda com estes termos.`],
     ["2. O que é o serviço", "A Voxelia organiza Agent Skills e outros recursos de repositórios públicos para o Claude, o ChatGPT e outros agentes de IA, com busca por objetivo e guias passo a passo em português. As skills não são exclusivas: vêm de projetos públicos, sempre com a fonte e o autor creditados. O que vendemos é a curadoria, a organização, a busca e os guias."],
     ["3. Conta", "Você é responsável pelo e-mail informado e pela senha da sua conta. A licença é pessoal: não compartilhe o acesso nem o link de conexão com a IA."],
-    ["4. Licença vitalícia", "A compra de uma edição dá acesso por tempo indeterminado aos recursos daquela edição, enquanto a Voxelia estiver em operação. Edições futuras podem trazer recursos extras mediante upgrade opcional, pagando a diferença."],
-    ["5. Voxelia Pro e conexão com a IA", "O Voxelia Pro inclui a edição vitalícia e a conexão da sua IA ao acervo (servidor MCP) por 12 meses contados do pagamento. Depois desse prazo, o acervo continua vitalício e a conexão pode ser renovada. Os aplicativos de IA (Claude, ChatGPT e outros) são de terceiros e têm suas próprias regras e custos."],
+    ["4. Licença vitalícia", "A compra avulsa do acervo dá acesso por tempo indeterminado aos recursos daquela edição, enquanto a Voxelia estiver em operação. Não inclui conexão direta com IA. Edições futuras podem trazer recursos extras mediante upgrade opcional."],
+    ["5. Assinatura mensal e conexão com IA", "A assinatura Voxelia de R$ 49,90 por mês inclui acervo e conexão com IA enquanto houver período pago. A cobrança é automática no cartão pelo Asaas. Você pode cancelar em Minha licença; não haverá nova cobrança e o acesso segue até o fim do período já pago. A assinatura não cria licença vitalícia. Quem comprou o Pro anual antes desta mudança mantém os direitos da compra. Os aplicativos de IA são de terceiros e podem ter custos próprios."],
     ["6. Conteúdo de terceiros", "Cada skill segue a licença do repositório de origem, informada junto ao recurso. Antes de usar em produção, confira a licença e revise o que o agente vai executar. A Voxelia não se responsabiliza pelo funcionamento de ferramentas de terceiros."],
     ["7. Disponibilidade e suporte", `Trabalhamos para manter a plataforma no ar, mas podem ocorrer interrupções para manutenção. Suporte por ${contact()}.`],
     ["8. Uso proibido", "É proibido revender o acesso, copiar o acervo em massa, burlar a cobrança ou usar a plataforma para fins ilegais. Nesses casos a licença pode ser revogada."],
@@ -153,11 +159,11 @@ const legal = {
     ["8. Segurança", "Usamos conexão criptografada, senhas protegidas pelo provedor de autenticação e acesso restrito ao banco de dados. Os dados do cartão são digitados no ambiente do Asaas e não passam pelos nossos servidores."],
   ] },
   "compra-e-reembolso": { title: "Compra e reembolso", sections: () => [
-    ["1. Preços e pagamento", "Os preços são exibidos em reais na página de compra. A edição vitalícia é paga uma única vez. O Voxelia Pro pode ser pago em até 12 parcelas no cartão ou à vista no Pix. Os pagamentos são processados pelo Asaas."],
+    ["1. Preços e pagamento", "O acervo vitalício custa R$ 97,90 uma única vez. A assinatura com acervo e conexão com IA custa R$ 49,90 por mês, com cobrança automática no cartão. Os pagamentos são processados pelo Asaas."],
     ["2. Liberação do acesso", "O acesso é liberado assim que o pagamento é confirmado: na hora no Pix e em instantes no cartão. Depois da confirmação você cria a senha na própria página, sem esperar e-mail."],
-    ["3. Garantia de 15 dias", "Você pode desistir em até 15 dias da compra, mais que os 7 dias do Código de Defesa do Consumidor (art. 49), sem precisar justificar. Peça em Minha licença → Garantia de 15 dias ou pelo suporte."],
-    ["4. Como o reembolso é feito", "O valor volta pelo mesmo meio de pagamento: no Pix, para a conta de origem; no cartão, como estorno na fatura (no parcelamento, todas as parcelas são canceladas). O acesso é encerrado quando o reembolso é feito. Quando o estorno automático não for possível, ele é concluído em até 2 dias úteis."],
-    ["5. Upgrades e renovação", "No upgrade para uma edição maior, o que você já pagou vira crédito e você paga só a diferença. A conexão do Pro com a IA pode ser renovada por mais 12 meses a partir de 30 dias antes do vencimento."],
+    ["3. Garantia de 15 dias", "Você pode pedir reembolso em até 15 dias da compra avulsa ou da primeira mensalidade, sem justificar, em Minha licença ou pelo suporte."],
+    ["4. Como o reembolso é feito", "O valor volta pelo mesmo meio de pagamento. No cartão, o estorno aparece na fatura. Reembolso da primeira mensalidade também cancela novas cobranças; o período reembolsado deixa de dar acesso. Quando o estorno automático não for possível, procure o suporte."],
+    ["5. Cancelamento e direitos anteriores", "A assinatura pode ser cancelada em Minha licença a qualquer momento. O acesso continua até o fim do período pago e não há novas cobranças. Compras anuais anteriores continuam com os direitos informados na data da compra."],
     ["6. Contestação", "Se você contestar a cobrança no banco ou no cartão, o acesso pode ficar em análise até a decisão. Antes disso, fale com a gente: resolvemos mais rápido."],
     ["7. Contato", `Dúvidas sobre cobrança: ${contact()}. Vendedor: ${who()}.`],
   ] },

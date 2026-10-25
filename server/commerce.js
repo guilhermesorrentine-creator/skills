@@ -1,6 +1,7 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
 import { activeGrants, entitlement, licenseLabels, quote } from "./licensing.js";
 import { checkoutUrl } from "./asaas.js";
+import { createSubscriptions } from "./subscriptions.js";
 
 const httpError = (status, code, message) => Object.assign(new Error(message), { status, code });
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -20,9 +21,15 @@ const DISPUTE = new Set(["PAYMENT_CHARGEBACK_REQUESTED", "PAYMENT_CHARGEBACK_DIS
 
 // Pagamento único por edição (Asaas Checkout avulso) e licença vitalícia.
 export function createCommerce({ store, asaas, config, onboarding = null, conversions = null, now = () => new Date() }) {
+  const subscriptions = createSubscriptions({ store, asaas, config, now });
   async function userEntitlement(userId) {
-    const [license, grants, editions] = await Promise.all([store.getLicense(userId), store.listGrants(userId), store.listEditions({ onSaleOnly: false })]);
-    return { license, grants, editions, ...entitlement({ license, grants, editions, now: now() }) };
+    const [license, grants, editions, monthly] = await Promise.all([store.getLicense(userId), store.listGrants(userId), store.listEditions({ onSaleOnly: false }), subscriptions.status(userId)]);
+    const permanent = entitlement({ license, grants, editions, now: now() });
+    const pro = editions.find((edition) => edition.code === MCP_EDITION);
+    const rank = Math.max(permanent.rank, monthly.active ? pro?.rank || 2 : 0);
+    return { license, grants, editions, monthly, ...permanent, access: rank > 0, rank,
+      edition: rank > permanent.rank ? pro || null : permanent.edition,
+      reason: rank > permanent.rank ? "subscription" : permanent.reason };
   }
 
   async function accountState(user) {
@@ -39,7 +46,9 @@ export function createCommerce({ store, asaas, config, onboarding = null, conver
       access: ent.access,
       accessReason: ent.reason,
       rank: ent.rank,
-      edition: ent.edition ? publicEdition(ent.edition) : null,
+      edition: ent.reason === "subscription" ? { code: "voxelia-mensal", name: "Voxelia mensal", rank: ent.rank, priceCents: 4990,
+        features: ["Acervo de skills enquanto a assinatura estiver paga", "Conexão com Claude, ChatGPT e Claude Code enquanto a assinatura estiver paga"], onSale: true, installments: 1, mcp: true }
+        : ent.edition ? publicEdition(ent.edition) : null,
       license: ent.license ? {
         status: ent.license.status,
         statusLabel: licenseLabels[ent.license.status],
@@ -55,7 +64,8 @@ export function createCommerce({ store, asaas, config, onboarding = null, conver
       upgrade: upgrade && !upgrade.error ? { edition: publicEdition(latest), ...upgrade } : null,
       pendingOrder: open?.checkout_url ? { url: open.checkout_url, expiresAt: open.expires_at } : null,
       refund: refundState(orders),
-      mcp: mcpWindow(orders, ent.editions, ent.grants),
+      mcp: ent.monthly.active ? { active: true, until: ent.monthly.until } : mcpWindow(orders, ent.editions, ent.grants),
+      subscription: { ...ent.monthly, priceCents: 4990 },
       renewal: renewal ? { edition: publicEdition(pro), amount: renewal.amount } : null,
     };
   }
@@ -82,8 +92,9 @@ export function createCommerce({ store, asaas, config, onboarding = null, conver
     return { kind: "purchase", listPrice: target.price_cents, credit: 0, amount: target.price_cents };
   }
   async function mcpStatus(userId) {
-    const [orders, editions, grants] = await Promise.all([store.listOrders(userId), store.listEditions({ onSaleOnly: false }), store.listGrants(userId)]);
-    return mcpWindow(orders, editions, grants);
+    const [orders, editions, grants, monthly] = await Promise.all([store.listOrders(userId), store.listEditions({ onSaleOnly: false }), store.listGrants(userId), subscriptions.status(userId)]);
+    const legacy = mcpWindow(orders, editions, grants);
+    return monthly.active ? { active: true, until: monthly.until } : legacy;
   }
 
   // Cobrança do pedido pela referência gravada nela (vale para parcelas) ou, em pedidos antigos, pelo valor.
@@ -381,12 +392,31 @@ export function createCommerce({ store, asaas, config, onboarding = null, conver
   async function processEvent(row) {
     const payload = row.payload;
     try {
-      if (payload.event.startsWith("CHECKOUT_")) return await handleCheckout(row, payload);
+      if (payload.event.startsWith("SUBSCRIPTION_")) {
+        const result = await subscriptions.subscriptionEvent(payload);
+        const finished = await finish(row, result?.status || "processed", result?.note);
+        if (result?.status === "processed") await retryUnlinked(row.id);
+        return finished;
+      }
+      if (payload.event.startsWith("CHECKOUT_")) {
+        const result = await subscriptions.checkoutEvent(payload);
+        if (result) { const finished = await finish(row, result.status, result.note); await retryUnlinked(row.id); return finished; }
+        return await handleCheckout(row, payload);
+      }
       if (!payload.payment) return finish(row, "processed", "Evento sem cobrança; apenas registrado.");
+      if (payload.payment.subscription) {
+        const result = await subscriptions.paymentEvent(payload);
+        return finish(row, result.status, result.note);
+      }
       return await handlePayment(row, payload);
     } catch (error) {
       return finish(row, "failed", String(error.message).slice(0, 500));
     }
+  }
+
+  async function retryUnlinked(except) {
+    for (const pending of await store.listEvents({ status: "unlinked", limit: 50 }))
+      if (pending.id !== except && (pending.event.startsWith("SUBSCRIPTION_") || pending.payload?.payment?.subscription)) await processEvent(pending);
   }
 
   async function handleCheckout(row, payload) {
@@ -496,7 +526,7 @@ export function createCommerce({ store, asaas, config, onboarding = null, conver
     return { status };
   }
 
-  return { userEntitlement, accountState, startCheckout, guestCheckout, accountCheckout, mcpStatus, claimAccess, requestRefund, adminRefund, receiveWebhook, processEvent, reconcileOrder, setLicenseStatus, verifyWebhookToken };
+  return { userEntitlement, accountState, startCheckout, guestCheckout, accountCheckout, mcpStatus, claimAccess, requestRefund, adminRefund, receiveWebhook, processEvent, reconcileOrder, setLicenseStatus, verifyWebhookToken, subscriptions };
 }
 
 export function publicEdition(edition) {

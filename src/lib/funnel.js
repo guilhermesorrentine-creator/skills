@@ -22,6 +22,8 @@ function origin() {
   return value;
 }
 
+export const attributionForCheckout = () => origin();
+
 export function funnel(name, extra = {}) {
   const id = sid();
   if (!id) return;

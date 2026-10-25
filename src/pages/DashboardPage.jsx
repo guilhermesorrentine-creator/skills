@@ -11,8 +11,8 @@ const sections = [
   ["funil", "Funil do site", Target], ["financeiro", "Financeiro", Wallet], ["pedidos", "Clientes e pedidos", ShoppingBag], ["indices", "Índices", BookOpen], ["config", "Configurações", Settings],
 ];
 const definitions = {
-  "Vendas": "Valor integral dos pedidos confirmados no período, menos reembolsos lançados no período. Uma compra em 12x conta pelo valor total.",
-  "Vendas do período": "Valor integral dos pedidos confirmados no período, menos reembolsos lançados no período. Uma compra em 12x conta pelo valor total.",
+  "Vendas": "Compras avulsas e mensalidades confirmadas no período, menos reembolsos lançados no período. Compras antigas em 12x contam pelo valor total.",
+  "Vendas do período": "Compras avulsas e mensalidades confirmadas no período, menos reembolsos lançados no período. Compras antigas em 12x contam pelo valor total.",
   "Pedidos pagos": "Quantidade de pedidos com pagamento confirmado, descontados os totalmente reembolsados.",
   "Caixa": "Valor líquido das parcelas que ficou disponível no saldo do Asaas no período.",
   "Caixa no Asaas": "Valor líquido das parcelas que ficou disponível no saldo do Asaas no período.",

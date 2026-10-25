@@ -4,7 +4,7 @@ import { randomUUID } from "node:crypto";
 
 export function createMemoryStore(seed = {}) {
   const db = {
-    profiles: [...(seed.profiles || [])], editions: [...(seed.editions || [])], orders: [], payments: [], licenses: [], licenseEvents: [],
+    profiles: [...(seed.profiles || [])], editions: [...(seed.editions || [])], plans: [...(seed.plans || [{ id: "plan-monthly", code: "voxelia-mensal", name: "Voxelia mensal", price_cents: 4990, cycle: "MONTHLY", active: true }])], checkoutSessions: [], subscriptions: [], subscriptionPayments: [], orders: [], payments: [], licenses: [], licenseEvents: [],
     events: [], grants: [], audit: [], funnel: [], resources: [...(seed.resources || [])], relations: [...(seed.relations || [])], paths: [...(seed.paths || [])],
     collections: [], items: [], favorites: [], recent: [], dashboardExpenses: [], dashboardNotes: [], dashboardAdLinks: [], dashboardCache: [],
     dashboardSettings: { goal_cents: 1500000, goal_starts_on: "2026-10-22", goal_ends_on: "2026-12-05" },
@@ -38,6 +38,36 @@ export function createMemoryStore(seed = {}) {
       if (existing) Object.assign(existing, edition); else db.editions.push({ id: randomUUID(), ...edition });
       return clone(db.editions.find((item) => item.code === edition.code));
     },
+
+    getPlanByCode: async (code) => clone(db.plans.find((item) => item.code === code)),
+    insertCheckoutSession: async (row) => {
+      if (db.checkoutSessions.some((item) => item.user_id === row.user_id && ["creating", "created"].includes(item.status))) return null;
+      const record = { id: randomUUID(), created_at: stamp(), ...row }; db.checkoutSessions.push(record); return clone(record);
+    },
+    updateCheckoutSession: async (id, patch) => { Object.assign(db.checkoutSessions.find((item) => item.id === id) || {}, patch); },
+    getCheckoutSession: async (id) => clone(db.checkoutSessions.find((item) => item.id === id)),
+    findCheckoutSessionByAsaas: async (id) => clone(db.checkoutSessions.find((item) => item.asaas_checkout_id === id)),
+    findCheckoutSessionByCustomer: async (id) => clone(db.checkoutSessions.find((item) => item.asaas_customer_id === id && item.status === "paid")),
+    getOpenCheckoutSession: async (userId, at) => clone(db.checkoutSessions.find((item) => item.user_id === userId && ["creating", "created"].includes(item.status) && new Date(item.expires_at) > new Date(at))),
+    listCheckoutSessions: async (userId) => clone(db.checkoutSessions.filter((item) => item.user_id === userId)),
+    insertSubscription: async (row) => {
+      if (db.subscriptions.some((item) => item.asaas_subscription_id === row.asaas_subscription_id)) return null;
+      const record = { id: randomUUID(), created_at: stamp(), ...row }; db.subscriptions.push(record); return clone(record);
+    },
+    updateSubscription: async (id, patch) => { Object.assign(db.subscriptions.find((item) => item.id === id) || {}, patch); },
+    findSubscriptionByAsaas: async (id) => clone(db.subscriptions.find((item) => item.asaas_subscription_id === id)),
+    listSubscriptions: async (userId) => clone(db.subscriptions.filter((item) => !userId || item.user_id === userId)),
+    getSubscription: async (id) => clone(db.subscriptions.find((item) => item.id === id)),
+    upsertSubscriptionPayment: async (row) => {
+      const found = db.subscriptionPayments.find((item) => item.asaas_payment_id === row.asaas_payment_id);
+      if (found) {
+        if (row.status === "REFUNDED" || (row.status === "CONFIRMED" || row.status === "RECEIVED") && found.status !== "REFUNDED"
+          || !["CONFIRMED", "RECEIVED", "REFUNDED"].includes(found.status)) Object.assign(found, row);
+      } else db.subscriptionPayments.push({ id: randomUUID(), created_at: stamp(), ...row });
+      return clone(found || db.subscriptionPayments.at(-1));
+    },
+    getSubscriptionPayment: async (id) => clone(db.subscriptionPayments.find((item) => item.asaas_payment_id === id)),
+    listSubscriptionPayments: async (subscriptionId) => clone(db.subscriptionPayments.filter((item) => !subscriptionId || item.subscription_id === subscriptionId)),
 
     getOpenOrder: async (userId, now) => clone(db.orders.filter((item) => item.user_id === userId && isOpen(item, now)).sort(newest("created_at"))[0]),
     insertOrder: async (row) => {

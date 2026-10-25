@@ -1,0 +1,7 @@
+# Assinatura mensal Voxelia
+
+Decisão de 25/10/2026: R$ 49,90 por mês, cobrança automática no cartão via Checkout recorrente do Asaas. O período pago libera o acervo e a conexão MCP. O cancelamento impede novas cobranças e mantém o acesso até o fim do período pago. A primeira mensalidade tem garantia de 15 dias. O acervo vitalício de R$ 97,90 continua à venda separadamente, sem MCP. O Pro anual antigo sai de venda; pedidos anteriores mantêm os direitos adquiridos.
+
+O preço é validado no servidor. O retorno do navegador e `CHECKOUT_PAID` não liberam acesso; apenas a cobrança `PAYMENT_CONFIRMED` ou `PAYMENT_RECEIVED`, associada à assinatura correta, ao cliente, ao cartão e ao valor de R$ 49,90. Eventos duplicados e fora de ordem são registrados e reprocessados. Os períodos pagos são recalculados após estorno. A licença vitalícia não é criada pela assinatura. O painel financeiro inclui cada mensalidade pelo pagamento real do Asaas, com taxa e data de crédito.
+
+Antes de colocar em produção: aplicar `20261025120000_voxelia_mensal.sql`, validar o Checkout recorrente em Sandbox com os webhooks `CHECKOUT_*`, `SUBSCRIPTION_*` e `PAYMENT_*`, testar uma renovação e um cancelamento, e então publicar código e página juntos. Não publicar o site com o novo preço antes da migração. A campanha D continua anunciando o vitalício e a variante `/oferta?utm_content=D` o destaca. Nenhum anúncio da Meta será modificado por esta mudança.

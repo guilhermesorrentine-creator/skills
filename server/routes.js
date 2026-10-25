@@ -45,6 +45,10 @@ export function createApi({ store, commerce, onboarding = null, library, me, mcp
     return user;
   }
   const body = async (request) => { try { return await request.json(); } catch { return {}; } };
+  const attribution = (input) => {
+    const clean = (value) => String(value || "").replace(/[^\p{L}\p{N}_\-./ ]/gu, "").slice(0, 120);
+    return { source: clean(input?.source), campaign: clean(input?.campaign), content: clean(input?.content) };
+  };
   const param = (request, name) => new URL(request.url).searchParams.get(name);
   const ok = (data = { ok: true }) => json(200, data);
   async function cached(key, fetchFresh, force) {
@@ -93,6 +97,11 @@ export function createApi({ store, commerce, onboarding = null, library, me, mcp
     "POST /api/checkout": async (request) => { const input = await body(request); return ok(await commerce.accountCheckout(await requireUser(request), input.editionCode, readTracking(input.tracking, request), input.name || input.document ? { name: input.name, document: input.document } : null, input.method === "card" ? "card" : "pix")); },
     // Compra sem cadastro (só e-mail) e retorno com link para criar a senha.
     "POST /api/checkout/guest": async (request) => { const input = await body(request); return ok(await commerce.guestCheckout(input.email, input.editionCode, readTracking(input.tracking, request), input.name || input.document ? { name: input.name, document: input.document } : null, input.method === "card" ? "card" : "pix")); },
+    "POST /api/subscription/checkout": async (request) => { const user = await requireUser(request); const input = await body(request); return ok(await commerce.subscriptions.start(user, readTracking(input.tracking, request), false, attribution(input.attribution))); },
+    "POST /api/subscription/guest": async (request) => { const input = await body(request); return ok(await commerce.subscriptions.startGuest(input.email, readTracking(input.tracking, request), attribution(input.attribution))); },
+    "POST /api/subscription/claim": async (request) => { const input = await body(request); return ok(await commerce.subscriptions.claim(input.session, input.key)); },
+    "POST /api/subscription/cancel": async (request) => ok(await commerce.subscriptions.cancel((await requireUser(request)).id)),
+    "POST /api/subscription/refund": async (request) => ok(await commerce.subscriptions.refund((await requireUser(request)).id)),
     // Conexão com IAs (MCP): só para quem tem licença ativa.
     "GET /api/account/mcp": async (request) => { const user = await requireMcp(request); return ok({ url: await mcp.connectionUrl(user.id) }); },
     "POST /api/account/mcp/rotate": async (request) => { const user = await requireMcp(request); return ok({ url: await mcp.rotate(user.id) }); },
@@ -139,8 +148,8 @@ export function createApi({ store, commerce, onboarding = null, library, me, mcp
       const { from, to, today } = dashboardPeriod(request);
       const goal = await store.getDashboardSettings();
       const force = param(request, "refresh") === "1";
-      const [orders, payments, profiles, editions, expenses, links, funnel, asaasData] = await Promise.all([
-        store.listOrders(), store.listPayments(), store.listProfiles(), store.listEditions({ onSaleOnly: false }),
+      const [orders, payments, profiles, editions, subscriptions, subscriptionPayments, expenses, links, funnel, asaasData] = await Promise.all([
+        store.listOrders(), store.listPayments(), store.listProfiles(), store.listEditions({ onSaleOnly: false }), store.listSubscriptions(), store.listSubscriptionPayments(),
         store.listDashboardExpenses(), store.listDashboardAdLinks(),
         store.listFunnelEvents(`${[from, goal.goal_starts_on].sort()[0]}T00:00:00-03:00`), cached("asaas-payments", () => loadAsaasPayments(asaas), force),
       ]);
@@ -148,7 +157,7 @@ export function createApi({ store, commerce, onboarding = null, library, me, mcp
       const metaFrom = [from, goal.goal_starts_on, firstDeposit].filter(Boolean).sort()[0];
       const metaTo = [to, goal.goal_ends_on].sort().at(-1) > today ? today : [to, goal.goal_ends_on].sort().at(-1);
       const metaData = await cached(`meta-${dashboardConfig.adsAccountId}-${metaFrom}-${metaTo}`, () => loadMetaAds(dashboardConfig, metaFrom, metaTo), force);
-      const ledger = buildLedger({ orders, remotePayments: asaasData.rows, localPayments: payments, profiles, editions, funnel });
+      const ledger = buildLedger({ orders, remotePayments: asaasData.rows, localPayments: payments, profiles, editions, funnel, subscriptions, subscriptionPayments });
       const occurrences = expenseOccurrences(expenses, [from, goal.goal_starts_on].sort()[0], [to, goal.goal_ends_on].sort().at(-1));
       const metrics = summarizeLedger({ ledger, expenses: occurrences, ads: metaData.rows || [], funnel, from, to, goal });
       if (asaasData.error || ledger.incomplete || orders.length >= 1000 || payments.length >= 1000) {

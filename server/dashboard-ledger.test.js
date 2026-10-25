@@ -17,6 +17,19 @@ test("fuso de Brasília mantém venda às 22h no mesmo dia", () => {
   assert.equal(businessDay("2026-10-24T01:00:00Z"), "2026-10-23");
 });
 
+test("mensalidade entra no painel com origem, taxa e crédito real do Asaas", () => {
+  const ledger = buildLedger({ orders: [], localPayments: [], profiles: [{ id: "u1", email: "a@example.com" }], editions: [], funnel: [],
+    subscriptions: [{ id: "s1", user_id: "u1", asaas_subscription_id: "sub_1", attribution: { source: "meta", campaign: "teste60", content: "C" } }],
+    subscriptionPayments: [], remotePayments: [{ id: "pay_1", subscription: "sub_1", status: "RECEIVED", value: 49.9, netValue: 48.4,
+      billingType: "CREDIT_CARD", confirmedDate: "2026-10-24", creditDate: "2026-10-25", refunds: [] }] });
+  const result = summary(ledger);
+  assert.equal(result.salesCents, 4990);
+  assert.equal(result.cashCents, 4840);
+  assert.equal(result.feesCents, 150);
+  assert.equal(result.metaSalesCents, 4990);
+  assert.equal(ledger.orderRows[0].product, "Voxelia mensal");
+});
+
 test("recarga de R$ 60 não duplica o custo dos anúncios no lucro", () => {
   const expenses = [{ kind: "meta_deposit", title: "Recarga Meta Ads via Pix", amount_cents: 6000, starts_on: "2026-10-23", recurring: false }];
   const ads = [{ on: "2026-10-23", spendCents: 306 }];

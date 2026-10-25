@@ -13,7 +13,7 @@ const sum = (rows, field) => rows.reduce((total, row) => total + Number(row[fiel
 const between = (date, from, to) => date && date >= from && date <= to;
 const iso = (value) => String(value || "").replace(" ", "T");
 
-export function buildLedger({ orders, remotePayments, localPayments, profiles, editions, funnel }) {
+export function buildLedger({ orders, remotePayments, localPayments, profiles, editions, funnel, subscriptions = [], subscriptionPayments = [] }) {
   const byOrder = new Map(orders.map((order) => [order.id, order]));
   const byLocalPayment = new Map(localPayments.map((payment) => [payment.asaas_payment_id, payment.order_id]));
   // Pedidos pagos pelo Checkout do Asaas (fluxo antigo) não têm cobrança local: a ligação vem da sessão de checkout.
@@ -77,6 +77,43 @@ export function buildLedger({ orders, remotePayments, localPayments, profiles, e
     orderRows.push({ ...common, id: order.id, email: emails.get(order.user_id) || "—", amountCents: order.amount_cents, status: order.status,
       confirmedOn, createdOn: businessDay(order.created_at), refundedOn: businessDay(order.refunded_at), refundedCents: Math.min(order.amount_cents, sum(refundRows, "amountCents")),
       billingType: payments[0]?.billingType || "—", installments: payments[0]?.installment ? payments.length : 1 });
+  }
+  const subscriptionByAsaas = new Map(subscriptions.map((item) => [item.asaas_subscription_id, item]));
+  const recorded = new Map(subscriptionPayments.map((item) => [item.asaas_payment_id, item]));
+  for (const payment of remotePayments) {
+    const subscription = subscriptionByAsaas.get(payment.subscription);
+    if (!subscription) continue;
+    const local = recorded.get(payment.id);
+    const origin = subscription.attribution || {};
+    const common = { orderId: payment.id, source: origin.source || "não identificada", campaign: origin.campaign || "",
+      content: origin.content || "", product: "Voxelia mensal" };
+    const gross = cents(payment.value);
+    if (gross !== 4990) { incomplete = true; continue; }
+    const confirmedOn = businessDay(payment.confirmedDate || payment.paymentDate || local?.confirmed_at);
+    const creditedOn = businessDay(payment.creditDate);
+    const paid = ["CONFIRMED", "RECEIVED", "REFUNDED", "PARTIALLY_REFUNDED"].includes(payment.status);
+    const completed = (Array.isArray(payment.refunds) ? payment.refunds : []).filter((item) => item.status === "DONE");
+    const refundedCents = Math.min(gross, completed.reduce((total, item) => total + cents(item.value), 0));
+    const fee = payment.netValue == null ? null : Math.max(0, gross - cents(payment.netValue));
+    if (paid && (!confirmedOn || fee === null)) incomplete = true;
+    if (paid && confirmedOn) sales.push({ ...common, on: confirmedOn, amountCents: gross, count: 1, guaranteed: true });
+    if (paid && confirmedOn && fee !== null) fees.push({ ...common, on: confirmedOn, amountCents: fee });
+    if (creditedOn && ["RECEIVED", "REFUNDED", "PARTIALLY_REFUNDED"].includes(payment.status))
+      cash.push({ ...common, on: creditedOn, amountCents: fee === null ? gross : cents(payment.netValue), feeCents: fee || 0, paymentId: payment.id });
+    if (paid && !creditedOn && !refundedCents) receivable.push({ ...common, on: businessDay(payment.estimatedCreditDate), amountCents: gross, paymentId: payment.id });
+    for (const item of completed) {
+      const amountCents = cents(item.value);
+      const on = businessDay(item.dateCreated || item.date) || confirmedOn;
+      if (!on) continue;
+      refunds.push({ ...common, on, amountCents, paymentId: payment.id });
+      sales.push({ ...common, on, amountCents: -amountCents, count: 0, refund: true });
+      if (creditedOn) cash.push({ ...common, on, amountCents: -amountCents, refund: true });
+    }
+    paymentRows.push({ ...common, id: payment.id, status: payment.status, billingType: payment.billingType, confirmedOn, creditOn: creditedOn,
+      expectedOn: businessDay(payment.estimatedCreditDate), grossCents: gross, feeCents: fee, netCents: payment.netValue == null ? null : cents(payment.netValue), refundedCents });
+    orderRows.push({ ...common, id: payment.id, email: emails.get(subscription.user_id) || "—", amountCents: gross,
+      status: refundedCents >= gross ? "refunded" : paid ? "paid" : "pending", confirmedOn, createdOn: businessDay(payment.dateCreated),
+      refundedOn: refundedCents ? businessDay(completed.at(-1)?.dateCreated) : null, refundedCents, billingType: payment.billingType || "CREDIT_CARD", installments: 1 });
   }
   return { sales, cash, refunds, fees, receivable, paymentRows, orderRows, incomplete };
 }

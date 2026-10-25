@@ -60,6 +60,32 @@ export function createSupabaseStore({ url, serviceKey }) {
     getEditionByCode: (code) => one(db.from("commercial_editions").select("*").eq("code", code)),
     upsertEdition: async (edition) => must(await db.from("commercial_editions").upsert({ ...edition, updated_at: now() }, { onConflict: "code" }).select().single()),
 
+    getPlanByCode: (code) => one(db.from("plans").select("*").eq("code", code)),
+    insertCheckoutSession: (row) => insertOrNull("checkout_sessions", row),
+    updateCheckoutSession: (id, patch) => run(db.from("checkout_sessions").update({ ...patch, updated_at: now() }).eq("id", id)),
+    getCheckoutSession: (id) => (/^[0-9a-f-]{36}$/i.test(id) ? one(db.from("checkout_sessions").select("*").eq("id", id)) : null),
+    findCheckoutSessionByAsaas: (id) => one(db.from("checkout_sessions").select("*").eq("asaas_checkout_id", id)),
+    findCheckoutSessionByCustomer: (id) => one(db.from("checkout_sessions").select("*").eq("asaas_customer_id", id).eq("status", "paid").order("created_at", { ascending: false }).limit(1)),
+    getOpenCheckoutSession: (userId, at) => one(db.from("checkout_sessions").select("*").eq("user_id", userId).in("status", ["creating", "created"]).gt("expires_at", new Date(at).toISOString()).order("created_at", { ascending: false }).limit(1)),
+    listCheckoutSessions: (userId) => many(db.from("checkout_sessions").select("*").eq("user_id", userId).order("created_at", { ascending: false }).limit(20)),
+    insertSubscription: (row) => insertOrNull("subscriptions", row),
+    updateSubscription: (id, patch) => run(db.from("subscriptions").update({ ...patch, updated_at: now() }).eq("id", id)),
+    findSubscriptionByAsaas: (id) => one(db.from("subscriptions").select("*").eq("asaas_subscription_id", id)),
+    listSubscriptions: (userId) => { let query = db.from("subscriptions").select("*").order("created_at", { ascending: false }).limit(userId ? 20 : 1000); if (userId) query = query.eq("user_id", userId); return many(query); },
+    getSubscription: (id) => (/^[0-9a-f-]{36}$/i.test(id) ? one(db.from("subscriptions").select("*").eq("id", id)) : null),
+    upsertSubscriptionPayment: async (row) => {
+      const { data, error } = await db.from("payment_records").insert(row).select().single();
+      if (!error) return data;
+      if (error.code !== "23505") return must({ data, error });
+      let query = db.from("payment_records").update(row).eq("asaas_payment_id", row.asaas_payment_id);
+      if (row.status !== "REFUNDED") query = row.status === "CONFIRMED" || row.status === "RECEIVED"
+        ? query.neq("status", "REFUNDED") : query.not("status", "in", "(CONFIRMED,RECEIVED,REFUNDED)");
+      must(await query);
+      return one(db.from("payment_records").select("*").eq("asaas_payment_id", row.asaas_payment_id));
+    },
+    getSubscriptionPayment: (id) => one(db.from("payment_records").select("*").eq("asaas_payment_id", id)),
+    listSubscriptionPayments: (subscriptionId) => { let query = db.from("payment_records").select("*").order("confirmed_at").limit(subscriptionId ? 100 : 1000); if (subscriptionId) query = query.eq("subscription_id", subscriptionId); return many(query); },
+
     getOpenOrder: (userId, at) => one(db.from("orders").select("*").eq("user_id", userId).in("status", ["creating", "pending"]).or(`expires_at.is.null,expires_at.gt.${new Date(at).toISOString()}`).order("created_at", { ascending: false }).limit(1)),
     insertOrder: (row) => insertOrNull("orders", row),
     updateOrder: (id, patch) => run(db.from("orders").update({ ...patch, updated_at: now() }).eq("id", id)),
