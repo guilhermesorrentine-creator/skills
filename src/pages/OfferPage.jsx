@@ -58,7 +58,6 @@ export default function OfferPage({ signedIn }) {
   const checkoutRef = useRef(null);
   const [atCheckout, setAtCheckout] = useState(false);
   const [pastHero, setPastHero] = useState(false);
-  const [videoOk, setVideoOk] = useState(true);
 
   useEffect(() => {
     document.title = "Voxelia: dê superpoderes para a sua IA";
@@ -103,13 +102,6 @@ export default function OfferPage({ signedIn }) {
         <button type="button" className="btn btn-primary offer-cta" onClick={goCheckout}>{choice === "lifetime" ? "Quero o acesso vitalício" : "Quero começar por R$ 49,90/mês"}</button>
         <p className="small offer-assure">Acesso na hora · 15 dias de garantia</p>
       </section>
-
-      {videoOk && <section className="offer-video" aria-label="Vídeo: como a Voxelia funciona">
-        <div className="offer-video-head"><h2>Veja a Voxelia em ação</h2><p>Assista antes de escolher seu plano.</p></div>
-        <video controls playsInline preload="none" poster="/video/oferta-poster.jpg" onError={() => setVideoOk(false)}>
-          <source src="/video/oferta.mp4" type="video/mp4" onError={() => setVideoOk(false)}/>
-        </video>
-      </section>}
 
       <section id="checkout" ref={checkoutRef} className="offer-checkout" aria-label="Pagamento">
         <h2>Escolha seu acesso</h2>

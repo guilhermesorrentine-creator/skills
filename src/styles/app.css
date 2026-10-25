@@ -333,11 +333,6 @@
 .offer-lead { font-size: 17px; line-height: 1.55; color: var(--text-2); }
 .offer-cta { width: 100%; min-height: 54px; font-size: 17px; }
 .offer-assure { color: var(--text-2); }
-.offer-video { border-radius: var(--radius-lg); overflow: hidden; background: var(--surface); border: 1px solid var(--line); }
-.offer-video-head { padding: 16px 18px 12px; }
-.offer-video-head h2 { font-size: 22px; }
-.offer-video-head p { margin: 4px 0 0; color: var(--text-2); font-size: 14px; }
-.offer-video video { display: block; width: 100%; aspect-ratio: 16 / 9; background: #000; }
 .offer-cases { display: grid; gap: 12px; }
 .offer-case { display: grid; gap: 8px; padding: 14px; border: 1px solid var(--line); border-radius: var(--radius-md); background: var(--surface-2, var(--surface)); }
 .offer-ask { font-weight: 700; color: var(--text); }
