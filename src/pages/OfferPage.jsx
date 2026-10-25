@@ -25,11 +25,21 @@ const CASES = [
   ["\"Escreva a legenda do meu post.\"", "\"Descubra o poder transformador da IA e eleve seu negócio a outro nível.\"", "Gancho, lista e chamada para ação, com as fórmulas de gancho da skill de Instagram."],
   ["\"Encontre clientes para mim.\"", "Uma lista inventada, que você não pode usar.", "O Google Maps Scraper monta a lista real de empresas, com telefone e site, numa planilha."],
 ];
+const LIFETIME_RESULTS = [
+  "Você encontra a skill de design, copia o comando e usa o método para estruturar e revisar a página.",
+  "Você copia as fórmulas de gancho da skill de Instagram para escrever uma legenda mais específica.",
+  "Você segue o guia do Google Maps Scraper para montar uma lista real de empresas, com telefone e site.",
+];
 const GETS = ["2 mil skills de projetos abertos, com a fonte e o autor creditados", "Guia passo a passo em português para cada skill, com o comando pronto para copiar", "Busca por objetivo: você diz o que quer e ela mostra a skill certa"];
 const STEPS = [
   ["Conecte uma vez", "Cole o seu link pessoal no Claude, no ChatGPT ou no Claude Code. O guia mostra cada clique."],
   ["Peça normalmente", "\"Quero criar uma landing page\", \"preciso prospectar clientes\", \"revise este artigo\"."],
   ["A IA usa a skill certa", "Ela consulta o acervo da Voxelia e traz o método, com fonte e autor."],
+];
+const LIFETIME_STEPS = [
+  ["Encontre a skill", "Busque pelo que você quer criar e escolha um guia do acervo."],
+  ["Copie o comando", "Use o passo a passo em português e copie o comando pronto."],
+  ["Use na sua IA", "Cole o comando no seu app de IA. O plano vitalício não inclui conexão automática."],
 ];
 const FAQ = [
   ["Preciso saber programar?", "Não. Você conversa com a IA como sempre. Para conectar, copia um link e cola no app; o guia mostra o passo a passo."],
@@ -83,8 +93,8 @@ export default function OfferPage({ signedIn }) {
         <p className="eyebrow">{hook.eyebrow}</p>
         <h1>{hook.title}</h1>
         <p className="offer-lead">{hook.lead}</p>
-        <p className="offer-hero-price"><b>{lifetimeFirst ? "R$ 97,90" : "R$ 49,90/mês"}</b><span>{lifetimeFirst ? "pagamento único · acervo vitalício" : "cartão · acervo e conexão enquanto pagar"}</span></p>
-        <button type="button" className="btn btn-primary offer-cta" onClick={goCheckout}>{lifetimeFirst ? "Quero o acesso vitalício" : "Quero começar por R$ 49,90/mês"}</button>
+        <p className="offer-hero-price"><b>{choice === "lifetime" ? "R$ 97,90" : "R$ 49,90/mês"}</b><span>{choice === "lifetime" ? "pagamento único · acervo vitalício" : "cartão · acervo e conexão enquanto pagar"}</span></p>
+        <button type="button" className="btn btn-primary offer-cta" onClick={goCheckout}>{choice === "lifetime" ? "Quero o acesso vitalício" : "Quero começar por R$ 49,90/mês"}</button>
         <p className="small offer-assure">Acesso na hora · 15 dias de garantia</p>
       </section>
 
@@ -110,10 +120,10 @@ export default function OfferPage({ signedIn }) {
 
       <section className="repo-block">
         <h2>Como sair disso para isso</h2>
-        <div className="offer-cases">{CASES.map(([ask, before, after]) => <article key={ask} className="offer-case">
+        <div className="offer-cases">{CASES.map(([ask, before, after], index) => <article key={ask} className="offer-case">
           <p className="offer-ask">{ask}</p>
           <div className="offer-before"><b>Sem a Voxelia</b><p>{before}</p></div>
-          <div className="offer-after"><b>Com a Voxelia conectada</b><p>{after}</p></div>
+          <div className="offer-after"><b>{choice === "lifetime" ? "Com o acervo Voxelia" : "Com a Voxelia conectada"}</b><p>{choice === "lifetime" ? LIFETIME_RESULTS[index] : after}</p></div>
         </article>)}</div>
       </section>
 
@@ -121,7 +131,7 @@ export default function OfferPage({ signedIn }) {
 
       <section className="repo-block">
         <h2>Como funciona</h2>
-        <ol className="kit-steps">{STEPS.map(([t, d]) => <li key={t}><b>{t}.</b> {d}</li>)}</ol>
+        <ol className="kit-steps">{(choice === "lifetime" ? LIFETIME_STEPS : STEPS).map(([t, d]) => <li key={t}><b>{t}.</b> {d}</li>)}</ol>
         <button type="button" className="btn btn-secondary offer-cta" onClick={goCheckout}>Quero começar agora</button>
       </section>
 
@@ -132,12 +142,13 @@ export default function OfferPage({ signedIn }) {
 
       <section className="repo-block">
         <h2>Perguntas frequentes</h2>
-        <div className="offer-faq">{FAQ.map(([q, a]) => <details key={q}><summary>{q}</summary><p>{a}</p></details>)}</div>
+        <div className="offer-faq">{FAQ.map(([q, a]) => <details key={q}><summary>{q}</summary><p>{choice === "lifetime" && q === "Preciso saber programar?" ? "Não. O acervo traz guias em português e comandos prontos para copiar e usar na sua IA."
+          : choice === "lifetime" && q === "Em quais IAs funciona?" ? "Os guias podem ser copiados para qualquer IA que aceite texto. A conexão automática com Claude, ChatGPT e Claude Code está no plano mensal." : a}</p></details>)}</div>
       </section>
     </main>
 
     {!atCheckout && <div className="repo-cta offer-sticky" role="region" aria-label="Comprar">
-      <button type="button" className="btn btn-primary" onClick={goCheckout}>{lifetimeFirst ? "Quero o acervo vitalício · R$ 97,90" : "Assinar · R$ 49,90/mês"}</button>
+      <button type="button" className="btn btn-primary" onClick={goCheckout}>{choice === "lifetime" ? "Quero o acervo vitalício · R$ 97,90" : "Assinar · R$ 49,90/mês"}</button>
     </div>}
 
     <footer className="offer-foot">
