@@ -9,6 +9,7 @@ import { createMcp } from "./mcp.js";
 import { createMailer } from "./email.js";
 import { createOnboarding } from "./onboarding.js";
 import { createConversions } from "./meta.js";
+import { createMetaOAuth } from "./meta-oauth.js";
 import { createApi, json } from "./routes.js";
 import { createSupabaseStore } from "./store-supabase.js";
 import { createMemoryStore } from "./store-memory.js";
@@ -23,7 +24,8 @@ function assemble(store, asaas, config, extra = {}) {
   const onboarding = createOnboarding({ store, mailer: createMailer(config.email), config });
   const commerce = createCommerce({ store, asaas, config, onboarding, conversions: createConversions(config.meta) });
   const mcp = createMcp({ store, commerce, library, loadCatalog, config });
-  return createApi({ store, commerce, onboarding, library, me: createMe({ store, library }), mcp, asaas, dashboardConfig: config.meta, ...extra });
+  const metaOAuth = createMetaOAuth({ store, config: config.meta });
+  return createApi({ store, commerce, onboarding, library, me: createMe({ store, library }), mcp, asaas, caktoConfig: config.cakto, dashboardConfig: config.meta, metaOAuth, ...extra });
 }
 
 function build() {

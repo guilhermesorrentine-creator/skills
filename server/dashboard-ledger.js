@@ -39,6 +39,26 @@ export function buildLedger({ orders, remotePayments, localPayments, profiles, e
     const payments = orderPayments.get(order.id) || [];
     const link = origin.get(order.id);
     const common = { orderId: order.id, source: link?.source || "não identificada", campaign: link?.campaign || "", content: link?.content || "", product: products.get(order.edition_id) || "—" };
+    if (order.payment_provider === "cakto") {
+      const confirmedOn = businessDay(order.paid_at);
+      const refundedOn = businessDay(order.refunded_at);
+      const paid = ["paid", "refunded"].includes(order.status);
+      const refundedCents = Math.min(order.amount_cents, Number(order.refunded_cents || (order.status === "refunded" ? order.amount_cents : 0)));
+      if (paid && !confirmedOn) incomplete = true;
+      if (paid && order.cakto_fee_cents == null) incomplete = true;
+      if (paid && confirmedOn) {
+        sales.push({ ...common, on: confirmedOn, amountCents: order.amount_cents, count: 1, guaranteed: true });
+        if (order.cakto_fee_cents != null) fees.push({ ...common, on: confirmedOn, amountCents: order.cakto_fee_cents });
+      }
+      if (refundedCents && refundedOn) {
+        refunds.push({ ...common, on: refundedOn, amountCents: refundedCents });
+        sales.push({ ...common, on: refundedOn, amountCents: -refundedCents, count: 0, refund: true });
+      }
+      orderRows.push({ ...common, id: order.id, email: emails.get(order.user_id) || "—", amountCents: order.amount_cents,
+        status: order.status, confirmedOn, createdOn: businessDay(order.created_at), refundedOn, refundedCents,
+        billingType: order.cakto_payment_method || "Cakto", installments: 1 });
+      continue;
+    }
     const confirmedOn = businessDay(payments.map((payment) => payment.confirmedDate || payment.paymentDate).filter(Boolean).sort()[0]) || businessDay(order.paid_at);
     const paid = ["paid", "refunded"].includes(order.status);
     if (paid && (!payments.length || payments.some((payment) => payment.netValue == null))) incomplete = true;

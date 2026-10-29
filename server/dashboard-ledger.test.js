@@ -30,6 +30,22 @@ test("mensalidade entra no painel com origem, taxa e crédito real do Asaas", ()
   assert.equal(ledger.orderRows[0].product, "Voxelia mensal");
 });
 
+test("venda Cakto usa pedido confirmado e taxa Cakto sem exigir cobrança Asaas", () => {
+  const ledger = build([order({ payment_provider: "cakto", amount_cents: 1990, cakto_order_id: "cakto-1",
+    cakto_fee_cents: 250, cakto_payment_method: "PIX" })], []);
+  const result = summary(ledger);
+  assert.equal(result.salesCents, 1990);
+  assert.equal(result.feesCents, 250);
+  assert.equal(result.metaSalesCents, 1990);
+  assert.equal(result.cashCents, 0, "a data de crédito na Cakto ainda não foi informada");
+  assert.equal(ledger.incomplete, false);
+  assert.equal(ledger.orderRows[0].billingType, "PIX");
+  const refunded = build([order({ payment_provider: "cakto", amount_cents: 1990, cakto_fee_cents: 250,
+    status: "refunded", refunded_cents: 1990, refunded_at: "2026-10-20T20:00:00Z" })], []);
+  assert.equal(summary(refunded).salesCents, 0);
+  assert.equal(summary(refunded).sales, 0);
+});
+
 test("recarga de R$ 60 não duplica o custo dos anúncios no lucro", () => {
   const expenses = [{ kind: "meta_deposit", title: "Recarga Meta Ads via Pix", amount_cents: 6000, starts_on: "2026-10-23", recurring: false }];
   const ads = [{ on: "2026-10-23", spendCents: 306 }];

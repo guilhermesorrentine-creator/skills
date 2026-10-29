@@ -96,6 +96,10 @@ export function createSupabaseStore({ url, serviceKey }) {
     getOrder: (id) => (/^[0-9a-f-]{36}$/i.test(id) ? one(db.from("orders").select("*").eq("id", id)) : null),
     findOrderByCheckout: (checkoutId) => one(db.from("orders").select("*").eq("asaas_checkout_id", checkoutId)),
     listOrders: (userId) => { let query = db.from("orders").select("*").order("created_at", { ascending: false }).limit(1000); if (userId) query = query.eq("user_id", userId); return many(query); },
+    claimOrderPurchase: (id, attemptedAt, staleBefore) => one(db.from("orders")
+      .update({ meta_purchase_attempted_at: attemptedAt, meta_purchase_error: null }).eq("id", id)
+      .is("meta_purchase_sent_at", null).or(`meta_purchase_attempted_at.is.null,meta_purchase_attempted_at.lt.${staleBefore}`).select()),
+    finishOrderPurchase: (id, patch) => run(db.from("orders").update(patch).eq("id", id)),
 
     getPayment: (id) => one(db.from("payments").select("*").eq("asaas_payment_id", id)),
     findPaymentByOrder: (orderId) => one(db.from("payments").select("*").eq("order_id", orderId).order("created_at", { ascending: false }).limit(1)),
@@ -125,6 +129,24 @@ export function createSupabaseStore({ url, serviceKey }) {
     updateEvent: (id, patch) => run(db.from("asaas_webhook_events").update(patch).eq("id", id)),
     getEvent: (id) => one(db.from("asaas_webhook_events").select("*").eq("id", id)),
     listEvents: ({ status, limit = 100 } = {}) => { let query = db.from("asaas_webhook_events").select("*").order("received_at", { ascending: false }).limit(limit); if (status) query = query.eq("status", status); return many(query); },
+    insertCaktoEvent: async (row) => {
+      const { data, error } = await db.from("cakto_webhook_events").insert(row).select().single();
+      if (error?.code === "23505") return { inserted: false, event: await one(db.from("cakto_webhook_events").select("*").eq("id", row.id)) };
+      return { inserted: true, event: must({ data, error }) };
+    },
+    claimCaktoEvent: async (id, at, staleBefore) => {
+      const current = await one(db.from("cakto_webhook_events").select("attempts").eq("id", id));
+      if (!current) return null;
+      const patch = { status: "processing", processing_started_at: at, attempts: current.attempts + 1 };
+      const ready = await one(db.from("cakto_webhook_events").update(patch).eq("id", id)
+        .in("status", ["received", "failed", "unlinked"]).select());
+      if (ready) return ready;
+      return one(db.from("cakto_webhook_events").update(patch).eq("id", id).eq("status", "processing")
+        .lt("processing_started_at", staleBefore).select());
+    },
+    finishCaktoEvent: (id, patch) => run(db.from("cakto_webhook_events").update(patch).eq("id", id)),
+    getCaktoEvent: (id) => one(db.from("cakto_webhook_events").select("*").eq("id", id)),
+    listCaktoEvents: ({ status, limit = 100 } = {}) => { let query = db.from("cakto_webhook_events").select("*").order("received_at", { ascending: false }).limit(limit); if (status) query = query.eq("status", status); return many(query); },
 
     listGrants: (userId) => { let query = db.from("access_grants").select("*").order("created_at", { ascending: false }); if (userId) query = query.eq("user_id", userId); return many(query); },
     insertGrant: async (row) => must(await db.from("access_grants").insert(row).select().single()),
@@ -141,6 +163,8 @@ export function createSupabaseStore({ url, serviceKey }) {
     deleteDashboardExpense: (id) => one(db.from("dashboard_expenses").delete().eq("id", id).select()),
     getDashboardSettings: () => one(db.from("dashboard_settings").select("*").eq("id", true)),
     saveDashboardSettings: async (row) => must(await db.from("dashboard_settings").upsert({ id: true, ...row, updated_at: now() }).select().single()),
+    getDashboardConnection: (provider) => one(db.from("dashboard_connections").select("*").eq("provider", provider)),
+    saveDashboardConnection: async (row) => must(await db.from("dashboard_connections").upsert({ ...row, updated_at: now() }, { onConflict: "provider" }).select().single()),
     listDashboardNotes: () => many(db.from("dashboard_notes").select("*").order("path")),
     saveDashboardNote: async (row) => must(await db.from("dashboard_notes").upsert({ ...row, imported_at: now() }, { onConflict: "path" }).select().single()),
     listDashboardAdLinks: () => many(db.from("dashboard_ad_links").select("*")),

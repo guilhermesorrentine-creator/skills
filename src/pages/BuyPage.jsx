@@ -4,7 +4,7 @@ import Checkout from "../components/checkout/Checkout.jsx";
 import { navigate } from "../lib/router.jsx";
 import { funnel } from "../lib/funnel.js";
 
-// Compra avulsa do acervo vitalício. A assinatura mensal fica em /oferta.
+// Compra avulsa do acervo vitalício.
 const COPY = {
   lifetime: {
     title: "Garanta seu acesso",
@@ -17,10 +17,9 @@ export default function BuyPage({ signedIn }) {
   const code = new URLSearchParams(location.search).get("edicao") || "edicao-1";
   useEffect(() => { funnel("buy_page"); }, []);
   useEffect(() => {
-    if (code === "pro-anual") location.replace("/oferta?plano=mensal&comprar=1");
-    if (code === "edicao-1") location.replace("/oferta?plano=vitalicio&comprar=1");
+    if (code === "edicao-1") location.replace("/oferta?comprar=1");
   }, [code]);
-  if (["pro-anual", "edicao-1"].includes(code)) return null;
+  if (code === "edicao-1") return null;
   return <main id="conteudo" className="auth-view">
     <div className="auth-card buy-card">
       <Brand/>

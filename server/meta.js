@@ -43,7 +43,7 @@ export function createConversions({ pixelId, token, testEventCode }, fetcher = f
     const body = { data: [event], access_token: token };
     if (testEventCode) body.test_event_code = testEventCode;
     const response = await fetcher(`${GRAPH}/${encodeURIComponent(pixelId)}/events`, {
-      method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
+      method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body), signal: AbortSignal.timeout(3000),
     });
     if (!response.ok) throw new Error(`Meta recusou o evento (${response.status}).`);
     return true;
@@ -51,7 +51,8 @@ export function createConversions({ pixelId, token, testEventCode }, fetcher = f
   return {
     // `order.ad_tracking` vem de readTracking; sem consentimento, não envia.
     async purchase({ order, email, editionCode, eventTime }) {
-      return sendPurchase({ id: `purchase-${order.id}`, userId: order.user_id, tracking: order.ad_tracking, email,
+      const id = order.payment_provider === "cakto" ? `purchase-cakto-${order.cakto_order_id}` : `purchase-${order.id}`;
+      return sendPurchase({ id, userId: order.user_id, tracking: order.ad_tracking, email,
         amountCents: order.amount_cents, contentId: editionCode, eventTime });
     },
     async subscriptionPurchase({ subscription, payment, email, eventTime }) {

@@ -3,6 +3,7 @@
 import { publicEdition } from "./commerce.js";
 import { validateResource } from "./library.js";
 import { readTracking } from "./meta.js";
+import { verifyCaktoWebhook } from "./cakto.js";
 import { estimateMetaBalance, expenseOccurrences, loadAsaasPayments, loadMetaAds, summarizeStages } from "./dashboard.js";
 import { buildLedger, businessDay, summarizeLedger } from "./dashboard-ledger.js";
 import { loadInstagramReels } from "./instagram.js";
@@ -16,7 +17,7 @@ const fail = (error) => {
 };
 const httpError = (status, code, message) => Object.assign(new Error(message), { status, code });
 
-export function createApi({ store, commerce, onboarding = null, library, me, mcp = null, asaas = null, dashboardConfig = {}, verifyToken, devUser = null }) {
+export function createApi({ store, commerce, onboarding = null, library, me, mcp = null, asaas = null, caktoConfig = {}, dashboardConfig = {}, metaOAuth = null, verifyToken, devUser = null }) {
   async function requireUser(request) {
     if (devUser) return devUser;
     const header = request.headers.get("authorization") || "";
@@ -87,6 +88,14 @@ export function createApi({ store, commerce, onboarding = null, library, me, mcp
       return ok();
     },
     "POST /api/webhooks/asaas": async (request) => ok({ received: true, ...(await commerce.receiveWebhook(request.headers.get("asaas-access-token"), await body(request))) }),
+    "POST /api/webhooks/cakto": async (request) => {
+      const raw = Buffer.from(await request.arrayBuffer());
+      if (!verifyCaktoWebhook(raw, request.headers.get("x-cakto-timestamp"), request.headers.get("x-cakto-signature"), caktoConfig.webhookSecret))
+        throw httpError(401, "invalid_signature", "Assinatura Cakto inválida.");
+      let payload;
+      try { payload = JSON.parse(raw.toString("utf8")); } catch { throw httpError(400, "invalid_json", "Evento Cakto inválido."); }
+      return ok({ received: true, ...(await commerce.receiveCaktoWebhook(payload)) });
+    },
 
     // Conta e compra
     "GET /api/account": async (request) => {
@@ -156,7 +165,9 @@ export function createApi({ store, commerce, onboarding = null, library, me, mcp
       const firstDeposit = estimateMetaBalance(expenses, [], today).since;
       const metaFrom = [from, goal.goal_starts_on, firstDeposit].filter(Boolean).sort()[0];
       const metaTo = [to, goal.goal_ends_on].sort().at(-1) > today ? today : [to, goal.goal_ends_on].sort().at(-1);
-      const metaData = await cached(`meta-${dashboardConfig.adsAccountId}-${metaFrom}-${metaTo}`, () => loadMetaAds(dashboardConfig, metaFrom, metaTo), force);
+      const activeMetaConfig = metaOAuth ? await metaOAuth.adsConfig() : dashboardConfig;
+      const metaData = await cached(`meta-${activeMetaConfig.adsAccountId}-${metaFrom}-${metaTo}`, () => loadMetaAds(activeMetaConfig, metaFrom, metaTo), force);
+      const metaAuth = metaOAuth ? await metaOAuth.status() : { configured: false, connected: false, expired: false };
       const ledger = buildLedger({ orders, remotePayments: asaasData.rows, localPayments: payments, profiles, editions, funnel, subscriptions, subscriptionPayments });
       const occurrences = expenseOccurrences(expenses, [from, goal.goal_starts_on].sort()[0], [to, goal.goal_ends_on].sort().at(-1));
       const metrics = summarizeLedger({ ledger, expenses: occurrences, ads: metaData.rows || [], funnel, from, to, goal });
@@ -170,13 +181,26 @@ export function createApi({ store, commerce, onboarding = null, library, me, mcp
       const stageData = summarizeStages(funnel, orders, from, to);
       const metaBalance = estimateMetaBalance(expenses, metaData.rows || [], today, metaData.error);
       return ok({ from, to, updatedAt: new Date().toISOString(), metrics, metaBalance, stages: stageData, payments: ledger.paymentRows, receivable: ledger.receivable, refunds: ledger.refunds, salesLedger: ledger.sales, orders: ledger.orderRows, expenses, goal, links, ads: metaData.rows || [], funnel: funnel.map((event) => ({ at: event.at, on: businessDay(event.at), name: event.name, path: event.path, source: event.source, campaign: event.campaign, content: event.content, orderId: event.order_id, sid: event.sid })),
-        connections: { asaas: { checkedAt: asaasData.checkedAt, error: asaasData.error || (ledger.incomplete || orders.length >= 1000 || payments.length >= 1000 ? "Dados de cobranças parciais; confira o Asaas." : null), ageSeconds: asaasData.ageSeconds, cached: asaasData.cached }, meta: { checkedAt: metaData.checkedAt, error: metaData.error, ageSeconds: metaData.ageSeconds, cached: metaData.cached }, funnel: { checkedAt: new Date().toISOString(), error: funnel.length === 20000 ? "Limite de eventos atingido; período parcial." : null } } });
+        connections: { asaas: { checkedAt: asaasData.checkedAt, error: asaasData.error || (ledger.incomplete || orders.length >= 1000 || payments.length >= 1000 ? "Dados de cobranças parciais; confira o Asaas." : null), ageSeconds: asaasData.ageSeconds, cached: asaasData.cached }, meta: { checkedAt: metaData.checkedAt, error: metaData.error, ageSeconds: metaData.ageSeconds, cached: metaData.cached, auth: metaAuth }, funnel: { checkedAt: new Date().toISOString(), error: funnel.length === 20000 ? "Limite de eventos atingido; período parcial." : null } } });
+    },
+    "POST /api/admin/dashboard/meta/connect/start": async (request) => {
+      const admin = await requireAdmin(request);
+      if (!metaOAuth) throw httpError(503, "meta_oauth_not_configured", "Conexão oficial da Meta indisponível.");
+      return ok(await metaOAuth.start(admin.id));
+    },
+    "POST /api/admin/dashboard/meta/connect/finish": async (request) => {
+      const admin = await requireAdmin(request); const input = await body(request);
+      if (!metaOAuth) throw httpError(503, "meta_oauth_not_configured", "Conexão oficial da Meta indisponível.");
+      const result = await metaOAuth.finish(admin.id, input.code, input.state);
+      await store.insertAudit({ actor_id: admin.id, action: "dashboard_meta_connect", details: { account_id: result.accountId } });
+      return ok(result);
     },
     "GET /api/admin/dashboard/organic": async (request) => {
       await requireAdmin(request);
       const { from, to } = dashboardPeriod(request);
-      const result = await cached(`instagram-reels-${dashboardConfig.instagramUserId}-${from}-${to}`,
-        () => loadInstagramReels(dashboardConfig, from, to), param(request, "refresh") === "1");
+      const activeMetaConfig = metaOAuth ? await metaOAuth.adsConfig() : dashboardConfig;
+      const result = await cached(`instagram-reels-${activeMetaConfig.instagramUserId}-${from}-${to}`,
+        () => loadInstagramReels(activeMetaConfig, from, to), param(request, "refresh") === "1");
       return ok({ from, to, rows: result.rows || [], warning: result.warning || null,
         connection: { checkedAt: result.checkedAt || null, error: result.error || null, ageSeconds: result.ageSeconds ?? null, cached: Boolean(result.cached) } });
     },
@@ -273,6 +297,22 @@ export function createApi({ store, commerce, onboarding = null, library, me, mcp
       if (event.status === "processed") throw httpError(409, "already_processed", "Evento já processado; não será aplicado de novo.");
       const result = await commerce.processEvent(event);
       await store.insertAudit({ actor_id: admin.id, action: "reprocess_event", details: { event_id: event.id, result: result.status } });
+      return ok(result);
+    },
+    "GET /api/admin/cakto/events": async (request) => {
+      await requireAdmin(request);
+      const events = await store.listCaktoEvents({ limit: 100 });
+      return ok({ events: events.map(({ id, event, status, note, attempts, received_at, processed_at }) =>
+        ({ id, event, status, note, attempts, received_at, processed_at })) });
+    },
+    "POST /api/admin/cakto/reprocess": async (request) => {
+      const admin = await requireAdmin(request);
+      const id = String((await body(request)).id || "");
+      const event = await store.getCaktoEvent(id);
+      if (!event) throw httpError(404, "not_found", "Evento Cakto não encontrado.");
+      if (event.status === "processed") throw httpError(409, "already_processed", "Evento já processado.");
+      const result = await commerce.processCaktoEvent(id);
+      await store.insertAudit({ actor_id: admin.id, action: "reprocess_cakto_event", details: { event_id: id, status: result.status } });
       return ok(result);
     },
     // Painel do funil: por campanha e criativo, sessões em cada etapa, pedidos pagos e receita.

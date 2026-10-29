@@ -8,7 +8,7 @@ import { formatPrice } from "../lib/billing-client.js";
 import { track } from "../lib/meta-pixel.js";
 import { NotFound } from "./AccountPages.jsx";
 
-const buy = () => navigate("/oferta?plano=vitalicio&comprar=1");
+const buy = () => navigate("/oferta?comprar=1");
 
 // Página de venda por profissão (/kit/<slug>), destino de anúncios. Celular primeiro, CTA fixo.
 export default function KitPage({ slug, onEnter }) {
@@ -87,8 +87,7 @@ export function LinksPage() {
   return <main id="conteudo" className="links-page">
     <Brand/>
     <p className="links-lead">2 mil skills de IA organizadas, com passo a passo em português.</p>
-    <button type="button" className="btn btn-primary links-buy" onClick={buy}>Acesso vitalício · R$ 97,90</button>
-    <Link className="btn btn-secondary links-buy" to="/conecta">Conectar na minha IA · R$ 49,90/mês</Link>
+    <button type="button" className="btn btn-primary links-buy" onClick={buy}>Acesso vitalício · R$ 19,90</button>
     <h2>Kits por profissão</h2>
     <div className="links-grid">{KITS.map((k) => <Link key={k.slug} className={`links-kit area-${k.category}`} to={`/kit/${k.slug}`}>{k.name}</Link>)}</div>
     {repos.length > 0 && <><h2>Dos nossos Reels</h2>

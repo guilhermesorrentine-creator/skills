@@ -1,7 +1,8 @@
 // E-mails de boas-vindas (compra confirmada e acesso liberado pela administração) e o envio.
-// O envio usa a API HTTP da Resend; sem RESEND_API_KEY/EMAIL_FROM, nada é enviado e quem chamou
+// O envio usa Resend ou Gmail SMTP; sem configuração, nada é enviado e quem chamou
 // recebe `sent: false` (a administração pode copiar o link e enviar por outro canal).
 import { escapeHtml, renderEmail } from "./email-layout.js";
+import nodemailer from "nodemailer";
 
 const FIRST_STEPS = [
   { title: "Entre na Voxelia", text: "Use sempre este e-mail para acessar a plataforma." },
@@ -23,6 +24,14 @@ export function welcomeEmail({ kind, email, editionName, actionUrl, appUrl }) {
       body: `Seu pagamento foi confirmado e o acesso vitalício à <b>${edition}</b> está ativo para ${who}. É só entrar com o e-mail e a senha que você criou no cadastro.`,
       button: "Entrar na Voxelia",
       note: "Pagamento único, sem mensalidade. Esqueceu a senha? Use “Esqueci a senha” na tela de entrada.",
+    },
+    purchase_invite: {
+      subject: "Sua compra Voxelia foi confirmada",
+      preheader: "Crie sua senha para acessar o acervo vitalício.",
+      title: "Seu acesso está pronto",
+      body: `Seu pagamento foi confirmado. O acervo vitalício da <b>${edition}</b> está liberado para ${who}. Crie sua senha pelo botão abaixo para entrar.`,
+      button: "Criar minha senha e entrar",
+      note: "O link é pessoal e vale por tempo limitado. Se expirar, use “Esqueci a senha” na tela de entrada.",
     },
     invite: {
       subject: "Seu acesso à Voxelia foi liberado",
@@ -53,9 +62,8 @@ export function welcomeEmail({ kind, email, editionName, actionUrl, appUrl }) {
   return { subject: content.subject, html, text };
 }
 
-export function createMailer({ apiKey, from }, fetcher = fetch) {
-  if (!apiKey || !from) return null;
-  return {
+export function createMailer({ apiKey, from, gmailUser, gmailAppPassword }, fetcher = fetch, createTransport = nodemailer.createTransport) {
+  if (apiKey && from) return {
     async send({ to, subject, html, text }) {
       const response = await fetcher("https://api.resend.com/emails", {
         method: "POST",
@@ -66,4 +74,8 @@ export function createMailer({ apiKey, from }, fetcher = fetch) {
       return response.json().catch(() => ({}));
     },
   };
+  if (!gmailUser || !gmailAppPassword) return null;
+  const transport = createTransport({ host: "smtp.gmail.com", port: 465, secure: true,
+    auth: { user: gmailUser, pass: gmailAppPassword }, connectionTimeout: 10000, greetingTimeout: 10000, socketTimeout: 15000 });
+  return { send: ({ to, subject, html, text }) => transport.sendMail({ from: `Voxelia <${gmailUser}>`, to, subject, html, text }) };
 }

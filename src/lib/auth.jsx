@@ -61,7 +61,7 @@ const run = async (promise) => { const { data, error } = await promise; if (erro
 
 export const authActions = {
   signIn: (email, password) => run(requireClient().auth.signInWithPassword({ email, password })),
-  signUp: (email, password) => run(requireClient().auth.signUp({ email, password, options: { emailRedirectTo: `${location.origin}/entrar` } })),
+  signUp: (email, password, next = "/app") => run(requireClient().auth.signUp({ email, password, options: { emailRedirectTo: `${location.origin}/entrar?next=${encodeURIComponent(next)}` } })),
   recover: (email) => run(requireClient().auth.resetPasswordForEmail(email, { redirectTo: `${location.origin}/redefinir-senha` })),
   // Verifica o link de e-mail (`token_hash`) e abre a sessão: convite, recuperação ou confirmação de cadastro.
   verifyLink: (tokenHash, type) => run(requireClient().auth.verifyOtp({ token_hash: tokenHash, type })),

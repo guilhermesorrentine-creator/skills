@@ -8,6 +8,9 @@ import { funnel } from "../../lib/funnel.js";
 const isAsaas = (value) => {
   try { const url = new URL(value); return url.protocol === "https:" && (url.hostname === "asaas.com" || url.hostname.endsWith(".asaas.com")); } catch { return false; }
 };
+const isCakto = (value) => {
+  try { const url = new URL(value); return url.protocol === "https:" && url.hostname === "pay.cakto.com.br"; } catch { return false; }
+};
 const maskCpf = (value) => value.replace(/\D/g, "").slice(0, 11).replace(/(\d{3})(\d)/, "$1.$2").replace(/(\d{3})(\d)/, "$1.$2").replace(/(\d{3})(\d{1,2})$/, "$1-$2");
 
 // Pagamento direto: e-mail (sem login), nome e CPF (exigidos pelo Asaas). Pix mostra o QR aqui; cartão abre a
@@ -66,7 +69,7 @@ export default function Checkout({ codes, signedIn, intro = null, labels = {}, h
       }
       try { localStorage.setItem("vx-claim", JSON.stringify({ order: data.order, key: data.key })); } catch { /* sem armazenamento: o retorno usa a URL */ }
       funnel("checkout", { order: data.order });
-      if (hosted && isAsaas(data.url)) { location.assign(data.url); return; }
+      if (isCakto(data.url) || hosted && isAsaas(data.url)) { location.assign(data.url); return; }
       if (data.pix || isAsaas(data.url)) { setCharge(data); setBusy(""); return; }
       throw new Error("Endereço de pagamento inesperado.");
     } catch (cause) { setError(cause.message); setBusy(""); if (hosted) form_?.scrollIntoView({ block: "start" }); }
@@ -123,7 +126,7 @@ export default function Checkout({ codes, signedIn, intro = null, labels = {}, h
         <button type="button" className="btn btn-ghost buy-submit" disabled={Boolean(busy) || !edition} onClick={(e) => pay("pix", e)}>{busy === "pix" ? "Gerando Pix…" : `Pagar à vista no Pix (${formatPrice(edition.priceCents)})`}</button>
       </> : <button type="submit" className="btn btn-primary buy-submit" disabled={Boolean(busy) || !edition}>{busy ? "Gerando pagamento…" : "Pagar com Pix ou cartão"}</button>}
     </form>
-    <p className="small muted">Pagamento seguro pelo Asaas. {signedIn ? "A liberação é automática." : "Depois do pagamento você cria sua senha na hora, sem esperar e-mail."}</p>
+    <p className="small muted">Pagamento seguro pela {edition?.code === "edicao-1" ? "Cakto" : "Asaas"}. O acesso é liberado quando a compra é confirmada. Use no pagamento o mesmo e-mail {signedIn ? "desta conta" : "informado acima"}. {signedIn ? "Depois, entre com sua conta." : "Você receberá o link para criar sua senha no e-mail informado."}</p>
     <p className="small muted">Ao pagar, você concorda com os <a className="link" href="/termos" target="_blank" rel="noopener">Termos de uso</a> e a política de <a className="link" href="/compra-e-reembolso" target="_blank" rel="noopener">Compra e reembolso</a>. Garantia de 15 dias.</p>
   </>;
 }
