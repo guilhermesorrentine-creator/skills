@@ -36,3 +36,30 @@ O Google confirmou em 29/10/2026 que senhas de app não estão disponíveis para
 Em 29/10/2026: 95/95 testes e build aprovados; migration aplicada e verificada (4 pedidos preservados, 8 colunas novas, tabela de eventos vazia com RLS); preview protegida `https://skills-75ll0h4vz-guilherme-s-projects28.vercel.app` pronta. A rota do webhook rejeitou requisição sem assinatura com HTTP 401. A Vercel lista `CAKTO_WEBHOOK_SECRET` em Preview e Production, mas a interface retorna os valores cifrados, então os IDs e o segredo ainda não foram verificados funcionalmente. A preview usa o Supabase de produção: não enviar evento de teste que registre compra fictícia. O produto Cakto segue inativo e o domínio principal segue com a oferta antiga. **Ainda falta provar uma compra aprovada real em ambiente de teste isolado e a entrega automática, sem cobrança real.**
 
 Depois da verificação, o dono autorizou restaurar temporariamente os campos comerciais para manter a produção antiga coerente. O banco voltou a Edição 1 por R$ 97,90 e `voxelia-mensal` ativo; a API pública confirmou R$ 97,90. A estrutura Cakto permanece instalada, sem eventos ou compras de teste. Antes de publicar a nova oferta, será necessário reaplicar os valores comerciais de R$ 19,90 de forma controlada, depois da validação isolada e da autorização de publicação.
+
+## Go-live (preparado em 29/10/2026)
+
+Em 29/10 o "Confirm email" do Supabase Auth foi desligado com autorização do dono. O cadastro abre a sessão na hora, e a pessoa volta para a `/oferta` já logada, sem depender do limite de 2 e-mails por hora. As variáveis `CAKTO_*` estão na Vercel. O banco já tem as colunas da Cakto e a tabela `dashboard_connections`. Testes: 95/95. Build: ok.
+
+O webhook da Cakto aponta para a produção. Por isso, o teste real só pode ser feito depois do deploy. Ordem:
+
+1. Fazer o merge do PR. A Vercel publica.
+2. Logo em seguida, aplicar os valores comerciais da nova oferta com uma chamada específica no projeto `biblioteca-total`:
+
+```sql
+begin;
+update public.commercial_editions
+set name = 'Voxelia — acesso vitalício', price_cents = 1990,
+    description = 'Acesso vitalício ao acervo de skills em português. Sem conexão automática com IA.',
+    features = array['Acervo de skills com busca por objetivo', 'Guias em português para consultar e copiar', 'Pagamento único, sem mensalidade'],
+    on_sale = true, updated_at = now()
+where code = 'edicao-1';
+update public.commercial_editions set on_sale = false, updated_at = now() where code <> 'edicao-1';
+update public.plans set active = false where code = 'voxelia-mensal';
+commit;
+```
+
+3. Reativar o produto na Cakto, com cupom desligado e 1 parcela.
+4. O dono faz uma compra real de R$ 19,90 com a própria conta Voxelia. Conferir que a licença foi ativada e que `cakto_webhook_events` tem o evento.
+5. Pedir o estorno pela Cakto e conferir que o acesso foi cortado.
+6. Se algo falhar: desativar o produto na Cakto, reverter o merge e aplicar o retorno de `docs/cakto-retorno.md`.
