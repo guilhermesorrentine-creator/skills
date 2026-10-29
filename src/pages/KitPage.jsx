@@ -4,7 +4,7 @@ import SiteFooter from "../components/site/SiteFooter.jsx";
 import CyberpunkCharacter from "../components/categories/CyberpunkCharacter.jsx";
 import { KITS } from "../lib/kits.js";
 import { Link, navigate } from "../lib/router.jsx";
-import { formatPrice } from "../lib/billing-client.js";
+import { formatPrice, OFFER_PRICE } from "../lib/billing-client.js";
 import { track } from "../lib/meta-pixel.js";
 import { NotFound } from "./AccountPages.jsx";
 
@@ -87,7 +87,7 @@ export function LinksPage() {
   return <main id="conteudo" className="links-page">
     <Brand/>
     <p className="links-lead">2 mil skills de IA organizadas, com passo a passo em português.</p>
-    <button type="button" className="btn btn-primary links-buy" onClick={buy}>Acesso vitalício · R$ 19,90</button>
+    <button type="button" className="btn btn-primary links-buy" onClick={buy}>Acesso vitalício · {OFFER_PRICE}</button>
     <h2>Kits por profissão</h2>
     <div className="links-grid">{KITS.map((k) => <Link key={k.slug} className={`links-kit area-${k.category}`} to={`/kit/${k.slug}`}>{k.name}</Link>)}</div>
     {repos.length > 0 && <><h2>Dos nossos Reels</h2>

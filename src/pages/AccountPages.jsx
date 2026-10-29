@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { authActions, useAuth } from "../lib/auth.jsx";
 import { Link, navigate } from "../lib/router.jsx";
-import { formatPrice, purchase } from "../lib/billing-client.js";
+import { formatPrice, OFFER_PRICE, purchase } from "../lib/billing-client.js";
 import { categoryLabel, typeLabel } from "../lib/resources.js";
 import { Brand } from "../components/site/SiteNav.jsx";
 import { seller, sellerLine } from "../lib/seller.js";
@@ -156,7 +156,7 @@ const legal = {
     ["8. Segurança", "Usamos conexão criptografada, senhas protegidas pelo provedor de autenticação e acesso restrito ao banco de dados. Os dados do cartão são digitados no ambiente da Cakto ou, em compras anteriores, do Asaas, e não passam pelos nossos servidores."],
   ] },
   "compra-e-reembolso": { title: "Compra e reembolso", sections: () => [
-    ["1. Preços e pagamento", "A oferta atual do acervo vitalício custa R$ 19,90 em pagamento único por Pix ou cartão, processado pela Cakto. Não inclui conexão automática com IA. Compras e assinaturas anteriores processadas pelo Asaas mantêm suas condições contratadas."],
+    ["1. Preços e pagamento", `A oferta atual do acervo vitalício custa ${OFFER_PRICE} em pagamento único por Pix ou cartão, processado pela Cakto. Não inclui conexão automática com IA. Compras e assinaturas anteriores processadas pelo Asaas mantêm suas condições contratadas.`],
     ["2. Liberação do acesso", "O acesso é liberado assim que o pagamento é confirmado: na hora no Pix e em instantes no cartão. Depois da confirmação você cria a senha na própria página, sem esperar e-mail."],
     ["3. Garantia de 15 dias", "Você pode pedir reembolso em até 15 dias da compra vitalícia ou da primeira mensalidade de uma assinatura anterior, sem justificar, em Minha licença ou pelo suporte."],
     ["4. Como o reembolso é feito", "O valor volta pelo mesmo meio de pagamento. Compras pela Cakto são solicitadas em Minha licença ou pelo suporte e processadas na Cakto; o acesso é atualizado após a confirmação do estorno. No cartão, o estorno aparece na fatura. Para assinaturas anteriores, o reembolso da primeira mensalidade também cancela novas cobranças."],

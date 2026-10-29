@@ -1,7 +1,9 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { createHmac, randomUUID } from "node:crypto";
-import { caktoCheckoutUrl, verifyCaktoWebhook } from "./cakto.js";
+import { CAKTO_PRICE_CENTS, caktoCheckoutUrl, verifyCaktoWebhook } from "./cakto.js";
+
+const PRICE = CAKTO_PRICE_CENTS / 100;
 import { createCommerce } from "./commerce.js";
 import { createConversions } from "./meta.js";
 import { createOnboarding } from "./onboarding.js";
@@ -16,10 +18,10 @@ function setup(purchase = async () => true) {
   const config = readConfig({ CLAIM_SECRET: "claim-test", CAKTO_PRODUCT_ID: productId, CAKTO_OFFER_ID: offerId,
     CAKTO_CHECKOUT_SLUG: "xjg2gb9_1253369", CAKTO_WEBHOOK_SECRET: "webhook-test" });
   const store = createMemoryStore({ profiles: [user], editions: [{ id: "edition", code: "edicao-1", name: "Voxelia vitalício",
-    rank: 1, price_cents: 1990, on_sale: true, features: [] }] });
+    rank: 1, price_cents: CAKTO_PRICE_CENTS, on_sale: true, features: [] }] });
   const commerce = createCommerce({ store, asaas: {}, config, conversions: { purchase } });
   const data = (order, changes = {}) => ({ id: randomUUID(), callback: order.id, offer_type: "main", subscription: null,
-    product: { id: productId, type: "unique" }, offer: { id: offerId, price: 19.9, currency: "BRL" }, amount: 19.9,
+    product: { id: productId, type: "unique" }, offer: { id: offerId, price: PRICE, currency: "BRL" }, amount: PRICE,
     currency: "BRL", installments: 1, customer: { email: user.email }, status: "paid", paidAt: new Date().toISOString(),
     fees: 2.5, paymentMethod: "PIX", ...changes });
   return { store, commerce, data };
@@ -59,7 +61,7 @@ test("Cakto: compra sem cadastro entrega o link uma vez após pagamento aprovado
     GMAIL_SMTP_USER: "sender@example.com", GMAIL_SMTP_APP_PASSWORD: "app-password-test",
     APP_URL: "https://voxelia.example" });
   const store = createMemoryStore({ editions: [{ id: "edition", code: "edicao-1", name: "Voxelia vitalício",
-    rank: 1, price_cents: 1990, on_sale: true, features: [] }] });
+    rank: 1, price_cents: CAKTO_PRICE_CENTS, on_sale: true, features: [] }] });
   const emails = [];
   const onboarding = createOnboarding({ store, config, mailer: { send: async (message) => emails.push(message) } });
   const commerce = createCommerce({ store, asaas: {}, config, onboarding });
@@ -68,8 +70,8 @@ test("Cakto: compra sem cadastro entrega o link uma vez após pagamento aprovado
   assert.ok(checkout.url.includes(`callback=${order.id}`));
   assert.equal(emails.length, 0);
   const paid = { id: randomUUID(), callback: order.id, offer_type: "main", subscription: null,
-    product: { id: productId, type: "unique" }, offer: { id: offerId, price: 19.9, currency: "BRL" },
-    amount: 19.9, currency: "BRL", installments: 1, customer: { email: "buyer@example.com" },
+    product: { id: productId, type: "unique" }, offer: { id: offerId, price: PRICE, currency: "BRL" },
+    amount: PRICE, currency: "BRL", installments: 1, customer: { email: "buyer@example.com" },
     status: "paid", paidAt: new Date().toISOString() };
   await commerce.receiveCaktoWebhook({ event: "purchase_approved", data: paid });
   await commerce.receiveCaktoWebhook({ event: "purchase_approved", data: paid });
@@ -92,7 +94,7 @@ test("Cakto: pagamento aprovado libera uma vez; divergências e pendências não
   assert.equal(store.db.licenses.length, 0);
   const wrongBuyer = data(order, { customer: { email: "other@example.com" } });
   assert.equal((await commerce.receiveCaktoWebhook({ event: "purchase_approved", data: wrongBuyer })).results[0].status, "failed");
-  const wrongOffer = data(order, { offer: { id: "other", price: 19.9, currency: "BRL" } });
+  const wrongOffer = data(order, { offer: { id: "other", price: PRICE, currency: "BRL" } });
   assert.equal((await commerce.receiveCaktoWebhook({ event: "purchase_approved", data: wrongOffer })).results[0].status, "failed");
   const pending = data(order, { status: "pending" });
   assert.equal((await commerce.receiveCaktoWebhook({ event: "purchase_approved", data: pending })).results[0].status, "failed");
@@ -141,6 +143,6 @@ test("Cakto: Purchase enviado ao Pixel certo com valor, moeda e ID da transaçã
   assert.equal(sent[0].body.test_event_code, "TEST123");
   assert.equal(sent[0].body.data[0].event_name, "Purchase");
   assert.equal(sent[0].body.data[0].event_id, `purchase-cakto-${paid.id}`);
-  assert.deepEqual(sent[0].body.data[0].custom_data, { currency: "BRL", value: 19.9,
+  assert.deepEqual(sent[0].body.data[0].custom_data, { currency: "BRL", value: PRICE,
     content_ids: ["voxelia-vitalicio"], content_type: "product" });
 });

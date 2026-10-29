@@ -5,6 +5,7 @@ import { Link } from "../lib/router.jsx";
 import { track } from "../lib/meta-pixel.js";
 import { funnel } from "../lib/funnel.js";
 import { seller, sellerLine } from "../lib/seller.js";
+import { OFFER_PRICE } from "../lib/billing-client.js";
 
 // A oferta vitalícia dá acesso ao acervo. A pessoa usa os guias manualmente na IA de sua escolha.
 const SERVICES = [
@@ -24,7 +25,7 @@ const FAQ = [
   ["Preciso saber programar?", "Não. Você pode escolher um guia, copiar as instruções e usar em uma IA que aceite texto."],
   ["A IA se conecta automaticamente?", "Não. Esta compra dá acesso vitalício ao acervo; você consulta e usa as skills manualmente. Ferramentas de IA podem exigir conta própria."],
   ["Quando recebo o acesso?", "Crie sua conta antes de pagar. Quando a Cakto confirmar o pagamento, o acervo será liberado automaticamente nessa conta. Entre com o mesmo e-mail usado no checkout."],
-  ["Existe mensalidade?", "Não. São R$ 19,90 em pagamento único pelo acesso vitalício ao acervo."],
+  ["Existe mensalidade?", `Não. São ${OFFER_PRICE} em pagamento único pelo acesso vitalício ao acervo.`],
   ["E se eu não gostar?", "A compra tem 15 dias de garantia. Você pode pedir o reembolso em Minha licença ou pelo suporte."],
 ];
 
@@ -86,8 +87,8 @@ export default function OfferPage({ signedIn, authReady = true }) {
         <p className="offer-lead">Encontre métodos para criar páginas, produzir conteúdo, pesquisar clientes e desenvolver serviços que você pode oferecer. A Voxelia organiza os guias para você usar com a IA de sua escolha.</p>
         {variant === "C" && <p className="small">Dê superpoderes à sua IA com instruções mais específicas para cada tarefa.</p>}
         <ol className="offer-flow" aria-label="Como a Voxelia ajuda">{["Escolha seu objetivo", "Encontre uma skill", "Use o comando na sua IA"].map((step, index) => <li key={step}><span>{index + 1}</span>{step}</li>)}</ol>
-        <p className="offer-hero-price"><b>R$ 19,90</b><span>pagamento único · acesso vitalício ao acervo</span></p>
-        <button type="button" className="btn btn-primary offer-cta" onClick={goCheckout}>Quero acessar as skills por R$ 19,90</button>
+        <p className="offer-hero-price"><b>{OFFER_PRICE}</b><span>pagamento único · acesso vitalício ao acervo</span></p>
+        <button type="button" className="btn btn-primary offer-cta" onClick={goCheckout}>Quero acessar as skills por {OFFER_PRICE}</button>
         <p className="small offer-assure">Sem mensalidade · 15 dias de garantia</p>
       </section>
 
@@ -128,7 +129,7 @@ export default function OfferPage({ signedIn, authReady = true }) {
     </main>
 
     {pastHero && !atCheckout && <div className="repo-cta offer-sticky" role="region" aria-label="Comprar">
-      <button type="button" className="btn btn-primary" onClick={goCheckout}>Quero o acervo vitalício · R$ 19,90</button>
+      <button type="button" className="btn btn-primary" onClick={goCheckout}>Quero o acervo vitalício · {OFFER_PRICE}</button>
     </div>}
 
     <footer className="offer-foot">

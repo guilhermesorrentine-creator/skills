@@ -1,6 +1,8 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
 
 const httpError = (status, code, message) => Object.assign(new Error(message), { status, code });
+// Preço da oferta vitalícia na Cakto. Mudar aqui exige o mesmo valor no produto Cakto, em commercial_editions e em src/lib/billing-client.js.
+export const CAKTO_PRICE_CENTS = 3990;
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export function caktoCheckoutUrl(checkoutSlug, orderId) {
@@ -28,7 +30,7 @@ export function validCaktoOrder(data, config) {
     && String(data.product?.id || "") === config.productId
     && String(data.offer?.id || "") === config.offerId
     && data.product?.type === "unique" && data.currency === "BRL" && data.offer?.currency === "BRL"
-    && Number(data.amount) === 19.9 && Number(data.offer?.price) === 19.9
+    && Number(data.amount) * 100 === CAKTO_PRICE_CENTS && Number(data.offer?.price) * 100 === CAKTO_PRICE_CENTS
     && Number(data.installments) === 1 && typeof data.customer?.email === "string");
 }
 
