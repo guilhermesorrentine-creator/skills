@@ -63,3 +63,13 @@ commit;
 4. O dono faz uma compra real de R$ 19,90 com a própria conta Voxelia. Conferir que a licença foi ativada e que `cakto_webhook_events` tem o evento.
 5. Pedir o estorno pela Cakto e conferir que o acesso foi cortado.
 6. Se algo falhar: desativar o produto na Cakto, reverter o merge e aplicar o retorno de `docs/cakto-retorno.md`.
+
+## Troca de produto e preço (29/10/2026, noite)
+
+O produto `eab775e9…` ficou bloqueado pela Cakto ("contate o suporte") e o checkout respondia 404. O dono pediu um produto novo com as mesmas características:
+
+- produto `6ca0a662-b9c7-4cfd-892d-69527ddbdc3b`;
+- oferta `n67ozi6`;
+- checkout `n67ozi6_1258848`.
+
+O produto novo já está no webhook "Voxelia — compras", e a Vercel recebeu os três IDs. Em seguida, o dono pediu o preço de **R$ 39,90**. O preço passa a existir só em dois lugares do código, `CAKTO_PRICE_CENTS` (server/cakto.js) e `OFFER_PRICE` (src/lib/billing-client.js). O valor precisa ser igual também no produto Cakto e em `commercial_editions.price_cents` (`edicao-1` = 3990).

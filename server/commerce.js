@@ -1,7 +1,7 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
 import { activeGrants, entitlement, licenseLabels, quote } from "./licensing.js";
 import { checkoutUrl } from "./asaas.js";
-import { approvedCaktoPurchase, caktoCheckoutUrl, validCaktoOrder } from "./cakto.js";
+import { approvedCaktoPurchase, CAKTO_PRICE_CENTS, caktoCheckoutUrl, validCaktoOrder } from "./cakto.js";
 import { createSubscriptions } from "./subscriptions.js";
 
 const httpError = (status, code, message) => Object.assign(new Error(message), { status, code });
@@ -175,11 +175,11 @@ export function createCommerce({ store, asaas, config, onboarding = null, conver
   async function startCheckout(user, editionCode, tracking = null, { claim = false, payer = null, method = "pix" } = {}, retried = false) {
     const target = await store.getEditionByCode(String(editionCode || ""));
     if (!target || !target.on_sale) throw httpError(404, "edition_not_found", "Edição indisponível para compra.");
-    const cakto = target.code === "edicao-1" && target.price_cents === 1990;
+    const cakto = target.code === "edicao-1" && target.price_cents === CAKTO_PRICE_CENTS;
     if (cakto && (!config.cakto?.checkoutSlug || !config.cakto.productId || !config.cakto.offerId || !config.cakto.webhookSecret))
       throw httpError(503, "cakto_not_configured", "Compra temporariamente indisponível.");
     const open = await store.getOpenOrder(user.id, now());
-    if (cakto && open && (open.amount_cents !== 1990 || open.payment_provider !== "cakto"))
+    if (cakto && open && (open.amount_cents !== CAKTO_PRICE_CENTS || open.payment_provider !== "cakto"))
       throw httpError(409, "order_in_progress", "Há um pagamento anterior em andamento. Aguarde ele expirar antes de iniciar a nova oferta.");
     if (open?.checkout_url && open.edition_id === target.id) {
       const payment = payer ? await store.findPaymentByOrder(open.id) : null;
@@ -196,7 +196,7 @@ export function createCommerce({ store, asaas, config, onboarding = null, conver
     const quoted = quote({ target, license: ent.license, editions: ent.editions, orders });
     const price = quoted.error === "already_owned" ? renewalQuote(target, ent, orders) || quoted : quoted;
     if (price.error === "already_owned") throw httpError(409, "already_owned", "Sua licença já inclui esta edição.");
-    if (cakto && (price.kind !== "purchase" || price.amount !== 1990)) throw httpError(422, "offer_unavailable", "Esta compra não corresponde à oferta disponível.");
+    if (cakto && (price.kind !== "purchase" || price.amount !== CAKTO_PRICE_CENTS)) throw httpError(422, "offer_unavailable", "Esta compra não corresponde à oferta disponível.");
     const expiresAt = new Date(now().getTime() + (cakto ? DAY : payer ? DAY : config.asaas.checkoutMinutes * 60000)).toISOString();
     const base = { user_id: user.id, edition_id: target.id, kind: price.kind, list_price_cents: price.listPrice, credit_cents: price.credit, amount_cents: price.amount, ...(cakto && { payment_provider: "cakto" }) };
 
@@ -305,7 +305,7 @@ export function createCommerce({ store, asaas, config, onboarding = null, conver
     if (!EMAIL.test(address) || address.length > 254) throw httpError(400, "invalid_email", "Informe um e-mail válido.");
     const target = await store.getEditionByCode(String(editionCode || ""));
     const emailReady = config.email?.apiKey && config.email?.from || config.email?.gmailUser && config.email?.gmailAppPassword;
-    if (target?.code === "edicao-1" && target.price_cents === 1990 && !emailReady)
+    if (target?.code === "edicao-1" && target.price_cents === CAKTO_PRICE_CENTS && !emailReady)
       throw httpError(503, "delivery_not_configured", "Compra temporariamente indisponível: envio do acesso não configurado.");
     const buyer = payer && validPayer(payer);
     let profile = await store.findProfileByEmail(address);
@@ -402,7 +402,7 @@ export function createCommerce({ store, asaas, config, onboarding = null, conver
       if (!order || order.payment_provider !== "cakto") return finish("unlinked", "Pedido local não encontrado.");
       const profile = await store.getProfile(order.user_id);
       if (profile?.email?.toLowerCase() !== data.customer.email.toLowerCase()
-        || order.amount_cents !== 1990 || order.cakto_order_id && order.cakto_order_id !== data.id)
+        || order.amount_cents !== CAKTO_PRICE_CENTS || order.cakto_order_id && order.cakto_order_id !== data.id)
         return finish("failed", "Comprador ou transação divergente.");
       if (event === "purchase_approved") {
         if (!approvedCaktoPurchase(data, config.cakto) || Number.isNaN(Date.parse(data.paidAt))) return finish("failed", "Pagamento não confirmado.");

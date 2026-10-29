@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { apiFetch } from "../lib/auth.jsx";
 import { Link } from "../lib/router.jsx";
-import { formatPrice } from "../lib/billing-client.js";
+import { formatPrice, OFFER_PRICE } from "../lib/billing-client.js";
 import { CATEGORIES, TYPES } from "../lib/resources.js";
 import { Brand } from "../components/site/SiteNav.jsx";
 import { CopyButton } from "../components/shared.jsx";
@@ -129,7 +129,7 @@ function EditionsTab({ data, act }) {
   const set = (key) => (event) => setForm({ ...form, [key]: event.target.type === "checkbox" ? event.target.checked : event.target.value });
   return <>
     <h2>Edições comerciais</h2>
-    <p className="small muted">Oferta atual: Edição 1 — R$ 19,90. Valores de edições futuras dependem de aprovação. Mudar o preço não altera pedidos já pagos.</p>
+    <p className="small muted">Oferta atual: Edição 1 — {OFFER_PRICE}. Valores de edições futuras dependem de aprovação. Mudar o preço não altera pedidos já pagos.</p>
     <Table head={["Ordem", "Código", "Nome", "Preço", "À venda", ""]} rows={data.editions.map((e) => [e.rank, e.code, e.name, formatPrice(e.price_cents), e.on_sale ? "sim" : "não",
       <button key="e" type="button" className="link" onClick={() => setForm({ code: e.code, name: e.name, rank: e.rank, priceCents: e.price_cents, description: e.description, features: (e.features || []).join("\n"), onSale: e.on_sale })}>Editar</button>])}/>
     <form className="admin-form" onSubmit={async (e) => { e.preventDefault(); if (await act("/api/admin/editions", { ...form, priceCents: Number(form.priceCents), rank: Number(form.rank) }, "Edição salva.")) setForm(emptyEdition); }}>
