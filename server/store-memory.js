@@ -5,8 +5,8 @@ import { randomUUID } from "node:crypto";
 export function createMemoryStore(seed = {}) {
   const db = {
     profiles: [...(seed.profiles || [])], editions: [...(seed.editions || [])], plans: [...(seed.plans || [{ id: "plan-monthly", code: "voxelia-mensal", name: "Voxelia mensal", price_cents: 4990, cycle: "MONTHLY", active: true }])], checkoutSessions: [], subscriptions: [], subscriptionPayments: [], orders: [], payments: [], licenses: [], licenseEvents: [],
-    events: [], grants: [], audit: [], funnel: [], resources: [...(seed.resources || [])], relations: [...(seed.relations || [])], paths: [...(seed.paths || [])],
-    collections: [], items: [], favorites: [], recent: [], dashboardExpenses: [], dashboardNotes: [], dashboardAdLinks: [], dashboardCache: [],
+    events: [], caktoEvents: [], grants: [], audit: [], funnel: [], resources: [...(seed.resources || [])], relations: [...(seed.relations || [])], paths: [...(seed.paths || [])],
+    collections: [], items: [], favorites: [], recent: [], dashboardExpenses: [], dashboardNotes: [], dashboardAdLinks: [], dashboardCache: [], dashboardConnections: [],
     dashboardSettings: { goal_cents: 1500000, goal_starts_on: "2026-10-22", goal_ends_on: "2026-12-05" },
   };
   const clone = (value) => (value === undefined || value === null ? null : structuredClone(value));
@@ -68,6 +68,13 @@ export function createMemoryStore(seed = {}) {
     },
     getSubscriptionPayment: async (id) => clone(db.subscriptionPayments.find((item) => item.asaas_payment_id === id)),
     listSubscriptionPayments: async (subscriptionId) => clone(db.subscriptionPayments.filter((item) => !subscriptionId || item.subscription_id === subscriptionId)),
+    claimSubscriptionPurchase: async (id, attemptedAt, staleBefore) => {
+      const item = db.subscriptionPayments.find((entry) => entry.asaas_payment_id === id);
+      if (!item || item.meta_purchase_sent_at || item.meta_purchase_attempted_at && item.meta_purchase_attempted_at >= staleBefore) return null;
+      item.meta_purchase_attempted_at = attemptedAt; item.meta_purchase_error = null;
+      return clone(item);
+    },
+    finishSubscriptionPurchase: async (id, patch) => { Object.assign(db.subscriptionPayments.find((item) => item.asaas_payment_id === id) || {}, patch); },
 
     getOpenOrder: async (userId, now) => clone(db.orders.filter((item) => item.user_id === userId && isOpen(item, now)).sort(newest("created_at"))[0]),
     insertOrder: async (row) => {
@@ -80,6 +87,14 @@ export function createMemoryStore(seed = {}) {
     getOrder: async (id) => clone(db.orders.find((item) => item.id === id)),
     findOrderByCheckout: async (checkoutId) => clone(db.orders.find((item) => item.asaas_checkout_id === checkoutId)),
     listOrders: async (userId) => clone(db.orders.filter((item) => !userId || item.user_id === userId).sort(newest("created_at"))),
+    claimOrderPurchase: async (id, at, staleBefore) => {
+      const row = db.orders.find((item) => item.id === id && !item.meta_purchase_sent_at
+        && (!item.meta_purchase_attempted_at || item.meta_purchase_attempted_at < staleBefore));
+      if (!row) return null;
+      row.meta_purchase_attempted_at = at; row.meta_purchase_error = null;
+      return clone(row);
+    },
+    finishOrderPurchase: async (id, patch) => { Object.assign(db.orders.find((item) => item.id === id) || {}, patch); },
 
     getPayment: async (id) => clone(db.payments.find((item) => item.asaas_payment_id === id)),
     findPaymentByOrder: async (orderId) => clone(db.payments.find((item) => item.order_id === orderId)),
@@ -111,6 +126,22 @@ export function createMemoryStore(seed = {}) {
     updateEvent: async (id, patch) => { Object.assign(db.events.find((item) => item.id === id) || {}, patch); },
     getEvent: async (id) => clone(db.events.find((item) => item.id === id)),
     listEvents: async ({ status, limit = 100 } = {}) => clone(db.events.filter((item) => !status || item.status === status).slice(-limit).reverse()),
+    insertCaktoEvent: async (row) => {
+      const existing = db.caktoEvents.find((item) => item.id === row.id);
+      if (existing) return { inserted: false, event: clone(existing) };
+      const event = { received_at: stamp(), attempts: 0, status: "received", ...row };
+      db.caktoEvents.push(event); return { inserted: true, event: clone(event) };
+    },
+    claimCaktoEvent: async (id, at, staleBefore) => {
+      const row = db.caktoEvents.find((item) => item.id === id);
+      if (!row || !["received", "failed", "unlinked"].includes(row.status)
+        && !(row.status === "processing" && row.processing_started_at < staleBefore)) return null;
+      row.status = "processing"; row.processing_started_at = at; row.attempts += 1;
+      return clone(row);
+    },
+    finishCaktoEvent: async (id, patch) => { Object.assign(db.caktoEvents.find((item) => item.id === id) || {}, patch); },
+    getCaktoEvent: async (id) => clone(db.caktoEvents.find((item) => item.id === id)),
+    listCaktoEvents: async ({ status, limit = 100 } = {}) => clone(db.caktoEvents.filter((item) => !status || item.status === status).slice(-limit).reverse()),
 
     listGrants: async (userId) => clone(db.grants.filter((item) => !userId || item.user_id === userId)),
     insertGrant: async (row) => { const record = { id: randomUUID(), created_at: stamp(), ...row }; db.grants.push(record); return clone(record); },
@@ -128,6 +159,8 @@ export function createMemoryStore(seed = {}) {
     deleteDashboardExpense: async (id) => { const item = db.dashboardExpenses.find((entry) => entry.id === id); db.dashboardExpenses = db.dashboardExpenses.filter((entry) => entry.id !== id); return clone(item); },
     getDashboardSettings: async () => clone(db.dashboardSettings),
     saveDashboardSettings: async (row) => clone(Object.assign(db.dashboardSettings, row)),
+    getDashboardConnection: async (provider) => clone(db.dashboardConnections.find((item) => item.provider === provider)),
+    saveDashboardConnection: async (row) => { const item = db.dashboardConnections.find((entry) => entry.provider === row.provider); if (item) Object.assign(item, row, { updated_at: stamp() }); else db.dashboardConnections.push({ ...row, updated_at: stamp() }); return clone(item || db.dashboardConnections.at(-1)); },
     listDashboardNotes: async () => clone(db.dashboardNotes),
     saveDashboardNote: async (row) => { const item = db.dashboardNotes.find((entry) => entry.path === row.path); if (item) Object.assign(item, row, { imported_at: stamp() }); else db.dashboardNotes.push({ ...row, imported_at: stamp() }); return clone(item || db.dashboardNotes.at(-1)); },
     listDashboardAdLinks: async () => clone(db.dashboardAdLinks),

@@ -24,7 +24,7 @@ function paidUntil(records) {
   return new Date(Date.UTC(year, month, Math.min(day, daysInNextMonth), 12)).toISOString();
 }
 
-export function createSubscriptions({ store, asaas, config, now = () => new Date() }) {
+export function createSubscriptions({ store, asaas, config, conversions = null, now = () => new Date() }) {
   const keyFor = (id) => {
     if (!config.claimSecret) throw error(503, "not_configured", "Pagamento sem cadastro indisponível.");
     return createHmac("sha256", config.claimSecret).update(`subscription:${id}`).digest("base64url").slice(0, 32);
@@ -205,10 +205,31 @@ export function createSubscriptions({ store, asaas, config, now = () => new Date
       status, value_cents: plan.price_cents, billing_type: payment.billingType, due_date: payment.dueDate || existing?.due_date || null,
       confirmed_at: paid(payload.event) ? payment.confirmedDate || payment.paymentDate || now().toISOString() : existing?.confirmed_at || null,
       invoice_url: payment.invoiceUrl || null });
-    const until = paidUntil(await store.listSubscriptionPayments(subscription.id));
+    const records = await store.listSubscriptionPayments(subscription.id);
+    const until = paidUntil(records);
     await store.updateSubscription(subscription.id, { current_period_end: until,
       status: subscription.canceled_at ? "canceled" : until && new Date(until) > now() ? "active" : "past_due",
       ...(paid(payload.event) && { last_payment_at: now().toISOString() }) });
+    const first = records.filter((record) => ["CONFIRMED", "RECEIVED"].includes(record.status))
+      .sort((a, b) => new Date(a.confirmed_at) - new Date(b.confirmed_at))[0];
+    if (paid(payload.event) && first?.asaas_payment_id === payment.id && conversions && subscription.ad_tracking?.consent) {
+      const attemptedAt = now().toISOString();
+      const staleBefore = new Date(now().getTime() - 5 * 60000).toISOString();
+      const claimed = await store.claimSubscriptionPurchase(payment.id, attemptedAt, staleBefore);
+      if (claimed) {
+        try {
+          const profile = await store.getProfile(subscription.user_id);
+          await conversions.subscriptionPurchase({ subscription, payment: claimed, email: profile?.email,
+            eventTime: new Date(claimed.confirmed_at || attemptedAt) });
+          await store.finishSubscriptionPurchase(payment.id, { meta_purchase_sent_at: now().toISOString(), meta_purchase_error: null });
+          console.info(`[meta] Purchase mensal enviado: purchase-subscription-${payment.id}`);
+        } catch (cause) {
+          await store.finishSubscriptionPurchase(payment.id, { meta_purchase_attempted_at: null, meta_purchase_error: String(cause.message).slice(0, 300) });
+          console.error(`[meta] Purchase mensal não enviado: purchase-subscription-${payment.id}: ${cause.message}`);
+          throw cause;
+        }
+      }
+    }
     return { status: "processed", note: paid(payload.event) ? "Mensalidade confirmada." : "Cobrança da assinatura registrada." };
   }
 

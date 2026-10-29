@@ -17,12 +17,20 @@ export function readConfig(env = process.env) {
       checkoutHost: asaasEnv === "production" ? "https://asaas.com" : "https://sandbox.asaas.com",
       checkoutMinutes: Math.min(1440, Math.max(10, Number(env.ASAAS_CHECKOUT_MINUTES) || 60)),
     },
-    // E-mails de boas-vindas (Resend). Sem chave, nada é enviado e o admin recebe o link para copiar.
-    email: { apiKey: env.RESEND_API_KEY || "", from: env.EMAIL_FROM || "" },
+    cakto: {
+      offerId: env.CAKTO_OFFER_ID || "",
+      checkoutSlug: env.CAKTO_CHECKOUT_SLUG || "",
+      productId: env.CAKTO_PRODUCT_ID || "",
+      webhookSecret: env.CAKTO_WEBHOOK_SECRET || "",
+    },
+    // E-mails de boas-vindas: Resend ou Gmail SMTP com senha de app, só no servidor.
+    email: { apiKey: env.RESEND_API_KEY || "", from: env.EMAIL_FROM || "",
+      gmailUser: env.GMAIL_SMTP_USER || "", gmailAppPassword: env.GMAIL_SMTP_APP_PASSWORD || "" },
     // API de Conversões do Meta (Purchase). O token é segredo; o ID do Pixel é público.
-    meta: { pixelId: env.META_PIXEL_ID || env.VITE_META_PIXEL_ID || "", token: env.META_CAPI_TOKEN || "", testEventCode: env.META_TEST_EVENT_CODE || "",
+    meta: { appUrl: (previewUrl || env.APP_URL || "http://localhost:5173").replace(/\/$/, ""), pixelId: env.META_PIXEL_ID || env.VITE_META_PIXEL_ID || "", token: env.META_CAPI_TOKEN || "", testEventCode: env.META_TEST_EVENT_CODE || "",
       adsToken: env.META_ADS_TOKEN || "", adsAccountId: env.META_AD_ACCOUNT_ID || "", graphVersion: env.META_GRAPH_VERSION || "v24.0",
-      instagramToken: env.META_INSTAGRAM_TOKEN || "", instagramUserId: env.META_INSTAGRAM_USER_ID || "" },
+      instagramToken: env.META_INSTAGRAM_TOKEN || "", instagramUserId: env.META_INSTAGRAM_USER_ID || "",
+      oauthAppId: env.META_OAUTH_APP_ID || "", oauthAppSecret: env.META_OAUTH_APP_SECRET || "", oauthEncryptionKey: env.META_OAUTH_ENCRYPTION_KEY || "" },
     // Atalho de desenvolvimento local: só existe fora da Vercel e fora de produção.
     devBypass: env.BT_DEV_BYPASS === "1" && !env.VERCEL && env.NODE_ENV !== "production",
   };

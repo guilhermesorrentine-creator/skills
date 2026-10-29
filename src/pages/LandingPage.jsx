@@ -55,7 +55,7 @@ const goalChips = ["Quero criar um site", "Automatizar tarefas", "Editar vídeos
 const faq = [
   { q: "O que é a Voxelia?", a: "Uma plataforma que organiza recursos para trabalhar com IA: Agent Skills de repositórios públicos, ferramentas e referências, e guias próprios, com busca por objetivo, coleções e páginas de consulta." },
   { q: "Como funciona o acesso vitalício?", a: "Você paga uma vez pela edição e mantém o acesso aos recursos e funcionalidades incluídos nela, sem mensalidade nem renovação." },
-  { q: "Como é o pagamento?", a: "Pagamento único por Pix ou cartão de crédito, no ambiente seguro do Asaas. A Voxelia não armazena dados do cartão. O acesso é liberado quando o Asaas confirma o pagamento." },
+  { q: "Como é o pagamento?", a: "Pagamento único por Pix ou cartão de crédito, no ambiente seguro da Cakto. A Voxelia não armazena dados do cartão. O acesso é liberado quando a Cakto confirma o pagamento." },
   { q: "O que acontece quando sair uma nova edição?", a: "Novas edições podem trazer recursos extras. O upgrade é opcional: você paga só a diferença de preço e, se preferir não atualizar, continua com a edição que comprou." },
   { q: "O conteúdo das skills é exclusivo?", a: "Não. As Agent Skills vêm de repositórios públicos e cada página aponta para a fonte original. O valor da Voxelia está na curadoria, na organização, na busca, nos guias próprios e nas ferramentas de organização." },
   { q: "E se eu não gostar?", a: "Você tem 15 dias de garantia. Se a Voxelia não servir para você, peça o reembolso dentro desse prazo e devolvemos o valor pago." },
@@ -189,7 +189,7 @@ export default function LandingPage({ account, signedIn, onEnter }) {
               <li>Guias passo a passo em português, com comandos prontos</li>
               <li>Acesso vitalício aos recursos e funcionalidades da edição adquirida</li>
               <li>Sem mensalidade, anuidade ou renovação automática</li>
-              <li>Pix ou cartão de crédito, pelo Asaas</li>
+              <li>Pix ou cartão de crédito, pela Cakto</li>
               <li>Upgrades futuros opcionais, pagando só a diferença</li>
               {(edition?.features || []).map((feature) => <li key={feature}>{feature}</li>)}
             </ul>

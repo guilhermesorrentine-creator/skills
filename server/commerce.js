@@ -1,6 +1,7 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
 import { activeGrants, entitlement, licenseLabels, quote } from "./licensing.js";
 import { checkoutUrl } from "./asaas.js";
+import { approvedCaktoPurchase, caktoCheckoutUrl, validCaktoOrder } from "./cakto.js";
 import { createSubscriptions } from "./subscriptions.js";
 
 const httpError = (status, code, message) => Object.assign(new Error(message), { status, code });
@@ -21,7 +22,7 @@ const DISPUTE = new Set(["PAYMENT_CHARGEBACK_REQUESTED", "PAYMENT_CHARGEBACK_DIS
 
 // Pagamento único por edição (Asaas Checkout avulso) e licença vitalícia.
 export function createCommerce({ store, asaas, config, onboarding = null, conversions = null, now = () => new Date() }) {
-  const subscriptions = createSubscriptions({ store, asaas, config, now });
+  const subscriptions = createSubscriptions({ store, asaas, config, conversions, now });
   async function userEntitlement(userId) {
     const [license, grants, editions, monthly] = await Promise.all([store.getLicense(userId), store.listGrants(userId), store.listEditions({ onSaleOnly: false }), subscriptions.status(userId)]);
     const permanent = entitlement({ license, grants, editions, now: now() });
@@ -126,6 +127,7 @@ export function createCommerce({ store, asaas, config, onboarding = null, conver
 
   // Estorna no Asaas, marca o pedido e recalcula a licença (sem pedido pago válido, o acesso termina).
   async function refundOrder(order, reason, actorId) {
+    if (order.payment_provider === "cakto") throw httpError(422, "cakto_refund_manual", "Solicite o reembolso desta compra na Cakto; a licença será atualizada quando o estorno for confirmado.");
     const paymentId = await paidPaymentId(order);
     if (!paymentId) throw httpError(404, "payment_not_found", "Cobrança do pedido não encontrada no Asaas.");
     // Parcelado no cartão: estorna o parcelamento inteiro, não só uma parcela.
@@ -173,7 +175,12 @@ export function createCommerce({ store, asaas, config, onboarding = null, conver
   async function startCheckout(user, editionCode, tracking = null, { claim = false, payer = null, method = "pix" } = {}, retried = false) {
     const target = await store.getEditionByCode(String(editionCode || ""));
     if (!target || !target.on_sale) throw httpError(404, "edition_not_found", "Edição indisponível para compra.");
+    const cakto = target.code === "edicao-1" && target.price_cents === 1990;
+    if (cakto && (!config.cakto?.checkoutSlug || !config.cakto.productId || !config.cakto.offerId || !config.cakto.webhookSecret))
+      throw httpError(503, "cakto_not_configured", "Compra temporariamente indisponível.");
     const open = await store.getOpenOrder(user.id, now());
+    if (cakto && open && (open.amount_cents !== 1990 || open.payment_provider !== "cakto"))
+      throw httpError(409, "order_in_progress", "Há um pagamento anterior em andamento. Aguarde ele expirar antes de iniciar a nova oferta.");
     if (open?.checkout_url && open.edition_id === target.id) {
       const payment = payer ? await store.findPaymentByOrder(open.id) : null;
       if (!payment) return withClaim({ url: open.checkout_url, reused: true }, open.id, claim);
@@ -189,8 +196,9 @@ export function createCommerce({ store, asaas, config, onboarding = null, conver
     const quoted = quote({ target, license: ent.license, editions: ent.editions, orders });
     const price = quoted.error === "already_owned" ? renewalQuote(target, ent, orders) || quoted : quoted;
     if (price.error === "already_owned") throw httpError(409, "already_owned", "Sua licença já inclui esta edição.");
-    const expiresAt = new Date(now().getTime() + (payer ? DAY : config.asaas.checkoutMinutes * 60000)).toISOString();
-    const base = { user_id: user.id, edition_id: target.id, kind: price.kind, list_price_cents: price.listPrice, credit_cents: price.credit, amount_cents: price.amount };
+    if (cakto && (price.kind !== "purchase" || price.amount !== 1990)) throw httpError(422, "offer_unavailable", "Esta compra não corresponde à oferta disponível.");
+    const expiresAt = new Date(now().getTime() + (cakto ? DAY : payer ? DAY : config.asaas.checkoutMinutes * 60000)).toISOString();
+    const base = { user_id: user.id, edition_id: target.id, kind: price.kind, list_price_cents: price.listPrice, credit_cents: price.credit, amount_cents: price.amount, ...(cakto && { payment_provider: "cakto" }) };
 
     if (price.amount === 0) {
       const order = await store.insertOrder({ ...base, status: "paid", paid_at: now().toISOString() });
@@ -209,6 +217,11 @@ export function createCommerce({ store, asaas, config, onboarding = null, conver
       return startCheckout(user, editionCode, tracking, { claim, payer, method }, true);
     }
     if (tracking) await saveTracking(order.id, tracking);
+    if (cakto) {
+      const url = caktoCheckoutUrl(config.cakto.checkoutSlug, order.id);
+      await store.updateOrder(order.id, { status: "pending", checkout_url: url });
+      return withClaim({ url, reused: false }, order.id, claim);
+    }
     if (payer) return withClaim(await chargeDirect(user, order, target, price, payer, method), order.id, claim);
     const back = claim ? `&pedido=${order.id}&chave=${claimKey(order.id)}` : "";
     try {
@@ -290,6 +303,10 @@ export function createCommerce({ store, asaas, config, onboarding = null, conver
   async function guestCheckout(email, editionCode, tracking = null, payer = null, method = "pix") {
     const address = String(email || "").trim().toLowerCase();
     if (!EMAIL.test(address) || address.length > 254) throw httpError(400, "invalid_email", "Informe um e-mail válido.");
+    const target = await store.getEditionByCode(String(editionCode || ""));
+    const emailReady = config.email?.apiKey && config.email?.from || config.email?.gmailUser && config.email?.gmailAppPassword;
+    if (target?.code === "edicao-1" && target.price_cents === 1990 && !emailReady)
+      throw httpError(503, "delivery_not_configured", "Compra temporariamente indisponível: envio do acesso não configurado.");
     const buyer = payer && validPayer(payer);
     let profile = await store.findProfileByEmail(address);
     if (profile && await store.hasSignedIn(profile.id)) throw httpError(409, "account_exists", "Este e-mail já tem conta na Voxelia. Entre para concluir a compra.");
@@ -316,7 +333,7 @@ export function createCommerce({ store, asaas, config, onboarding = null, conver
     let order = await store.getOrder(id);
     if (!order) throw httpError(404, "not_found", "Pedido não encontrado.");
     // Quem paga o Pix fica nesta tela: consulta o Asaas direto, sem depender só do webhook.
-    if (order.status === "pending" && order.asaas_customer_id) {
+    if (order.status === "pending" && order.payment_provider !== "cakto" && order.asaas_customer_id) {
       try { if (await settleFromAsaas(order, "activated")) order = { ...order, status: "paid" }; } catch (error) { console.error("[asaas] consulta do pedido:", error.message); }
     }
     if (order.status !== "paid") return { status: order.status };
@@ -333,16 +350,94 @@ export function createCommerce({ store, asaas, config, onboarding = null, conver
 
   // Purchase para a API de Conversões, uma vez por pedido (só na transição para pago).
   async function reportPurchase(order) {
-    if (!conversions || !order.ad_tracking || order.amount_cents <= 0) return;
+    if (!conversions || !order.ad_tracking?.consent || order.amount_cents <= 0) return;
+    const cakto = order.payment_provider === "cakto";
+    const attempt = cakto ? await store.claimOrderPurchase(order.id, now().toISOString(), new Date(now().getTime() - 300000).toISOString()) : order;
+    if (!attempt) return;
     try {
       const [profile, editions] = await Promise.all([store.getProfile(order.user_id), store.listEditions({ onSaleOnly: false })]);
-      await conversions.purchase({ order, email: profile?.email, editionCode: editions.find((edition) => edition.id === order.edition_id)?.code, eventTime: now() });
+      const sent = await conversions.purchase({ order: attempt, email: profile?.email,
+        editionCode: cakto ? "voxelia-vitalicio" : editions.find((edition) => edition.id === order.edition_id)?.code,
+        eventTime: new Date(order.paid_at || now()) });
+      if (cakto && sent) await store.finishOrderPurchase(order.id, { meta_purchase_sent_at: now().toISOString(), meta_purchase_error: null });
     } catch (error) {
       console.error("[meta] Purchase não enviado:", error.message);
+      if (cakto) await store.finishOrderPurchase(order.id, { meta_purchase_error: String(error.message).slice(0, 300) });
+    }
+  }
+
+  async function receiveCaktoWebhook(payload) {
+    const rows = Array.isArray(payload?.data) ? payload.data : [payload?.data];
+    if (!payload?.event || !rows.length || rows.length > 20) throw httpError(400, "invalid_event", "Evento Cakto inválido.");
+    const results = [];
+    for (const data of rows) {
+      if (!data?.id) { results.push({ status: "ignored" }); continue; }
+      const id = `${payload.event}:${data.id}`;
+      const { inserted, event } = await store.insertCaktoEvent({ id, event: payload.event, payload: { event: payload.event, data } });
+      if (!inserted && event.status === "processed") {
+        if (payload.event === "purchase_approved") {
+          const order = await store.getOrder(data.callback);
+          if (order?.status === "paid" && order.cakto_order_id === data.id) await reportPurchase(order);
+        }
+        results.push({ duplicate: true, status: "processed" }); continue;
+      }
+      results.push({ duplicate: !inserted, ...(await processCaktoEvent(id)) });
+    }
+    return { results };
+  }
+
+  async function processCaktoEvent(id) {
+    const at = now().toISOString();
+    const row = await store.claimCaktoEvent(id, at, new Date(now().getTime() - 300000).toISOString());
+    if (!row) return { status: "processing" };
+    const { event, data } = row.payload;
+    const finish = async (status, note) => {
+      await store.finishCaktoEvent(id, { status, note, processed_at: status === "processed" ? now().toISOString() : null });
+      return { status, note };
+    };
+    try {
+      if (!["purchase_approved", "purchase_refused", "refund", "chargeback"].includes(event)) return finish("processed", "Evento sem efeito na licença.");
+      if (!validCaktoOrder(data, config.cakto)) return finish("failed", "Produto, oferta, valor ou pedido divergente.");
+      const order = await store.getOrder(data.callback);
+      if (!order || order.payment_provider !== "cakto") return finish("unlinked", "Pedido local não encontrado.");
+      const profile = await store.getProfile(order.user_id);
+      if (profile?.email?.toLowerCase() !== data.customer.email.toLowerCase()
+        || order.amount_cents !== 1990 || order.cakto_order_id && order.cakto_order_id !== data.id)
+        return finish("failed", "Comprador ou transação divergente.");
+      if (event === "purchase_approved") {
+        if (!approvedCaktoPurchase(data, config.cakto) || Number.isNaN(Date.parse(data.paidAt))) return finish("failed", "Pagamento não confirmado.");
+        if (order.status === "refunded") return finish("processed", "Compra já estornada.");
+        if (order.status !== "paid") await store.updateOrder(order.id, { status: "paid", paid_at: data.paidAt, cakto_order_id: data.id,
+          cakto_fee_cents: Number.isFinite(Number(data.fees)) && Number(data.fees) >= 0 ? Math.round(Number(data.fees) * 100) : null,
+          cakto_payment_method: String(data.paymentMethod || "").slice(0, 40) || null });
+        if (!order.access_granted_at) {
+          await activateLicense(order.user_id, { ...order, status: "paid" });
+          await store.updateOrder(order.id, { access_granted_at: now().toISOString() });
+        }
+        await reportPurchase({ ...order, status: "paid", cakto_order_id: data.id, paid_at: data.paidAt });
+        return finish("processed", "Compra confirmada e acesso liberado.");
+      }
+      if (event === "purchase_refused") {
+        if (["creating", "pending"].includes(order.status)) await store.updateOrder(order.id, { status: "failed", cakto_order_id: data.id });
+        return finish("processed", "Pagamento recusado.");
+      }
+      if (order.status === "paid") {
+        await store.updateOrder(order.id, { status: "refunded", refunded_cents: order.amount_cents,
+          refunded_at: data.refundedAt || data.chargedbackAt || now().toISOString(), error: event === "chargeback" ? "Contestação Cakto" : null });
+        await recomputeLicense(order.user_id, event === "chargeback" ? "disputed" : "refunded");
+      } else if (["creating", "pending", "failed", "expired"].includes(order.status)) {
+        await store.updateOrder(order.id, { status: "refunded", refunded_cents: order.amount_cents,
+          refunded_at: data.refundedAt || data.chargedbackAt || now().toISOString(), cakto_order_id: data.id });
+      }
+      return finish("processed", event === "chargeback" ? "Contestação registrada." : "Reembolso registrado.");
+    } catch (error) {
+      console.error("[cakto] evento:", id, error.message);
+      return finish("failed", String(error.message).slice(0, 300));
     }
   }
 
   async function activateLicense(userId, order, kind = "activated") {
+    if ((await store.listLicenseEvents(userId)).some((event) => event.order_id === order.id)) return;
     const editions = await store.listEditions({ onSaleOnly: false });
     const target = editions.find((edition) => edition.id === order.edition_id);
     const license = await store.getLicense(userId);
@@ -508,6 +603,7 @@ export function createCommerce({ store, asaas, config, onboarding = null, conver
     const order = await store.getOrder(orderId);
     if (!order) throw httpError(404, "not_found", "Pedido não encontrado.");
     if (order.status === "paid") return { changed: false, reason: "Pedido já pago." };
+    if (order.payment_provider === "cakto") throw httpError(422, "cakto_reconcile", "Reprocesse o evento da Cakto após conferir a venda no painel da Cakto.");
     const paid = await settleFromAsaas(order, "reconciled");
     if (!paid) return { changed: false, reason: "Nenhuma cobrança paga correspondente." };
     await store.insertAudit({ actor_id: actorId, action: "reconcile_order", target_user_id: order.user_id, details: { order_id: order.id, payment: paid.id } });
@@ -526,7 +622,7 @@ export function createCommerce({ store, asaas, config, onboarding = null, conver
     return { status };
   }
 
-  return { userEntitlement, accountState, startCheckout, guestCheckout, accountCheckout, mcpStatus, claimAccess, requestRefund, adminRefund, receiveWebhook, processEvent, reconcileOrder, setLicenseStatus, verifyWebhookToken, subscriptions };
+  return { userEntitlement, accountState, startCheckout, guestCheckout, accountCheckout, mcpStatus, claimAccess, requestRefund, adminRefund, receiveWebhook, receiveCaktoWebhook, processCaktoEvent, processEvent, reconcileOrder, setLicenseStatus, verifyWebhookToken, subscriptions };
 }
 
 export function publicEdition(edition) {

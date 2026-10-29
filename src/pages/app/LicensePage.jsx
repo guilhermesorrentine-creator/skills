@@ -68,11 +68,6 @@ export default function LicensePage({ account }) {
 
     {account.mcp?.active && <AiConnect until={account.mcp.until}/>}
 
-    {!account.mcp?.active && !account.subscription?.active && <section className="panel stack">
-      <h2>Conecte a Voxelia à sua IA</h2>
-      <p>Assine por R$ 49,90 por mês para usar o acervo e a conexão no Claude, ChatGPT ou Claude Code enquanto pagar. Seu acesso vitalício, se houver, continua válido.</p>
-      <a className="btn btn-primary" href="/oferta?plano=mensal&comprar=1">Assinar por R$ 49,90/mês</a>
-    </section>}
 
     {account.renewal && <section className="panel upgrade-panel">
       <h2>{account.mcp?.active ? "Sua conexão com a IA vence em breve" : "Sua conexão com a IA venceu"}</h2>

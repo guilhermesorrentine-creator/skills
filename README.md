@@ -39,7 +39,7 @@ O importador remove o campo `local_dir`, substitui caminhos de usuário/rede e i
 
 ## Plataforma comercial (4.0)
 
-Landing pública em `/` e sistema em `/app` para quem tem acesso. Contas no Supabase Auth; acervo vitalício por pagamento único e assinatura mensal no cartão para acervo com conexão de IA. Regras da assinatura em [`docs/assinatura-mensal.md`](docs/assinatura-mensal.md). Além das Agent Skills, a plataforma suporta subagentes, workflows, ferramentas, referências e guias cadastrados em `/admin`, coleções pessoais com link de visualização, favoritos e histórico na conta.
+Landing pública em `/` e sistema em `/app` para quem tem acesso. Contas no Supabase Auth; a nova oferta é o acervo vitalício por R$ 39,90 em pagamento único pela Cakto, sem conexão automática com IA. Compras e assinaturas anteriores pelo Asaas preservam seus direitos. A integração Cakto está preparada localmente e documentada em [`docs/cakto-vitalicio.md`](docs/cakto-vitalicio.md); a assinatura anterior está descrita em [`docs/assinatura-mensal.md`](docs/assinatura-mensal.md). Além das Agent Skills, a plataforma suporta subagentes, workflows, ferramentas, referências e guias cadastrados em `/admin`, coleções pessoais com link de visualização, favoritos e histórico na conta.
 
 Backend em `server/`, publicado por uma única Vercel Function (`api/index.js` + rewrite de `/api/*`); migrações em `supabase/migrations/`. Arquitetura, modelo comercial, webhooks, administração, homologação e recuperação: [`docs/comercial-asaas.md`](docs/comercial-asaas.md). Variáveis: [`.env.example`](.env.example).
 

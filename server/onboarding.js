@@ -20,8 +20,11 @@ export function createOnboarding({ store, mailer, config }) {
       if (events.some((event) => event.kind === "welcome_email")) return;
       const profile = await store.getProfile(userId);
       if (!profile?.email) return;
-      const sent = await deliver(profile.email, welcomeEmail({ kind: "purchase", email: profile.email, editionName: edition?.name, appUrl: config.appUrl }));
-      if (sent) await store.insertLicenseEvent({ user_id: userId, kind: "welcome_email", details: { kind: "purchase" } });
+      const needsPassword = !(await store.hasSignedIn(userId));
+      const actionUrl = needsPassword ? await store.createPasswordLink(profile.email, `${config.appUrl}/criar-senha`) : null;
+      const kind = needsPassword ? "purchase_invite" : "purchase";
+      const sent = await deliver(profile.email, welcomeEmail({ kind, email: profile.email, editionName: edition?.name, actionUrl, appUrl: config.appUrl }));
+      if (sent) await store.insertLicenseEvent({ user_id: userId, kind: "welcome_email", details: { kind } });
     } catch (error) {
       console.error("[onboarding] boas-vindas não enviadas:", error.message);
     }

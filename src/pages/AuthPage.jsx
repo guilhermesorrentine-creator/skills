@@ -9,7 +9,7 @@ import { motionTokens } from "../lib/motion-tokens.js";
 
 const copy = {
   login: { title: "Entrar", lead: "Acesse sua conta da Voxelia.", submit: "Entrar" },
-  signup: { title: "Criar conta", lead: "Só e-mail e senha. Os dados de pagamento ficam no ambiente do Asaas.", submit: "Criar conta" },
+  signup: { title: "Criar conta", lead: "Só e-mail e senha. Os dados de pagamento ficam no ambiente da Cakto ou, para compras anteriores, do Asaas.", submit: "Criar conta" },
   recover: { title: "Recuperar senha", lead: "Enviaremos um link para você criar uma nova senha.", submit: "Enviar link" },
   reset: { title: "Nova senha", lead: "Defina a nova senha da sua conta.", submit: "Salvar nova senha" },
   invite: { title: "Crie sua senha", lead: "Seu acesso à Voxelia está pronto. Escolha uma senha para entrar agora e nas próximas vezes.", submit: "Criar senha e entrar" },
@@ -59,7 +59,7 @@ export default function AuthPage({ mode, account, onAuthenticated }) {
       if (action === "login") await authActions.signIn(email, password);
       else if (action === "signup") {
         if (password.length < 8) throw new Error("A senha precisa ter pelo menos 8 caracteres.");
-        const data = await authActions.signUp(email, password);
+        const data = await authActions.signUp(email, password, next);
         if (!data.session) setDone("Conta criada. Confirme seu e-mail pelo link que enviamos e depois entre.");
       } else if (action === "recover") { await authActions.recover(email); setDone("Se houver uma conta com este e-mail, enviamos o link. Abra assim que chegar: ele vale por tempo limitado."); }
       else if (setsPassword) {

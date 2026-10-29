@@ -5,7 +5,7 @@ import { readFile, writeFile, mkdir } from "node:fs/promises";
 import { KITS } from "../src/lib/kits.js";
 
 const BASE = (process.env.APP_URL || "https://skills-five-snowy.vercel.app").replace(/\/$/, "");
-const PRICE = "97.90"; // preço da Edição 1; atualizar junto com commercial_editions
+const PRICE = "19.90"; // preço da Edição 1; atualizar junto com commercial_editions
 const dist = (p) => new URL(`../dist/${p}`, import.meta.url);
 const template = await readFile(dist("index.html"), "utf8");
 const repos = JSON.parse(await readFile(dist("data/repos.json"), "utf8"));
@@ -85,9 +85,9 @@ await emit("/conecta", page({ path: "/conecta", title: "Voxelia Pro: conecte na 
   body: `<h1>Conecte na sua IA. É como dar superpoderes a ela.</h1><p>Menos texto genérico, menos resposta incompleta e menos token desperdiçado: a IA consulta ${skills} skills da Voxelia e usa a certa.</p><p>${link("/comprar?edicao=pro-anual", "Quero o Voxelia Pro")}</p>`,
   jsonld: [{ ...product("Voxelia Pro", "Conexão da Voxelia com a sua IA (MCP) por 12 meses e acervo vitalício"), offers: { ...offer, price: "598.80", url: `${BASE}/conecta` } }] }));
 
-// Página do tráfego pago: fora do Google, preço só no checkout
-await emit("/oferta", page({ path: "/oferta", noindex: true, title: "Voxelia: dê superpoderes para a sua IA", description: `Conecte a Voxelia no Claude, no ChatGPT e no Claude Code: a IA passa a usar ${skills} skills com o passo a passo certo. 15 dias de garantia.`,
-  body: `<h1>Dê superpoderes para a sua IA.</h1><p>Conecte uma vez e a sua IA passa a usar ${skills} skills de especialistas, com o passo a passo certo para cada pedido.</p>` }));
+// Página do tráfego pago: acervo vitalício para consulta e uso manual na IA.
+await emit("/oferta", page({ path: "/oferta", noindex: true, title: "Voxelia: skills para criar com IA", description: `${skills} skills com guias em português para consultar e usar na sua IA. Acesso vitalício ao acervo por R$ 19,90, pagamento único. Sem conexão automática.`,
+  body: `<h1>Ganhe dinheiro com IA usando as skills certas.</h1><p>Encontre métodos para criar páginas, conteúdo e serviços. ${skills} skills em português, acesso vitalício ao acervo por R$ 19,90, pagamento único. Sem conexão automática com IA.</p>` }));
 
 // Bio e início
 const kitLinks = ul(KITS.map((k) => link(`/kit/${k.slug}`, `Voxelia para ${k.name}`)));
@@ -114,7 +114,7 @@ ${KITS.map((k) => `- [Voxelia para ${k.name}](${BASE}/kit/${k.slug}): ${k.promis
 ${repos.map((r) => `- [${r.title}](${BASE}/r/${encodeURIComponent(r.name)}): ${r.summary}`).join("\n")}
 
 ## Compra
-- [Comprar acesso](${BASE}/comprar): só e-mail, Pix ou cartão, senha criada após o pagamento.
+- [Comprar acesso](${BASE}/oferta): crie uma conta, confirme o e-mail e pague na Cakto por Pix ou cartão; a licença é liberada nessa conta após a confirmação do pagamento.
 - [Página inicial](${BASE}/)
 `;
 await writeFile(dist("llms.txt"), llms, "utf8");

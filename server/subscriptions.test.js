@@ -4,23 +4,75 @@ import { createMemoryStore } from "./store-memory.js";
 import { createCommerce } from "./commerce.js";
 import { createApi } from "./routes.js";
 import { readConfig } from "./config.js";
+import { createConversions } from "./meta.js";
 
 const config = readConfig({ ASAAS_WEBHOOK_TOKEN: "webhook-secret", ASAAS_API_KEY: "x", APP_URL: "https://voxelia.example", CHECKOUT_CLAIM_SECRET: "claim-secret" });
-function fixture() {
+function fixture({ metaResponses = [] } = {}) {
   let clock = new Date("2026-10-25T12:00:00Z");
   const store = createMemoryStore({ profiles: [{ id: "u1", email: "cliente@example.com", last_sign_in_at: "2026-10-01" }],
     editions: [{ id: "e1", code: "edicao-1", rank: 1, price_cents: 9790, on_sale: true }, { id: "e2", code: "pro-anual", rank: 2, price_cents: 59880, on_sale: false }] });
   const checkouts = [], canceled = [], refunded = [];
+  const sent = [];
+  const conversions = createConversions({ pixelId: "1134502832307010", token: "test" }, async (url, init) => {
+    sent.push({ url, body: JSON.parse(init.body) });
+    return metaResponses.shift() || { ok: true, status: 200 };
+  });
   const asaas = { createCheckout: async (body) => { checkouts.push(body); return { id: `chk_${checkouts.length}` }; },
     deleteSubscription: async (id) => { canceled.push(id); }, refundPayment: async (id) => { refunded.push(id); } };
-  const commerce = createCommerce({ store, asaas, config, now: () => clock });
+  const commerce = createCommerce({ store, asaas, config, conversions, now: () => clock });
   const api = createApi({ store, commerce, library: {}, me: {}, verifyToken: async (token) => token === "user" ? { id: "u1", email: "cliente@example.com" } : null });
   const call = async (path, body, token) => { const response = await api(new Request(`https://voxelia.example${path}`, { method: "POST", headers: {
     "content-type": "application/json", ...(token && { authorization: `Bearer ${token}` }), ...(path === "/api/webhooks/asaas" && { "asaas-access-token": "webhook-secret" }),
   }, body: JSON.stringify(body) })); return { status: response.status, data: await response.json() }; };
   const hook = (id, event, data) => call("/api/webhooks/asaas", { id, event, ...data });
-  return { store, commerce, checkouts, canceled, refunded, call, hook, advance: (date) => { clock = new Date(date); } };
+  return { store, commerce, checkouts, canceled, refunded, sent, call, hook, advance: (date) => { clock = new Date(date); } };
 }
+
+async function startTrackedSubscription(f) {
+  await f.call("/api/subscription/checkout", { tracking: { consent: true, fbp: "fb.1.1729500000000.123456789",
+    pageUrl: "https://voxelia.example/oferta?utm_source=meta&utm_campaign=teste_vendas40&utm_content=C" },
+    attribution: { source: "meta", campaign: "teste_vendas40", content: "C" } }, "user");
+  await f.hook("checkout", "CHECKOUT_PAID", { checkout: { id: "chk_1", customer: "cus_1", items: [{ value: 49.9, quantity: 1 }] } });
+  const session = f.store.db.checkoutSessions[0];
+  await f.hook("subscription", "SUBSCRIPTION_CREATED", { subscription: { id: "sub_1", customer: "cus_1",
+    externalReference: session.id, value: 49.9, cycle: "MONTHLY", billingType: "CREDIT_CARD" } });
+  return { id: "pay_1", subscription: "sub_1", customer: "cus_1", value: 49.9, billingType: "CREDIT_CARD",
+    dueDate: "2026-10-25", confirmedDate: "2026-10-25T12:00:00Z", status: "CONFIRMED" };
+}
+
+test("primeira mensalidade paga envia um Purchase idempotente; pendência e renovação não enviam", async () => {
+  const f = fixture();
+  const payment = await startTrackedSubscription(f);
+  await f.hook("pending", "PAYMENT_CREATED", { payment: { ...payment, status: "PENDING" } });
+  await f.hook("overdue", "PAYMENT_OVERDUE", { payment: { ...payment, status: "OVERDUE" } });
+  assert.equal(f.sent.length, 0);
+  await f.hook("confirmed", "PAYMENT_CONFIRMED", { payment });
+  await f.hook("confirmed", "PAYMENT_CONFIRMED", { payment });
+  await f.hook("received", "PAYMENT_RECEIVED", { payment: { ...payment, status: "RECEIVED" } });
+  assert.equal(f.sent.length, 1);
+  const event = f.sent[0].body.data[0];
+  assert.equal(event.event_name, "Purchase");
+  assert.equal(event.event_id, "purchase-subscription-pay_1");
+  assert.equal(event.custom_data.value, 49.9);
+  assert.equal(event.custom_data.currency, "BRL");
+  assert.equal(event.custom_data.utm_campaign, "teste_vendas40");
+  assert.equal(event.user_data.fbp, "fb.1.1729500000000.123456789");
+  f.advance("2026-11-25T12:00:00Z");
+  await f.hook("renewal", "PAYMENT_RECEIVED", { payment: { ...payment, id: "pay_2", dueDate: "2026-11-25",
+    confirmedDate: "2026-11-25T12:00:00Z", status: "RECEIVED" } });
+  assert.equal(f.sent.length, 1, "renovação não é nova aquisição");
+});
+
+test("falha temporária da Meta é repetida com o mesmo event_id", async () => {
+  const f = fixture({ metaResponses: [{ ok: false, status: 503 }, { ok: true, status: 200 }] });
+  const payment = await startTrackedSubscription(f);
+  assert.equal((await f.hook("confirmed", "PAYMENT_CONFIRMED", { payment })).data.status, "failed");
+  assert.equal((await f.hook("confirmed", "PAYMENT_CONFIRMED", { payment })).data.status, "processed");
+  assert.equal(f.sent.length, 2);
+  assert.equal(f.sent[0].body.data[0].event_id, f.sent[1].body.data[0].event_id);
+  assert.ok(f.store.db.subscriptionPayments[0].meta_purchase_sent_at);
+  assert.equal(f.store.db.subscriptionPayments[0].meta_purchase_error, null);
+});
 
 test("assinatura cobra R$ 49,90 mensal no cartão e só libera após cobrança confirmada", async () => {
   const f = fixture();

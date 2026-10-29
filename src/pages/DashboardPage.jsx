@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Activity, BarChart3, BookOpen, CalendarDays, ChevronDown, ChevronLeft, ChevronRight, CircleHelp, Clapperboard, CreditCard, FileText, LayoutDashboard, Menu, RefreshCw, Search, Settings, ShoppingBag, Target, Wallet, X } from "lucide-react";
+import { Activity, BarChart3, BookOpen, CalendarDays, ChevronDown, ChevronLeft, ChevronRight, CircleHelp, Clapperboard, CreditCard, FileText, LayoutDashboard, Link2, Menu, RefreshCw, Search, Settings, ShoppingBag, Target, Wallet, X } from "lucide-react";
 import { apiFetch } from "../lib/auth.jsx";
 import { Link } from "../lib/router.jsx";
 import { formatPrice } from "../lib/billing-client.js";
@@ -17,8 +17,8 @@ const definitions = {
   "Caixa": "Valor líquido das parcelas que ficou disponível no saldo do Asaas no período.",
   "Caixa no Asaas": "Valor líquido das parcelas que ficou disponível no saldo do Asaas no período.",
   "A receber": "Parcelas confirmadas que ainda não ficaram disponíveis no saldo do Asaas.",
-  "Lucro": "Vendas menos gasto Meta, taxas Asaas e despesas cadastradas no período.",
-  "Custo total": "Soma de gasto Meta Ads, taxas Asaas e despesas cadastradas.",
+  "Lucro": "Vendas menos gasto Meta, taxas dos pagamentos e despesas cadastradas no período.",
+  "Custo total": "Soma de gasto Meta Ads, taxas dos pagamentos e despesas cadastradas.",
   "ROAS": "Vendas atribuídas à Meta pelas UTM divididas pelo gasto com anúncios no mesmo período. Não representa o lucro.",
   "Gasto Meta": "Valor gasto nos anúncios da Meta no período selecionado.",
   "Saldo estimado Meta": "Recargas registradas no painel menos o gasto que a Meta informou desde a primeira recarga. É uma estimativa, não o saldo oficial de cobrança da Meta.",
@@ -34,7 +34,7 @@ const definitions = {
   "Clique comprar": "Sessões que tocaram no botão para iniciar a compra.",
   "Cliques comprar": "Sessões que tocaram no botão para iniciar a compra.",
   "Página de compra": "Sessões que chegaram à página de compra. Não significa pedidos pagos.",
-  "Pagamento gerado": "Sessões com checkout criado no Asaas; o pagamento pode continuar pendente.",
+  "Pagamento gerado": "Sessões com checkout criado; o pagamento pode continuar pendente.",
   "Pedido pago": "Pedidos cujo pagamento foi confirmado.",
   "Abandono 24 h": "Pedidos com pagamento gerado que continuaram sem pagamento após 24 horas.",
   "Reembolso": "Pedidos que tiveram valor estornado, total ou parcialmente.",
@@ -84,7 +84,7 @@ function Donut({ metrics }) {
   const [selected, setSelected] = useState(null);
   if (metrics.adCents == null || metrics.metaSalesCents == null) return <div className="dash-card"><h2>Retorno dos anúncios</h2><p>Indisponível até as conexões voltarem.</p></div>;
   const parts = [
-    ["Meta Ads", metrics.donut.adsCents, "#b9c0c4"], ["Taxas do Asaas", metrics.donut.feesCents, "#747d82"],
+    ["Meta Ads", metrics.donut.adsCents, "#b9c0c4"], ["Taxas de pagamento", metrics.donut.feesCents, "#747d82"],
     ["Lucro atribuído", metrics.donut.profitCents, "#79dda7"], ["Prejuízo", metrics.donut.lossCents, "#ff8c8c"],
     ].filter((part) => part[1] > 0 && part[0] !== "Prejuízo");
   const total = parts.reduce((sum, part) => sum + part[1], 0);
@@ -124,8 +124,8 @@ function Overview({ data }) {
   const link = data.links.find((item) => item.entity_kind === "campaign" && item.entity_id === lead?.id);
   const signal = lead ? campaignSignalFor(data, lead, link, range) : paidSignal({ error: data.connections.meta.error });
   return <div className="dash-stack">
-    <div className="dash-card dash-hero"><MetricTerm label="Vendas do período"/><strong>{money(m.salesCents)}</strong><small>Caixa: {money(m.cashCents)} · A receber: {money(m.receivableCents)}</small><SalesChart daily={m.daily}/></div>
-    <div className="dash-pair"><Metric label="Lucro" value={money(m.profitCents)} tone={m.profitCents == null ? undefined : m.profitCents < 0 ? "bad" : "good"} note="Vendas menos anúncios, taxas e despesas"/><Metric label="Custo total" value={money(m.adCents == null ? null : m.adCents + m.feesCents + m.expenseCents)} note={`Meta ${money(m.adCents)} · Asaas ${money(m.feesCents)} · outros ${money(m.expenseCents)}`}/></div>
+    <div className="dash-card dash-hero"><MetricTerm label="Vendas do período"/><strong>{money(m.salesCents)}</strong><small>Caixa Asaas: {money(m.cashCents)} · A receber no Asaas: {money(m.receivableCents)}</small><SalesChart daily={m.daily}/></div>
+    <div className="dash-pair"><Metric label="Lucro" value={money(m.profitCents)} tone={m.profitCents == null ? undefined : m.profitCents < 0 ? "bad" : "good"} note="Vendas menos anúncios, taxas e despesas"/><Metric label="Custo total" value={money(m.adCents == null ? null : m.adCents + m.feesCents + m.expenseCents)} note={`Meta ${money(m.adCents)} · taxas ${money(m.feesCents)} · outros ${money(m.expenseCents)}`}/></div>
     <Donut metrics={m}/>
     <div className="dash-card dash-goal"><div><span>Meta de lucro até {dateBR(m.goal.goal_ends_on)}</span><strong>{money(m.goal.profitCents)} <small>de {money(m.goal.goal_cents)}</small></strong></div><progress max={m.goal.goal_cents} value={Math.max(0, Math.min(m.goal.profitCents || 0, m.goal.goal_cents))}/><div className="dash-goal-facts"><span>Falta <b>{money(m.goal.remainingCents)}</b></span><span>Por dia <b>{money(m.goal.neededPerDayCents)}</b></span><span>Projeção <b>{money(m.goal.projectedCents)}</b></span><span>Prazo <b>{m.goal.daysLeft} dias</b></span></div><details className="dash-more"><summary>Ver garantia e planejamento</summary><p>Consolidado: {money(m.goal.consolidatedCents)} · Em garantia: {money(m.goal.guaranteeCents)}{m.goal.projectedDate && ` · Data projetada: ${dateBR(m.goal.projectedDate)}`}</p><p>{m.goal.averageByProduct.map((item) => `${item.product}: ${item.salesPerDayNeeded ?? "—"} vendas/dia`).join(" · ")}</p></details></div>
     <SignalCard title={lead ? `Campanha: ${lead.name}` : "Campanhas Meta"} signal={signal}><div className="dash-signal-facts"><span>Gasto <b>{money(lead?.spendCents ?? m.adCents)}</b></span><span>Visitas Meta <b>{lead?.landingViews ?? "—"}</b></span><span>Vendas atribuídas <b>{money(m.metaSalesCents)}</b></span></div></SignalCard>
@@ -135,7 +135,7 @@ function Overview({ data }) {
 function Analytics({ data }) {
   const m = data.metrics;
   return <div className="dash-stack"><div className="dash-metric-grid">
-    <Metric label="Vendas" value={money(m.salesCents)}/><Metric label="Caixa" value={money(m.cashCents)}/><Metric label="Gasto Meta" value={money(m.adCents)}/><Metric label="Lucro" value={money(m.profitCents)}/><Metric label="ROAS" value={m.roas === null ? "Indisponível" : `${m.roas.toFixed(2)}×`}/>
+    <Metric label="Vendas" value={money(m.salesCents)}/><Metric label="Caixa no Asaas" value={money(m.cashCents)}/><Metric label="Gasto Meta" value={money(m.adCents)}/><Metric label="Lucro" value={money(m.profitCents)}/><Metric label="ROAS" value={m.roas === null ? "Indisponível" : `${m.roas.toFixed(2)}×`}/>
     <Metric label="Pedidos pagos" value={m.sales}/><Metric label="Custo por venda" value={m.costPerSaleCents === null ? "—" : money(m.costPerSaleCents)}/><Metric label="Conversão" value={m.conversion === null ? "—" : pct(m.conversion)}/><Metric label="Falta para meta" value={money(m.goal.remainingCents)}/>
   </div><div className="dash-card"><h2>Vendas por dia</h2><SalesChart daily={m.daily}/><Table headers={["Dia", "Vendas", "Valor"]} rows={m.daily.map((row) => [dateBR(row.on), row.sales, money(row.salesCents)])}/></div>
   <div className="dash-card"><h2>Origem · campanha · criativo · produto</h2><Table headers={["Origem", "Campanha", "Criativo", "Produto", "Vendas", "Valor"]} rows={m.breakdown.map((row) => [row.source, row.campaign || "—", row.content || "—", row.product, row.sales, money(row.salesCents)])}/><p className="dash-note">Visitas e pagamentos podem cair em dias diferentes.</p></div></div>;
@@ -154,7 +154,16 @@ function aggregateAds(rows, level, range) {
   return [...map.values()].map((item) => ({ ...item, linkClicks: item.linkClicksKnown ? item.linkClicks : null })).sort((a, b) => b.spendCents - a.spendCents);
 }
 
-function MetaAds({ data, range, refresh }) {
+function MetaConnectionAction({ auth, busy, message, onConnect }) {
+  const connected = Boolean(auth?.connected);
+  return <div className="dash-meta-connect">
+    <div><strong>{connected ? "Conta Meta conectada" : "Conecte sua conta Meta"}</strong><span>{connected ? `${auth.accountName || "Meta Ads"}${auth.expiresAt ? ` · autorização até ${new Date(auth.expiresAt).toLocaleDateString("pt-BR")}` : ""}` : "Use o login oficial da Meta; nenhuma senha passa pela Voxelia."}</span>{message && <small role="status">{message}</small>}</div>
+    <button className="btn btn-primary" type="button" onClick={onConnect} disabled={busy || !auth?.configured}><Link2 size={16}/>{busy ? "Conectando…" : connected ? "Reconectar Meta" : "Conectar com a Meta"}</button>
+    {!auth?.configured && <small>Falta configurar o App Meta da Voxelia no servidor.</small>}
+  </div>;
+}
+
+function MetaAds({ data, range, refresh, metaConnect }) {
   const [level, setLevel] = useState("campaign");
   const [campaignId, setCampaignId] = useState("");
   const [adsetId, setAdsetId] = useState("");
@@ -174,6 +183,7 @@ function MetaAds({ data, range, refresh }) {
     <ChevronRight size={15}/><button type="button" aria-pressed={level === "ad"} disabled={!adsetId} onClick={() => setLevel("ad")}>Anúncios individuais</button>
   </div><p className="dash-note">Selecione uma linha para conferir o vínculo UTM. O botão de nível abre os conjuntos ou anúncios.</p>
   {data.connections.meta.error && <p role="status" className="dash-error">Meta Ads indisponível: {data.connections.meta.error}</p>}
+  <MetaConnectionAction auth={data.connections.meta.auth} {...metaConnect}/>
   <Table headers={[level === "campaign" ? "Campanha" : level === "adset" ? "Conjunto" : "Anúncio", "Leitura", "Gasto", "Impressões", "Cliques", "CTR", "CTR de link", "CPC", "Visitas Meta", "Visitas site", "Cliques comprar", "Vendas", "Valor", "Custo/venda"]} rows={current.map((item) => {
     const link = match(item); const linked = link?.utm_campaign && (level !== "ad" || link?.utm_content);
     const hits = linked ? data.funnel.filter((event) => inRange(event.on, range) && event.source?.toLowerCase() === "meta" && event.campaign === link.utm_campaign && (level === "campaign" || event.content === link.utm_content)) : [];
@@ -263,7 +273,7 @@ function Finance({ data, range, refresh }) {
   const save = async (event) => { event.preventDefault(); try { await apiFetch("/api/admin/dashboard/expenses", { method: "POST", body: { ...form, amountCents: Math.round(Number(form.amount) * 100) } }); setForm({ kind: "expense", title: "", category: "Sistema", amount: "", startsOn: today(), recurring: false, endsOn: "" }); setStatus(form.kind === "meta_deposit" ? "Recarga registrada." : "Despesa salva."); await refresh(); } catch (error) { setStatus(error.message); } };
   const remove = async (id) => { if (!window.confirm("Excluir este lançamento?")) return; try { await apiFetch("/api/admin/dashboard/expenses/delete", { method: "POST", body: { id } }); await refresh(); } catch (error) { setStatus(error.message); } };
   const depositsCents = data.expenses.filter((entry) => entry.kind === "meta_deposit" && inRange(entry.starts_on, range)).reduce((sum, entry) => sum + entry.amount_cents, 0);
-  return <div className="dash-stack"><div className="dash-metric-grid"><Metric label="Vendas" value={money(data.metrics.salesCents)}/><Metric label="Caixa no Asaas" value={money(data.metrics.cashCents)}/><Metric label="A receber" value={money(data.metrics.receivableCents)}/><Metric label="Reembolsos" value={money(data.metrics.refundsCents)}/><Metric label="Taxas Asaas" value={money(data.metrics.feesCents)}/><Metric label="Despesas" value={money(data.metrics.expenseCents)}/><Metric label="Recarga Meta" value={money(depositsCents)} note="Pix antecipado; gasto entra no lucro quando a Meta consome"/></div>
+  return <div className="dash-stack"><div className="dash-metric-grid"><Metric label="Vendas" value={money(data.metrics.salesCents)}/><Metric label="Caixa no Asaas" value={money(data.metrics.cashCents)}/><Metric label="A receber no Asaas" value={money(data.metrics.receivableCents)}/><Metric label="Reembolsos" value={money(data.metrics.refundsCents)}/><Metric label="Taxas de pagamento" value={money(data.metrics.feesCents)}/><Metric label="Despesas" value={money(data.metrics.expenseCents)}/><Metric label="Recarga Meta" value={money(depositsCents)} note="Pix antecipado; gasto entra no lucro quando a Meta consome"/></div>
     <div className="dash-card"><h2>Cobranças e parcelas</h2><Table headers={["Confirmação", "Crédito", "Previsto", "Produto", "Forma", "Situação", "Bruto", "Taxa", "Líquido", "Reembolso"]} rows={data.payments.filter((payment) => inRange(payment.confirmedOn || payment.creditOn, range)).map((payment) => [dateBR(payment.confirmedOn), dateBR(payment.creditOn), dateBR(payment.expectedOn), payment.product, payment.billingType, payment.status, money(payment.grossCents), payment.feeCents == null ? "Estimada" : money(payment.feeCents), money(payment.netCents), money(payment.refundedCents)])}/></div>
     <div className="dash-card"><h2>Despesas e recargas</h2><Table headers={["Nome", "Tipo", "Categoria", "Valor", "Data", "Recorrência", "Ações"]} rows={data.expenses.map((expense) => [expense.title, expense.kind === "meta_deposit" ? "Recarga Meta" : "Despesa", expense.category, money(expense.amount_cents), dateBR(expense.starts_on), expense.recurring ? "Mensal" : "Avulsa", <div className="dash-actions"><button type="button" onClick={() => setForm({ id: expense.id, kind: expense.kind || "expense", title: expense.title, category: expense.category, amount: String(expense.amount_cents / 100), startsOn: expense.starts_on, endsOn: expense.ends_on || "", recurring: expense.recurring })}>Editar</button><button type="button" onClick={() => remove(expense.id)}>Excluir</button></div>])}/>
       <form className="dash-form" onSubmit={save}><h3>{form.id ? "Editar lançamento" : "Novo lançamento"}</h3><label>Tipo<select value={form.kind} onChange={(e) => { const kind = e.target.value; setForm({ ...form, kind, title: kind === "meta_deposit" ? "Recarga Meta Ads via Pix" : "", category: kind === "meta_deposit" ? "Meta Ads" : "Sistema", recurring: false, endsOn: "" }); }}><option value="expense">Despesa</option><option value="meta_deposit">Recarga Meta Ads</option></select></label><label>Nome<input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} required/></label><label>Categoria<input value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} required/></label><label>Valor (R$)<input type="number" min="0.01" step="0.01" value={form.amount} onChange={(e) => setForm({ ...form, amount: e.target.value })} required/></label><label>Data<input type="date" value={form.startsOn} onChange={(e) => setForm({ ...form, startsOn: e.target.value })} required/></label>{form.kind === "expense" && <label className="dash-check"><input type="checkbox" checked={form.recurring} onChange={(e) => setForm({ ...form, recurring: e.target.checked })}/> Mensal</label>}{form.recurring && form.kind === "expense" && <label>Fim (opcional)<input type="date" value={form.endsOn} onChange={(e) => setForm({ ...form, endsOn: e.target.value })}/></label>}<button className="btn btn-primary" type="submit">Salvar lançamento</button>{status && <p role="status">{status}</p>}</form></div>
@@ -272,12 +282,12 @@ function Finance({ data, range, refresh }) {
 
 function Orders({ data, range }) { return <div className="dash-card"><h2>Pedidos e clientes</h2><p className="dash-note">Consulta. Conciliação e estorno permanecem na <Link to="/admin">Administração</Link>.</p><Table headers={["Data", "Comprador", "Produto", "Valor", "Forma", "Status", "Garantia", "Origem", "Campanha", "Criativo", "Reembolso"]} rows={data.orders.filter((order) => inRange(order.createdOn, range)).map((order) => [dateBR(order.createdOn), order.email, order.product, money(order.amountCents), order.billingType, order.status, order.confirmedOn && Date.now() - new Date(`${order.confirmedOn}T12:00:00-03:00`).getTime() < 15 * 86400000 ? "Sim" : "Não", order.source, order.campaign || "—", order.content || "—", order.refundedCents ? money(order.refundedCents) : "—"])}/></div>; }
 
-function Config({ data, refresh }) {
+function Config({ data, refresh, metaConnect }) {
   const [form, setForm] = useState({ goalCents: data.goal.goal_cents / 100, startsOn: data.goal.goal_starts_on, endsOn: data.goal.goal_ends_on });
   const [status, setStatus] = useState("");
   const save = async (event) => { event.preventDefault(); try { await apiFetch("/api/admin/dashboard/goal", { method: "POST", body: { goalCents: Math.round(Number(form.goalCents) * 100), startsOn: form.startsOn, endsOn: form.endsOn } }); setStatus("Meta salva."); await refresh(); } catch (error) { setStatus(error.message); } };
   return <div className="dash-stack"><div className="dash-card"><h2>Meta de lucro</h2><form className="dash-form" onSubmit={save}><label>Valor (R$)<input type="number" min="0.01" step="0.01" value={form.goalCents} onChange={(e) => setForm({ ...form, goalCents: e.target.value })} required/></label><label>Começa<input type="date" value={form.startsOn} onChange={(e) => setForm({ ...form, startsOn: e.target.value })} required/></label><label>Termina<input type="date" value={form.endsOn} onChange={(e) => setForm({ ...form, endsOn: e.target.value })} required/></label><button className="btn btn-primary" type="submit">Salvar meta</button>{status && <p role="status">{status}</p>}</form></div>
-    <div className="dash-card"><h2>Conexões</h2><div className="dash-connections">{[["Asaas", data.connections.asaas], ["Meta Ads", data.connections.meta], ["Funil próprio", data.connections.funnel]].map(([name, connection]) => <div key={name}><strong>{name}</strong><span className={connection.error ? "dash-bad" : "dash-good"}>{connection.error ? "Atenção" : "Conectado"}</span><small>{connection.checkedAt ? `Atualizado ${new Date(connection.checkedAt).toLocaleString("pt-BR")}` : "Sem atualização"}{connection.ageSeconds != null ? ` · cache: ${Math.round(connection.ageSeconds / 60)} min` : ""}</small>{connection.error && <p>{connection.error}</p>}</div>)}</div><button className="btn btn-ghost" type="button" onClick={() => refresh(true)}><RefreshCw size={16}/> Atualizar agora</button></div></div>;
+    <div className="dash-card"><h2>Conexões</h2><div className="dash-connections">{[["Asaas", data.connections.asaas], ["Meta Ads", data.connections.meta], ["Funil próprio", data.connections.funnel]].map(([name, connection]) => <div key={name}><strong>{name}</strong><span className={connection.error ? "dash-bad" : "dash-good"}>{connection.error ? "Atenção" : "Conectado"}</span><small>{connection.checkedAt ? `Atualizado ${new Date(connection.checkedAt).toLocaleString("pt-BR")}` : "Sem atualização"}{connection.ageSeconds != null ? ` · cache: ${Math.round(connection.ageSeconds / 60)} min` : ""}</small>{connection.error && <p>{connection.error}</p>}</div>)}</div><MetaConnectionAction auth={data.connections.meta.auth} {...metaConnect}/><button className="btn btn-ghost" type="button" onClick={() => refresh(true)}><RefreshCw size={16}/> Atualizar agora</button></div></div>;
 }
 
 export default function DashboardPage() {
@@ -293,8 +303,23 @@ export default function DashboardPage() {
   const [data, setData] = useState(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
+  const [metaBusy, setMetaBusy] = useState(false);
+  const [metaMessage, setMetaMessage] = useState("");
+  const metaCallbackHandled = useRef(false);
   const current = section === "meta" ? metaRange : section === "organico" ? organicRange : range;
   const refresh = useCallback(async (force = false) => { setLoading(true); try { const active = section === "meta" ? metaRange : range; const params = new URLSearchParams(active); if (force) params.set("refresh", "1"); const next = await apiFetch(`/api/admin/dashboard?${params}`); setData(next); setError(""); } catch (cause) { setError(cause.status === 403 ? "Acesso restrito à administração." : cause.message); } finally { setLoading(false); } }, [range, metaRange, section]);
+  const connectMeta = useCallback(async () => { setMetaBusy(true); setMetaMessage(""); try { const result = await apiFetch("/api/admin/dashboard/meta/connect/start", { method: "POST" }); location.assign(result.url); } catch (cause) { setMetaMessage(cause.message); setMetaBusy(false); } }, []);
+  useEffect(() => {
+    if (metaCallbackHandled.current) return;
+    const params = new URLSearchParams(location.search); const code = params.get("code"), state = params.get("state"), denied = params.get("error_description");
+    if (!code && !denied) return;
+    metaCallbackHandled.current = true; setSection("meta"); setMetaBusy(true);
+    const cleanUrl = () => { for (const key of ["code", "state", "error", "error_code", "error_reason", "error_description"]) params.delete(key); history.replaceState({}, "", `${location.pathname}${params.size ? `?${params}` : ""}`); };
+    if (denied || !state) { setMetaMessage(denied || "A Meta não devolveu uma autorização válida."); setMetaBusy(false); cleanUrl(); return; }
+    apiFetch("/api/admin/dashboard/meta/connect/finish", { method: "POST", body: { code, state } })
+      .then((result) => { setMetaMessage(`Meta conectada: ${result.accountName}.`); return refresh(true); })
+      .catch((cause) => setMetaMessage(cause.message)).finally(() => { setMetaBusy(false); cleanUrl(); });
+  }, [refresh]);
   useEffect(() => { if (section !== "organico" && section !== "indices") refresh(false); }, [refresh, section]);
   const refreshCurrent = () => section === "organico" ? setOrganicRefresh((value) => value + 1) : section === "indices" ? null : refresh(true);
   const select = (id) => { setSection(id); setMobileOpen(false); setSearch(false); };
@@ -310,7 +335,7 @@ export default function DashboardPage() {
       {section !== "organico" && section !== "indices" && loading && <p role="status" className="dash-status">Atualizando Asaas e Meta Ads…</p>}{section !== "organico" && section !== "indices" && error && <p role="alert" className="dash-error">{error}</p>}
       {section === "organico" && <Organic range={organicRange} refreshKey={organicRefresh}/>}{section === "indices" && <Indices/>}
       {data && section !== "organico" && section !== "indices" && <><p className="dash-updated">Última consulta: {new Date(data.updatedAt).toLocaleString("pt-BR")} · {data.connections.asaas.error ? "Asaas indisponível" : "Asaas atualizado"} · {data.connections.meta.error ? "Meta Ads indisponível" : "Meta Ads atualizado"}</p>
-        {section === "geral" && <Overview data={data}/>}{section === "analytics" && <Analytics data={data}/>}{section === "meta" && <MetaAds data={data} range={metaRange} refresh={refresh}/>}{section === "funil" && <Funnel data={data} range={range}/>}{section === "financeiro" && <Finance data={data} range={range} refresh={refresh}/>}{section === "pedidos" && <Orders data={data} range={range}/>}{section === "config" && <Config data={data} refresh={refresh}/>}</>}
+        {section === "geral" && <Overview data={data}/>}{section === "analytics" && <Analytics data={data}/>}{section === "meta" && <MetaAds data={data} range={metaRange} refresh={refresh} metaConnect={{ busy: metaBusy, message: metaMessage, onConnect: connectMeta }}/>}{section === "funil" && <Funnel data={data} range={range}/>}{section === "financeiro" && <Finance data={data} range={range} refresh={refresh}/>}{section === "pedidos" && <Orders data={data} range={range}/>}{section === "config" && <Config data={data} refresh={refresh} metaConnect={{ busy: metaBusy, message: metaMessage, onConnect: connectMeta }}/>}</>}
       </div></div>
     {search && <div className="dash-search-overlay" role="dialog" aria-modal="true" aria-label="Buscar janela"><button type="button" aria-label="Fechar busca" className="dash-search-backdrop" onClick={() => setSearch(false)}/><div className="dash-search-modal"><div><Search size={19}/><input autoFocus placeholder="Buscar janela…" value={query} onChange={(event) => setQuery(event.target.value)}/><button type="button" aria-label="Fechar" onClick={() => setSearch(false)}><X size={18}/></button></div>{sections.filter(([, title]) => title.toLowerCase().includes(query.toLowerCase())).map(([id, title, Icon]) => <button key={id} type="button" onClick={() => { select(id); setQuery(""); }}><Icon size={17}/>{title}</button>)}</div></div>}
   </main>;

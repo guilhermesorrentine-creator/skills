@@ -34,7 +34,7 @@ export default function SubscriptionCheckout({ signedIn }) {
     {!signedIn && <><label htmlFor="monthly-email">Seu e-mail <span className="muted small">(será seu login)</span></label>
       <input id="monthly-email" className="input buy-input" type="email" inputMode="email" autoComplete="email" required value={email} onChange={(event) => setEmail(event.target.value)} placeholder="voce@email.com"/></>}
     {error && <p className="notice" role="alert">{error} {exists && <Link className="link" to="/entrar?next=/oferta">Entrar</Link>}</p>}
-    <button type="submit" className="btn btn-primary buy-submit" disabled={busy}>{busy ? "Abrindo pagamento…" : "Assinar por R$ 49,90/mês"}</button>
+    <button type="submit" className="btn btn-primary buy-submit" disabled={busy}>{busy ? "Abrindo pagamento…" : "Quero turbinar minha IA · R$ 49,90/mês"}</button>
     <p className="small muted">Acervo e conexão com IA enquanto a assinatura estiver paga. Cancele quando quiser em Minha licença; o acesso segue até o fim do período pago. Pagamento seguro no Asaas. Ao assinar, você concorda com os <a className="link" href="/termos" target="_blank" rel="noopener">Termos de uso</a>.</p>
   </form>;
 }
