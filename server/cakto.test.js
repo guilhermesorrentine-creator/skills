@@ -12,7 +12,7 @@ import { readConfig } from "./config.js";
 
 const productId = "eab775e9-b5c9-4f22-8bcb-490e8338b66e";
 const offerId = "xjg2gb9";
-const user = { id: "buyer", email: "buyer@example.com" };
+const user = { id: "buyer", email: "buyer@example.com", last_sign_in_at: "2026-10-01T00:00:00Z" };
 
 function setup(purchase = async () => true) {
   const config = readConfig({ CLAIM_SECRET: "claim-test", CAKTO_PRODUCT_ID: productId, CAKTO_OFFER_ID: offerId,
@@ -37,12 +37,21 @@ test("Cakto: assinatura HMAC exige corpo intacto e timestamp recente", () => {
   assert.equal(verifyCaktoWebhook(raw, String(Number(timestamp) - 600), signature, "segredo"), false);
 });
 
-test("Cakto: compra sem conta não abre pagamento sem entrega automática de acesso", async () => {
-  const { store, commerce } = setup();
-  await assert.rejects(commerce.guestCheckout("new@example.com", "edicao-1"),
-    (error) => error.code === "delivery_not_configured" && error.status === 503);
-  assert.equal(store.db.orders.length, 0);
-  assert.equal(store.db.profiles.length, 1);
+test("Cakto: compra sem conta abre o checkout e libera mesmo com outro e-mail na Cakto", async () => {
+  const { store, commerce, data } = setup();
+  const checkout = await commerce.guestCheckout("new@example.com", "edicao-1");
+  const order = store.db.orders[0];
+  assert.ok(checkout.url.includes(`callback=${order.id}`));
+  assert.ok(checkout.key);
+  const paid = data(order, { customer: { email: "outro-no-checkout@example.com" } });
+  assert.equal((await commerce.receiveCaktoWebhook({ event: "purchase_approved", data: paid })).results[0].status, "processed");
+  assert.equal(store.db.licenses.length, 1);
+  assert.equal((await commerce.claimAccess(order.id, checkout.key)).status, "paid");
+});
+
+test("Cakto: e-mail de conta já usada exige login antes da compra", async () => {
+  const { commerce } = setup();
+  await assert.rejects(commerce.guestCheckout(user.email, "edicao-1"), (error) => error.code === "account_exists");
 });
 
 test("Cakto: pedido Asaas antigo não é reutilizado para a nova oferta", async () => {

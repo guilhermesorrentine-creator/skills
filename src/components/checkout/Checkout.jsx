@@ -129,7 +129,7 @@ export default function Checkout({ codes, signedIn, intro = null, labels = {}, h
         <button type="button" className="btn btn-ghost buy-submit" disabled={Boolean(busy) || !edition} onClick={(e) => pay("pix", e)}>{busy === "pix" ? "Gerando Pix…" : `Pagar à vista no Pix (${formatPrice(edition.priceCents)})`}</button>
       </> : <button type="submit" className="btn btn-primary buy-submit" disabled={Boolean(busy) || !edition}>{busy ? "Abrindo checkout…" : hosted ? "Continuar para pagamento" : "Pagar com Pix ou cartão"}</button>}
     </form>
-    <p className="small muted">Pagamento seguro pela {edition?.code === "edicao-1" ? "Cakto" : "Asaas"}. O acesso é liberado quando a compra é confirmada. Use no pagamento o mesmo e-mail {signedIn ? "desta conta" : "informado acima"}. {signedIn ? "Depois, entre com sua conta." : "Você receberá o link para criar sua senha no e-mail informado."}</p>
+    <p className="small muted">Pagamento seguro pela {edition?.code === "edicao-1" ? "Cakto" : "Asaas"}. O acesso é liberado quando a compra é confirmada. Use no pagamento o mesmo e-mail {signedIn ? "desta conta" : "informado acima"}. {signedIn ? "Depois, entre com sua conta." : hosted ? "Depois de pagar, a Cakto traz você de volta para criar sua senha." : "Você receberá o link para criar sua senha no e-mail informado."}</p>
     <p className="small muted">Ao pagar, você concorda com os <a className="link" href="/termos" target="_blank" rel="noopener">Termos de uso</a> e a política de <a className="link" href="/compra-e-reembolso" target="_blank" rel="noopener">Compra e reembolso</a>. Garantia de 15 dias.</p>
   </>;
 }
