@@ -2,31 +2,31 @@
 :root {
   color-scheme: light dark;
 
-  --bg: #f7f6f2;
-  --bg-soft: #ece5fa;
+  --bg: #f4f9fc;
+  --bg-soft: #e2f4f8;
   --surface: #ffffff;
   --surface-muted: #faf9f6;
-  --primary: #7445c7;
-  --primary-hover: #6136ae;
-  --primary-soft: #efe8fb;
+  --primary: #087f9a;
+  --primary-hover: #08657e;
+  --primary-soft: #d9f3f7;
   --text: #23212b;
   --text-2: #55525f;
   --text-3: #6e6a78;
   --line: #e4e0d8;
   --line-strong: #d2ccc2;
-  --focus: #7445c7;
+  --focus: #087f9a;
   --on-primary: #ffffff;
   --surface-sunken: #f2f0eb;
   --surface-glass: rgba(255, 255, 255, 0.86);
   --surface-glass-soft: rgba(255, 255, 255, 0.66);
   --topbar-bg: rgba(247, 246, 242, 0.9);
-  --line-accent: #cbb9ea;
-  --mark: #f3e6ff;
+  --line-accent: #75c9d6;
+  --mark: #d9f3f7;
   --scrim: rgba(35, 33, 43, 0.35);
   --code-block-bg: #23212b;
   --code-block-text: #f3f1ff;
-  --blob-a: #e2d4fb;
-  --blob-b: #fbe4ee;
+  --blob-a: #bde8f0;
+  --blob-b: #dcecf8;
   --ground-shadow: rgba(35, 33, 43, 0.12);
   --ph-bg: #ffe9a8;
   /* Terminal da landing: sempre escuro, nos dois temas. */
@@ -82,7 +82,7 @@
   --shadow-1: 0 1px 2px rgba(35, 33, 43, 0.06), 0 1px 1px rgba(35, 33, 43, 0.04);
   --shadow-2: 0 10px 30px -12px rgba(35, 33, 43, 0.18), 0 2px 6px rgba(35, 33, 43, 0.05);
   --shadow-3: 0 30px 60px -24px rgba(65, 40, 110, 0.28), 0 8px 18px -10px rgba(35, 33, 43, 0.12);
-  --shadow-primary: 0 6px 16px -6px rgba(116, 69, 199, 0.55);
+  --shadow-primary: 0 6px 16px -6px rgba(8, 127, 154, 0.4);
 
   --page-width: 1200px;
   --gutter: clamp(16px, 4vw, 40px);
@@ -98,26 +98,26 @@
    contraste AA como texto, e o conteúdo sobre ele passa a ser escuro (--on-primary). */
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg: #15131b;
-    --bg-soft: #221c33;
-    --surface: #1d1a25;
-    --surface-muted: #191720;
-    --surface-sunken: #26222f;
-    --surface-glass: rgba(29, 26, 37, 0.86);
-    --surface-glass-soft: rgba(29, 26, 37, 0.7);
-    --topbar-bg: rgba(21, 19, 27, 0.9);
-    --primary: #a589ec;
-    --primary-hover: #b9a2f2;
-    --primary-soft: #2a2240;
-    --on-primary: #15131b;
+    --bg: #080e14;
+    --bg-soft: #10202b;
+    --surface: #111b25;
+    --surface-muted: #15212b;
+    --surface-sunken: #0d1720;
+    --surface-glass: rgba(17, 27, 37, 0.86);
+    --surface-glass-soft: rgba(17, 27, 37, 0.7);
+    --topbar-bg: rgba(8, 14, 20, 0.9);
+    --primary: #5be3ed;
+    --primary-hover: #8af2f6;
+    --primary-soft: #15343d;
+    --on-primary: #071115;
     --text: #f2f0f6;
     --text-2: #c3becd;
     --text-3: #9e99aa;
-    --line: #2f2b38;
-    --line-strong: #403b4b;
-    --line-accent: #5a4a80;
-    --focus: #b9a2f2;
-    --mark: #3a2c5c;
+    --line: #29323e;
+    --line-strong: #435563;
+    --line-accent: #347a88;
+    --focus: #8af2f6;
+    --mark: #15343d;
     --scrim: rgba(0, 0, 0, 0.55);
     --code-block-bg: #0f0d14;
     --code-block-text: #ede9f7;

@@ -16,7 +16,7 @@ const maskCpf = (value) => value.replace(/\D/g, "").slice(0, 11).replace(/(\d{3}
 // Pagamento direto: e-mail (sem login), nome e CPF (exigidos pelo Asaas). Pix mostra o QR aqui; cartão abre a
 // fatura do Asaas em outra aba (o Pro parcela em 12x). Confirma sozinho o pagamento.
 // Com mais de uma edição em `codes`, mostra a escolha do plano; `intro(edition)` vem antes do preço.
-export default function Checkout({ codes, signedIn, intro = null, labels = {}, hosted = false }) {
+export default function Checkout({ codes, signedIn, intro = null, labels = {}, hosted = false, expectedPriceCents = null }) {
   const [code, setCode] = useState(codes[0]);
   const [editions, setEditions] = useState([]);
   const [form, setForm] = useState({ email: "", name: "", document: "" });
@@ -30,6 +30,7 @@ export default function Checkout({ codes, signedIn, intro = null, labels = {}, h
     fetch("/api/editions").then((r) => (r.ok ? r.json() : { editions: [] })).then((d) => setEditions(d.editions)).catch(() => setEditions([]));
   }, []);
   const edition = editions.find((e) => e.code === code) || (codes.length === 1 ? editions[0] : null) || null;
+  const priceMismatch = expectedPriceCents != null && edition && edition.priceCents !== expectedPriceCents;
 
   // Enquanto a cobrança está aberta, consulta o pedido; pago, segue para criar a senha (ou para a licença).
   useEffect(() => {
@@ -53,6 +54,7 @@ export default function Checkout({ codes, signedIn, intro = null, labels = {}, h
 
   const pay = async (method, event) => {
     event?.preventDefault();
+    if (expectedPriceCents != null && edition?.priceCents !== expectedPriceCents) return;
     const form_ = document.getElementById(formId);
     if (form_ && !form_.reportValidity()) return;
     const target = edition?.code || code;
@@ -101,6 +103,7 @@ export default function Checkout({ codes, signedIn, intro = null, labels = {}, h
   </>;
 
   const choices = codes.map((c) => editions.find((e) => e.code === c)).filter(Boolean);
+  if (priceMismatch) return <p className="notice" role="status">A oferta está sendo preparada. O pagamento por este valor ainda não está disponível.</p>;
   return <>
     {intro?.(edition)}
     {choices.length > 1 ? <div className="plan-choice" role="radiogroup" aria-label="Escolha o plano">{choices.map((e) => <label key={e.code} className={`plan-option${e.code === code ? " is-on" : ""}`}>
@@ -124,9 +127,9 @@ export default function Checkout({ codes, signedIn, intro = null, labels = {}, h
       {installments > 1 ? <>
         <button type="submit" className="btn btn-primary buy-submit" disabled={Boolean(busy) || !edition}>{busy === "card" ? "Gerando pagamento…" : `Pagar ${installments}x de ${formatPrice(perMonth)} no cartão`}</button>
         <button type="button" className="btn btn-ghost buy-submit" disabled={Boolean(busy) || !edition} onClick={(e) => pay("pix", e)}>{busy === "pix" ? "Gerando Pix…" : `Pagar à vista no Pix (${formatPrice(edition.priceCents)})`}</button>
-      </> : <button type="submit" className="btn btn-primary buy-submit" disabled={Boolean(busy) || !edition}>{busy ? "Gerando pagamento…" : "Pagar com Pix ou cartão"}</button>}
+      </> : <button type="submit" className="btn btn-primary buy-submit" disabled={Boolean(busy) || !edition}>{busy ? "Abrindo checkout…" : hosted ? "Continuar para pagamento" : "Pagar com Pix ou cartão"}</button>}
     </form>
-    <p className="small muted">Pagamento seguro pela {edition?.code === "edicao-1" ? "Cakto" : "Asaas"}. O acesso é liberado quando a compra é confirmada. Use no pagamento o mesmo e-mail {signedIn ? "desta conta" : "informado acima"}. {signedIn ? "Depois, entre com sua conta." : "Você receberá o link para criar sua senha no e-mail informado."}</p>
+    <p className="small muted">Pagamento seguro pela {edition?.code === "edicao-1" ? "Cakto" : "Asaas"}. O acesso é liberado quando a compra é confirmada. Use no pagamento o mesmo e-mail {signedIn ? "desta conta" : "informado acima"}. {signedIn ? "Depois, entre com sua conta." : hosted ? "Depois de pagar, a Cakto traz você de volta para criar sua senha." : "Você receberá o link para criar sua senha no e-mail informado."}</p>
     <p className="small muted">Ao pagar, você concorda com os <a className="link" href="/termos" target="_blank" rel="noopener">Termos de uso</a> e a política de <a className="link" href="/compra-e-reembolso" target="_blank" rel="noopener">Compra e reembolso</a>. Garantia de 15 dias.</p>
   </>;
 }

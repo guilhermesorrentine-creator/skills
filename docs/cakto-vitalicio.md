@@ -2,7 +2,7 @@
 
 ## Decisão comercial
 
-A oferta nova da Edição 1 é **R$ 19,90 em pagamento único**, por Pix ou cartão, com acesso vitalício ao acervo. Não inclui conexão automática com IA. Assinaturas mensais e compras antigas pelo Asaas conservam os direitos contratados, mas não são oferecidas a novos clientes. A página `/oferta` e os caminhos públicos de compra seguem essa oferta.
+A oferta planejada da Edição 1 é **R$ 39,90 em pagamento único**, por Pix ou cartão, com acesso vitalício ao acervo. Não inclui conexão automática com IA. Assinaturas mensais e compras antigas pelo Asaas conservam os direitos contratados, mas não serão oferecidas a novos clientes após a mudança. A página `/oferta` e os caminhos públicos de compra devem seguir essa oferta quando a publicação for autorizada. O preço de R$ 19,90 abaixo registra etapas anteriores do projeto.
 
 ## Fluxo técnico
 
@@ -49,7 +49,7 @@ O webhook da Cakto aponta para a produção. Por isso, o teste real só pode ser
 ```sql
 begin;
 update public.commercial_editions
-set name = 'Voxelia — acesso vitalício', price_cents = 1990,
+set name = 'Voxelia — acesso vitalício', price_cents = 3990,
     description = 'Acesso vitalício ao acervo de skills em português. Sem conexão automática com IA.',
     features = array['Acervo de skills com busca por objetivo', 'Guias em português para consultar e copiar', 'Pagamento único, sem mensalidade'],
     on_sale = true, updated_at = now()
@@ -60,7 +60,7 @@ commit;
 ```
 
 3. Reativar o produto na Cakto, com cupom desligado e 1 parcela.
-4. O dono faz uma compra real de R$ 19,90 com a própria conta Voxelia. Conferir que a licença foi ativada e que `cakto_webhook_events` tem o evento.
+4. O dono faz uma compra real de R$ 39,90 com a própria conta Voxelia, somente quando autorizar essa validação. Conferir que a licença foi ativada e que `cakto_webhook_events` tem o evento.
 5. Pedir o estorno pela Cakto e conferir que o acesso foi cortado.
 6. Se algo falhar: desativar o produto na Cakto, reverter o merge e aplicar o retorno de `docs/cakto-retorno.md`.
 
@@ -73,3 +73,23 @@ O produto `eab775e9…` ficou bloqueado pela Cakto ("contate o suporte") e o che
 - checkout `n67ozi6_1258848`.
 
 O produto novo já está no webhook "Voxelia — compras", e a Vercel recebeu os três IDs. Em seguida, o dono pediu o preço de **R$ 39,90**. O preço passa a existir só em dois lugares do código, `CAKTO_PRICE_CENTS` (server/cakto.js) e `OFFER_PRICE` (src/lib/billing-client.js). O valor precisa ser igual também no produto Cakto e em `commercial_editions.price_cents` (`edicao-1` = 3990).
+
+## Página de vendas baseada na referência visual (30/10/2026)
+
+O dono forneceu um ZIP da landing Low Ticket AI e pediu que a `/oferta` adotasse sua estrutura visual com identidade Voxelia. A nova página usa fundo escuro, destaques em ciano e violeta, chamada central, quatro benefícios, prévia ilustrativa da busca, seções de funcionamento e conteúdo, comparação, card da oferta e perguntas frequentes. Não foram reutilizados o pixel, depoimentos, provas de faturamento, promessas de lucro ou temporizadores da referência. O botão de compra mantém o cadastro antes do checkout e o funil existente. O formulário só é mostrado se o preço retornado pelo servidor for R$ 39,90. O HTML pré-renderizado da `/oferta` e o preço estático das páginas públicas foram alinhados a R$ 39,90.
+
+Esta edição está apenas no código local. O banco de produção ainda mantém os valores comerciais anteriores e o produto Cakto precisa estar confirmado em R$ 39,90 antes da publicação. A migration histórica que registrou R$ 19,90 não deve ser reaplicada; a troca comercial final precisa ser uma operação separada e autorizada.
+
+## Compra por e-mail antes do checkout (30/10/2026)
+
+A `/oferta` local agora pede apenas o e-mail antes de abrir a Cakto. O servidor cria uma conta sem senha e associa o pedido a ela. Após o webhook de compra aprovada, libera a licença e gera um link pessoal para criar senha; a conta já possui o e-mail informado. Uma conta que já entrou na Voxelia precisa fazer login para comprar. A compra sem conta permanece bloqueada enquanto não houver envio automático de e-mail comprovadamente funcional. As variáveis de Gmail SMTP presentes na Vercel não demonstram entrega; a conta Google usada anteriormente não disponibilizou senha de app. Não alterar o preço de produção isoladamente: banco, checkout Cakto e site publicado precisam mostrar R$ 39,90 no mesmo momento da ativação.
+
+Em 30/10/2026, consulta somente de leitura confirmou que `biblioteca-total` já apresenta `edicao-1` por 3990 centavos e `voxelia-mensal` inativo; a API pública `/api/editions` também devolve 3990 centavos. Não foi necessário atualizar o banco novamente. A paleta do código local passou a usar azul e ciano da nova oferta no site e no painel. Testes: 95/95; build: aprovada. A publicação do fluxo de compra por e-mail ainda depende de envio automático comprovado e validação da oferta Cakto.
+
+## Login antes do checkout, com opção Google
+
+O dono optou por manter o acervo na Voxelia e evitar a dependência de e-mail pós-compra. A `/oferta` local voltou a exigir conta antes do checkout; oferece Google quando o provedor estiver ativado no Supabase, além de e-mail e senha. O retorno do OAuth preserva `/oferta` como destino mesmo para conta ainda sem licença. O checkout da Cakto deve usar o mesmo e-mail da conta autenticada; o webhook compara ambos antes de liberar acesso. Em 30/10/2026, a API pública do Supabase indicou `external.google=false`; não anunciar Google como disponível nem publicar o botão antes de configurar o cliente OAuth e habilitar o provedor no projeto `biblioteca-total`.
+
+Com autorização do dono, foi criado no Google Cloud da conta `zack74522@gmail.com` o projeto isolado `Voxelia Login` (`voxelia-login`). A tela de consentimento recebeu o nome Voxelia, suporte `zack74522@gmail.com` e público externo. A etapa final exige que o dono aceite a Política de dados do usuário dos serviços de API do Google. Até essa aceitação, não há cliente OAuth nem provedor Google ativo no Supabase. O código local esconde o botão Google enquanto a API pública do Supabase não indicar o provedor ativo. Nenhum domínio foi comprado.
+
+Após o dono aceitar essa política, o cliente OAuth web `Voxelia Supabase Auth` foi criado no projeto `voxelia-login` com retorno exclusivo para `https://nziuujuejzslgurycryt.supabase.co/auth/v1/callback`. O segredo foi inserido no provedor Google do Supabase `biblioteca-total`, sem ser salvo no repositório. A interface e a API pública confirmaram `external.google=true`; a rota `/auth/v1/authorize` redireciona ao Google com o cliente correto. O app Google ainda precisa sair do modo de testes para permitir compradores fora da lista de teste. A URL pública do checkout Cakto respondeu HTTP 200 e exibiu R$ 39,90 em 30/10/2026; isso não substitui a prova de compra aprovada e liberação de acesso.

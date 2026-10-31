@@ -299,14 +299,12 @@ export function createCommerce({ store, asaas, config, onboarding = null, conver
   }
 
   // Compra sem cadastro: e-mail (e, na cobrança direta, nome e CPF). A conta nasce sem senha (nenhum
-  // e-mail é enviado) e a pessoa cria a senha no retorno do pagamento. E-mail de conta já usada exige login.
+  // e-mail é enviado) e a pessoa cria a senha no retorno do pagamento. Na Cakto, a página de obrigado
+  // volta para /checkout/retorno, que lê o pedido guardado no navegador. E-mail de conta já usada exige login.
   async function guestCheckout(email, editionCode, tracking = null, payer = null, method = "pix") {
     const address = String(email || "").trim().toLowerCase();
     if (!EMAIL.test(address) || address.length > 254) throw httpError(400, "invalid_email", "Informe um e-mail válido.");
     const target = await store.getEditionByCode(String(editionCode || ""));
-    const emailReady = config.email?.apiKey && config.email?.from || config.email?.gmailUser && config.email?.gmailAppPassword;
-    if (target?.code === "edicao-1" && target.price_cents === CAKTO_PRICE_CENTS && !emailReady)
-      throw httpError(503, "delivery_not_configured", "Compra temporariamente indisponível: envio do acesso não configurado.");
     const buyer = payer && validPayer(payer);
     let profile = await store.findProfileByEmail(address);
     if (profile && await store.hasSignedIn(profile.id)) throw httpError(409, "account_exists", "Este e-mail já tem conta na Voxelia. Entre para concluir a compra.");
@@ -401,8 +399,10 @@ export function createCommerce({ store, asaas, config, onboarding = null, conver
       const order = await store.getOrder(data.callback);
       if (!order || order.payment_provider !== "cakto") return finish("unlinked", "Pedido local não encontrado.");
       const profile = await store.getProfile(order.user_id);
-      if (profile?.email?.toLowerCase() !== data.customer.email.toLowerCase()
-        || order.amount_cents !== CAKTO_PRICE_CENTS || order.cakto_order_id && order.cakto_order_id !== data.id)
+      // A Cakto pede o e-mail de novo. Numa conta criada pela compra sem cadastro (nunca usada), o pedido
+      // já identifica o comprador; e-mail diferente só é recusado em conta que já entrou na Voxelia.
+      const sameBuyer = profile?.email?.toLowerCase() === data.customer.email.toLowerCase() || !(await store.hasSignedIn(order.user_id));
+      if (!sameBuyer || order.amount_cents !== CAKTO_PRICE_CENTS || order.cakto_order_id && order.cakto_order_id !== data.id)
         return finish("failed", "Comprador ou transação divergente.");
       if (event === "purchase_approved") {
         if (!approvedCaktoPurchase(data, config.cakto) || Number.isNaN(Date.parse(data.paidAt))) return finish("failed", "Pagamento não confirmado.");

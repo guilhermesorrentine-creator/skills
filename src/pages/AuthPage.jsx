@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { motion } from "motion/react";
 import { useReduced } from "../lib/motion-pref.jsx";
-import { arrival, authActions, authConfigured, useAuth } from "../lib/auth.jsx";
+import { arrival, authActions, authConfigured, useAuth, useGoogleAuthAvailable } from "../lib/auth.jsx";
 import { Link, navigate, safeNext } from "../lib/router.jsx";
 import { purchase } from "../lib/billing-client.js";
 import { Brand } from "../components/site/SiteNav.jsx";
@@ -22,6 +22,7 @@ const copy = {
 export default function AuthPage({ mode, account, onAuthenticated }) {
   const reduced = useReduced();
   const { user, loading: authLoading, setInvited, setRecovery } = useAuth();
+  const googleAvailable = useGoogleAuthAvailable();
   const setsPassword = mode === "reset" || mode === "invite";
   const params = new URLSearchParams(location.search);
   const next = safeNext(params.get("next"));
@@ -83,12 +84,19 @@ export default function AuthPage({ mode, account, onAuthenticated }) {
     finally { history.replaceState(null, "", location.pathname); setBusy(false); }
   };
 
+  const onGoogle = async () => {
+    setBusy(true); setError("");
+    try { await authActions.signInWithGoogle(next); }
+    catch (cause) { setError(cause.message); setBusy(false); }
+  };
+
   return <main id="conteudo" className="auth-view">
     <motion.div className="auth-card" initial={reduced ? false : { opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: motionTokens.duration.normal, ease: motionTokens.easing.smooth }}>
       <Brand/>
       <h1>{text.title}</h1>
       <p className="auth-lead">{plan && action !== "recover" ? "Entre ou crie sua conta para continuar a compra." : text.lead}</p>
       {!authConfigured && <p className="form-error" role="alert">Login indisponível neste ambiente: o Supabase ainda não foi configurado (VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY).</p>}
+      {googleAvailable && (mode === "login" || mode === "signup") && <button type="button" className="btn btn-secondary auth-submit" onClick={onGoogle} disabled={busy}>Continuar com Google</button>}
       {confirmsEmail && <button type="button" className="btn btn-primary auth-submit" onClick={confirmEmail} disabled={busy || !authConfigured}>{busy ? "Aguarde…" : "Confirmar meu e-mail e entrar"}</button>}
       <form onSubmit={onSubmit} className="auth-form" noValidate>
         {(!setsPassword || asksNewLink) && <label className="auth-field">E-mail<input type="email" autoComplete="email" required value={email} onChange={(event) => setEmail(event.target.value)}/></label>}

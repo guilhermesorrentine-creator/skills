@@ -59,7 +59,7 @@ function Routes() {
   }, [signedIn, account]);
   const afterLogin = useCallback(async (next) => {
     const fresh = account || await reload();
-    navigate(fresh?.access ? next : "/acesso-pendente", { replace: true });
+    navigate(fresh?.access || next === "/oferta" || next.startsWith("/oferta?") ? next : "/acesso-pendente", { replace: true });
   }, [account, reload]);
 
   const requireSession = (render) => {
