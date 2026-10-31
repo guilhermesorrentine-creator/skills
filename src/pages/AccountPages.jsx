@@ -34,18 +34,28 @@ export function claimFrom(search) {
 function GuestReturn({ claim }) {
   const [state, setState] = useState({ status: "pending" });
   const [tries, setTries] = useState(0);
+  // Uma consulta por vez, até pagar: cada resposta "paga" gera um link de senha novo e invalida o anterior,
+  // então duas consultas simultâneas mostravam um link já vencido. O laço depende só da chave, não do objeto.
+  const claimKey = JSON.stringify(claim);
   useEffect(() => {
-    if (state.status === "paid" || tries >= 60) return undefined;
-    const id = window.setTimeout(async () => {
-      try {
-        const response = await fetch(claim.session ? "/api/subscription/claim" : "/api/checkout/claim", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(claim) });
-        const data = await response.json();
-        if (!response.ok) setState({ status: "error", message: data.message }); else setState(data);
-      } catch { /* tenta de novo */ }
-      setTries((v) => v + 1);
-    }, tries ? 3000 : 300);
-    return () => window.clearTimeout(id);
-  }, [claim, state.status, tries]);
+    let stopped = false;
+    (async () => {
+      for (let attempt = 0; attempt < 60 && !stopped; attempt += 1) {
+        await new Promise((resolve) => window.setTimeout(resolve, attempt ? 3000 : 300));
+        if (stopped) return;
+        try {
+          const response = await fetch(claim.session ? "/api/subscription/claim" : "/api/checkout/claim", { method: "POST", headers: { "content-type": "application/json" }, body: claimKey });
+          const data = await response.json();
+          if (stopped) return;
+          if (!response.ok) { setState({ status: "error", message: data.message }); return; }
+          setState(data);
+          if (data.status === "paid") return;
+        } catch { /* tenta de novo */ }
+        setTries(attempt + 1);
+      }
+    })();
+    return () => { stopped = true; };
+  }, [claimKey]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { if (state.status === "paid") try { localStorage.removeItem("vx-claim"); } catch { /* ok */ } }, [state.status]);
   const paid = state.status === "paid";
   return <Shell eyebrow="Pagamento" title={paid ? "Pagamento confirmado!" : state.status === "error" ? "Link de retorno inválido" : "Confirmando seu pagamento…"}>
