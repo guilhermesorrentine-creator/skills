@@ -24,13 +24,23 @@ export function verifyCaktoWebhook(rawBody, timestamp, signature, secret, now = 
   });
 }
 
+const cents = (value) => Math.round(Number(value) * 100);
+
+// A Cakto pode repassar ao comprador uma taxa (`charged_fees`, ex.: R$ 0,99 no Pix): o preço da oferta
+// continua 39,90 e o valor pago é preço + taxa. Desconto não é aceito (cupons desligados).
+function paidOfferPrice(data) {
+  const fees = cents(data.charged_fees || 0);
+  return cents(data.offer?.price) === CAKTO_PRICE_CENTS && cents(data.discount || 0) === 0
+    && fees >= 0 && fees < CAKTO_PRICE_CENTS && cents(data.amount) === CAKTO_PRICE_CENTS + fees;
+}
+
 export function validCaktoOrder(data, config) {
   return Boolean(data && UUID.test(data.id || "") && UUID.test(data.callback || "")
     && data.offer_type === "main" && !data.subscription
     && String(data.product?.id || "") === config.productId
     && String(data.offer?.id || "") === config.offerId
     && data.product?.type === "unique" && data.currency === "BRL" && data.offer?.currency === "BRL"
-    && Number(data.amount) * 100 === CAKTO_PRICE_CENTS && Number(data.offer?.price) * 100 === CAKTO_PRICE_CENTS
+    && paidOfferPrice(data)
     && Number(data.installments) === 1 && typeof data.customer?.email === "string");
 }
 

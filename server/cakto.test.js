@@ -105,6 +105,8 @@ test("Cakto: pagamento aprovado libera uma vez; divergências e pendências não
   assert.equal((await commerce.receiveCaktoWebhook({ event: "purchase_approved", data: wrongBuyer })).results[0].status, "failed");
   const wrongOffer = data(order, { offer: { id: "other", price: PRICE, currency: "BRL" } });
   assert.equal((await commerce.receiveCaktoWebhook({ event: "purchase_approved", data: wrongOffer })).results[0].status, "failed");
+  const unexplainedExtra = data(order, { amount: PRICE + 0.99 });
+  assert.equal((await commerce.receiveCaktoWebhook({ event: "purchase_approved", data: unexplainedExtra })).results[0].status, "failed");
   const pending = data(order, { status: "pending" });
   assert.equal((await commerce.receiveCaktoWebhook({ event: "purchase_approved", data: pending })).results[0].status, "failed");
   assert.equal(store.db.licenses.length, 0);
@@ -154,4 +156,14 @@ test("Cakto: Purchase enviado ao Pixel certo com valor, moeda e ID da transaçã
   assert.equal(sent[0].body.data[0].event_id, `purchase-cakto-${paid.id}`);
   assert.deepEqual(sent[0].body.data[0].custom_data, { currency: "BRL", value: PRICE,
     content_ids: ["voxelia-vitalicio"], content_type: "product" });
+});
+
+test("Cakto: taxa repassada ao comprador (preço + charged_fees) libera o acesso", async () => {
+  const { store, commerce, data } = setup(async () => true);
+  await commerce.accountCheckout(user, "edicao-1", { consent: true });
+  const order = store.db.orders[0];
+  const withFee = data(order, { amount: 40.89, baseAmount: PRICE, charged_fees: "0.99", discount: "0.00", fees: 2.49 });
+  assert.equal((await commerce.receiveCaktoWebhook({ event: "purchase_approved", data: withFee })).results[0].status, "processed");
+  assert.equal(store.db.licenses.length, 1);
+  assert.equal(store.db.orders[0].amount_cents, CAKTO_PRICE_CENTS);
 });
