@@ -41,7 +41,10 @@ const DEFAULT_LEAD = "Encontre a skill certa para criar páginas, conteúdo e pr
 const ANGLES = {
   A: { title: <>Pare de pagar a sua IA para <em>adivinhar</em>.</> },
   C: { title: <>Dê <em>superpoderes</em> à sua IA para vender mais.</>, lead: "Encontre a skill certa para criar propostas, anúncios, páginas de venda e conteúdo com método, em vez de texto genérico. Abra o guia, copie as instruções e use na IA que você já tem." },
+  E1: { title: <>Chega de texto <em>genérico</em> da sua IA.</>, lead: "Com a skill certa, a IA segue um método: problema do cliente, oferta, prazo, garantia e próximo passo. Abra o guia, copie as instruções e use na IA que você já tem." },
 };
+// A imagem E2 repete a promessa do anúncio C.
+ANGLES.E2 = ANGLES.C;
 
 function CTA({ onClick, children = `Quero o acervo por ${OFFER_PRICE}`, secondary = false }) {
   return <button type="button" className={`vx-offer-cta${secondary ? " is-secondary" : ""}`} onClick={onClick}>{children}<ArrowRight size={19} aria-hidden="true"/></button>;
