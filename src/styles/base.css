@@ -106,14 +106,23 @@ kbd { display: inline-flex; align-items: center; padding: 2px 6px; border-radius
 .motion-toggle { position: fixed; right: 16px; bottom: 16px; z-index: 60; display: inline-flex; align-items: center; gap: 10px; padding: 8px 14px; border-radius: var(--radius-pill); background: var(--surface-glass); border: 1px solid var(--line); box-shadow: var(--shadow-2); font-size: 13px; color: var(--text-2); backdrop-filter: blur(8px); }
 
 /* Aviso de cookies: acima do botão de animações, sem bloquear a página. */
-.consent { position: fixed; left: 16px; right: 16px; bottom: 64px; z-index: 70; display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px; max-width: 760px; margin: 0 auto; padding: 14px 18px; border-radius: var(--radius-lg); background: var(--surface); border: 1px solid var(--line); box-shadow: var(--shadow-2); font-size: 14px; color: var(--text-2); }
-.consent p { flex: 1 1 320px; margin: 0; }
+/* Contraste e borda de destaque para ser notado; Aceitar e Recusar continuam com o mesmo peso. */
+.consent { position: fixed; left: 16px; right: 16px; bottom: 64px; z-index: 70; display: flex; flex-wrap: wrap; align-items: center; gap: 14px 24px; max-width: 760px; margin: 0 auto; padding: 18px 20px; border-radius: var(--radius-lg); background: var(--surface); border: 1px solid var(--primary); box-shadow: var(--shadow-2), 0 0 0 4px color-mix(in srgb, var(--primary) 18%, transparent); font-size: 14px; color: var(--text-2); }
+.consent-copy { flex: 1 1 340px; }
+.consent-copy strong { display: block; margin-bottom: 4px; font-size: 16px; color: var(--text); }
+.consent p { margin: 0; line-height: 1.5; }
 .consent-actions { display: flex; gap: 8px; }
+.consent-actions .btn { min-width: 112px; }
+/* Na oferta, fica acima da barra fixa de compra para não cobri-la. */
+body:has(.vx-offer-sticky) .consent { bottom: 84px; }
 
 /* Celular: o botão de animações sai de cima do conteúdo e dos CTAs fixos e vai para o fim da página. */
 @media (max-width: 760px) {
   .motion-toggle { position: static; display: flex; width: fit-content; margin: 8px auto 28px; box-shadow: none; }
   .consent { bottom: 16px; }
+  .consent-actions { width: 100%; }
+  .consent-actions .btn { flex: 1; }
+  body:has(.vx-offer-sticky) .consent { bottom: 80px; }
   .repo-page ~ .motion-toggle { margin-bottom: 150px; }
 }
 
