@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Activity, BarChart3, BookOpen, CalendarDays, ChevronDown, ChevronLeft, ChevronRight, CircleHelp, Clapperboard, CreditCard, FileText, LayoutDashboard, Link2, Menu, RefreshCw, Search, Settings, ShoppingBag, Target, Wallet, X } from "lucide-react";
+import { Activity, BarChart3, BookOpen, CalendarDays, ChevronDown, ChevronLeft, ChevronRight, CircleHelp, Clapperboard, CreditCard, FileText, Globe, LayoutDashboard, Link2, Menu, RefreshCw, Search, Settings, ShoppingBag, Target, Wallet, X } from "lucide-react";
 import { apiFetch } from "../lib/auth.jsx";
 import { Link } from "../lib/router.jsx";
 import { formatPrice } from "../lib/billing-client.js";
@@ -116,7 +116,33 @@ function campaignSignalFor(data, campaign, link, range, level = "campaign") {
 
 function SignalCard({ title, signal, children }) { return <section className={`dash-card dash-signal dash-signal-${signal.tone}`}><div><span className="dash-signal-label">{title}</span><strong>{signal.title}</strong><small>{signal.detail}</small></div>{children}</section>; }
 
-function Overview({ data }) {
+// Um cartão por canal no topo da visão geral; cada um abre a aba com o detalhe.
+function Channels({ data, onOpen }) {
+  const range = { from: data.from, to: data.to };
+  const [instagram, setInstagram] = useState(null);
+  useEffect(() => {
+    let active = true;
+    apiFetch(`/api/admin/dashboard/organic?${new URLSearchParams({ from: data.from, to: data.to })}`)
+      .then((result) => active && setInstagram(result)).catch(() => active && setInstagram({ failed: true }));
+    return () => { active = false; };
+  }, [data.from, data.to]);
+  const m = data.metrics;
+  const linkClicks = aggregateAds(data.ads, "campaign", range).reduce((sum, item) => sum + (item.linkClicks || 0), 0);
+  const sessions = (name) => new Set(data.funnel.filter((event) => event.name === name && inRange(event.on, range)).map((event) => event.sid)).size;
+  const views = instagram?.rows?.reduce((sum, row) => sum + (row.views || 0), 0);
+  const cards = [
+    { id: "meta", Icon: Activity, name: "Meta Ads", value: money(m.adCents), label: "gasto no período", detail: `${linkClicks.toLocaleString("pt-BR")} cliques no link` },
+    { id: "organico", Icon: Clapperboard, name: "Instagram", value: instagram ? instagram.profile ? instagram.profile.followers.toLocaleString("pt-BR") : "—" : "…", label: "seguidores",
+      detail: !instagram ? "Consultando o Instagram…" : instagram.rows ? `${views.toLocaleString("pt-BR")} visualizações nos Reels` : "Instagram indisponível" },
+    { id: "funil", Icon: Globe, name: "Site", value: sessions("view").toLocaleString("pt-BR"), label: "visitas", detail: `${sessions("checkout")} chegaram ao pagamento` },
+    { id: "pedidos", Icon: ShoppingBag, name: "Vendas", value: m.sales, label: "pedidos pagos", detail: money(m.salesCents) },
+  ];
+  return <div className="dash-channels">{cards.map(({ id, Icon, name, value, label, detail }) => <button key={id} type="button" className="dash-channel" onClick={() => onOpen(id)}>
+    <span className="dash-channel-name"><Icon size={16} aria-hidden="true"/>{name}</span><strong>{value}</strong><span className="dash-channel-label">{label}</span><small>{detail}</small>
+  </button>)}</div>;
+}
+
+function Overview({ data, onOpen }) {
   const m = data.metrics;
   const range = { from: data.from, to: data.to };
   const campaigns = aggregateAds(data.ads, "campaign", range);
@@ -124,6 +150,7 @@ function Overview({ data }) {
   const link = data.links.find((item) => item.entity_kind === "campaign" && item.entity_id === lead?.id);
   const signal = lead ? campaignSignalFor(data, lead, link, range) : paidSignal({ error: data.connections.meta.error });
   return <div className="dash-stack">
+    <Channels data={data} onOpen={onOpen}/>
     <div className="dash-card dash-hero"><MetricTerm label="Vendas do período"/><strong>{money(m.salesCents)}</strong><small>Caixa Asaas: {money(m.cashCents)} · A receber no Asaas: {money(m.receivableCents)}</small><SalesChart daily={m.daily}/></div>
     <div className="dash-pair"><Metric label="Lucro" value={money(m.profitCents)} tone={m.profitCents == null ? undefined : m.profitCents < 0 ? "bad" : "good"} note="Vendas menos anúncios, taxas e despesas"/><Metric label="Custo total" value={money(m.adCents == null ? null : m.adCents + m.feesCents + m.expenseCents)} note={`Meta ${money(m.adCents)} · taxas ${money(m.feesCents)} · outros ${money(m.expenseCents)}`}/></div>
     <Donut metrics={m}/>
@@ -335,7 +362,7 @@ export default function DashboardPage() {
       {section !== "organico" && section !== "indices" && loading && <p role="status" className="dash-status">Atualizando Asaas e Meta Ads…</p>}{section !== "organico" && section !== "indices" && error && <p role="alert" className="dash-error">{error}</p>}
       {section === "organico" && <Organic range={organicRange} refreshKey={organicRefresh}/>}{section === "indices" && <Indices/>}
       {data && section !== "organico" && section !== "indices" && <><p className="dash-updated">Última consulta: {new Date(data.updatedAt).toLocaleString("pt-BR")} · {data.connections.asaas.error ? "Asaas indisponível" : "Asaas atualizado"} · {data.connections.meta.error ? "Meta Ads indisponível" : "Meta Ads atualizado"}</p>
-        {section === "geral" && <Overview data={data}/>}{section === "analytics" && <Analytics data={data}/>}{section === "meta" && <MetaAds data={data} range={metaRange} refresh={refresh} metaConnect={{ busy: metaBusy, message: metaMessage, onConnect: connectMeta }}/>}{section === "funil" && <Funnel data={data} range={range}/>}{section === "financeiro" && <Finance data={data} range={range} refresh={refresh}/>}{section === "pedidos" && <Orders data={data} range={range}/>}{section === "config" && <Config data={data} refresh={refresh} metaConnect={{ busy: metaBusy, message: metaMessage, onConnect: connectMeta }}/>}</>}
+        {section === "geral" && <Overview data={data} onOpen={select}/>}{section === "analytics" && <Analytics data={data}/>}{section === "meta" && <MetaAds data={data} range={metaRange} refresh={refresh} metaConnect={{ busy: metaBusy, message: metaMessage, onConnect: connectMeta }}/>}{section === "funil" && <Funnel data={data} range={range}/>}{section === "financeiro" && <Finance data={data} range={range} refresh={refresh}/>}{section === "pedidos" && <Orders data={data} range={range}/>}{section === "config" && <Config data={data} refresh={refresh} metaConnect={{ busy: metaBusy, message: metaMessage, onConnect: connectMeta }}/>}</>}
       </div></div>
     {search && <div className="dash-search-overlay" role="dialog" aria-modal="true" aria-label="Buscar janela"><button type="button" aria-label="Fechar busca" className="dash-search-backdrop" onClick={() => setSearch(false)}/><div className="dash-search-modal"><div><Search size={19}/><input autoFocus placeholder="Buscar janela…" value={query} onChange={(event) => setQuery(event.target.value)}/><button type="button" aria-label="Fechar" onClick={() => setSearch(false)}><X size={18}/></button></div>{sections.filter(([, title]) => title.toLowerCase().includes(query.toLowerCase())).map(([id, title, Icon]) => <button key={id} type="button" onClick={() => { select(id); setQuery(""); }}><Icon size={17}/>{title}</button>)}</div></div>}
   </main>;

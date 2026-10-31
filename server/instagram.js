@@ -32,6 +32,13 @@ export async function loadInstagramReels(config, from, to, fetchImpl = fetch) {
   let warning = null;
   try {
     const accountId = /^\d+$/.test(config.instagramUserId || "") ? config.instagramUserId : await instagramAccountId(graph, token, fetchImpl);
+    // Seguidores e posts da conta (o número de agora, não do período). Falha aqui não esconde os Reels.
+    let profile = null;
+    try {
+      const response = await fetchImpl(`${graph}/${accountId}?${new URLSearchParams({ fields: "followers_count,media_count", access_token: token })}`);
+      const payload = await response.json();
+      if (response.ok && Number.isFinite(Number(payload.followers_count))) profile = { followers: Number(payload.followers_count), posts: Number(payload.media_count) || 0 };
+    } catch { /* segue sem perfil */ }
     next = `${graph}/${accountId}/media?${params}`;
     for (let page = 0; page < 20 && next; page++) {
       const response = await fetchImpl(next);
@@ -64,6 +71,6 @@ export async function loadInstagramReels(config, from, to, fetchImpl = fetch) {
       if (!next.startsWith(graphHost)) throw new Error("Paginação inesperada do Instagram.");
     }
     if (next && !warning) warning = "Limite de páginas atingido; período parcial.";
-    return { rows, warning, error: null, checkedAt: new Date().toISOString() };
+    return { rows, profile, warning, error: null, checkedAt: new Date().toISOString() };
   } catch (error) { return { rows: [], error: error.message, checkedAt: null }; }
 }
