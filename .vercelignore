@@ -1,0 +1,7 @@
+.claude/
+supabase/.temp/
+node_modules/
+dist/
+.env
+.env.*
+*.zip

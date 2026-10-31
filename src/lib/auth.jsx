@@ -5,6 +5,17 @@ const url = import.meta.env.VITE_SUPABASE_URL;
 const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 export const supabase = url && anonKey ? createClient(url, anonKey, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true } }) : null;
 export const authConfigured = Boolean(supabase);
+export function useGoogleAuthAvailable() {
+  const [available, setAvailable] = useState(false);
+  useEffect(() => {
+    if (!authConfigured) return;
+    fetch(`${url}/auth/v1/settings`, { headers: { apikey: anonKey } })
+      .then((response) => response.ok ? response.json() : null)
+      .then((settings) => setAvailable(settings?.external?.google === true))
+      .catch(() => setAvailable(false));
+  }, []);
+  return available;
+}
 // Sem Supabase em desenvolvimento local, a API pode usar o atalho BT_DEV_BYPASS do servidor.
 const devMode = !authConfigured && import.meta.env.DEV;
 
@@ -61,6 +72,10 @@ const run = async (promise) => { const { data, error } = await promise; if (erro
 
 export const authActions = {
   signIn: (email, password) => run(requireClient().auth.signInWithPassword({ email, password })),
+  signInWithGoogle: (next = "/app") => run(requireClient().auth.signInWithOAuth({ provider: "google", options: {
+    redirectTo: `${location.origin}/entrar?next=${encodeURIComponent(next)}`,
+    queryParams: { prompt: "select_account" },
+  } })),
   signUp: (email, password, next = "/app") => run(requireClient().auth.signUp({ email, password, options: { emailRedirectTo: `${location.origin}/entrar?next=${encodeURIComponent(next)}` } })),
   recover: (email) => run(requireClient().auth.resetPasswordForEmail(email, { redirectTo: `${location.origin}/redefinir-senha` })),
   // Verifica o link de e-mail (`token_hash`) e abre a sessão: convite, recuperação ou confirmação de cadastro.
