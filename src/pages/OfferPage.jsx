@@ -36,10 +36,11 @@ const FAQ = [
   ["Posso pedir reembolso?", "Sim. A compra tem garantia de 15 dias. Solicite o reembolso em Minha licença ou pelo suporte."],
 ];
 
-// O título continua a promessa do anúncio de origem (utm_content); sem anúncio, vale o título padrão.
-const HEADLINES = {
-  A: <>Pare de pagar a sua IA para <em>adivinhar</em>.</>,
-  C: <>Dê <em>superpoderes</em> à IA que você já usa.</>,
+// O título e o texto de abertura continuam a promessa do anúncio de origem (utm_content); sem anúncio, vale o padrão.
+const DEFAULT_LEAD = "Encontre a skill certa para criar páginas, conteúdo e projetos com mais método. Abra o guia, copie as instruções e use na IA de sua escolha.";
+const ANGLES = {
+  A: { title: <>Pare de pagar a sua IA para <em>adivinhar</em>.</> },
+  C: { title: <>Dê <em>superpoderes</em> à sua IA para vender mais.</>, lead: "Encontre a skill certa para criar propostas, anúncios, páginas de venda e conteúdo com método, em vez de texto genérico. Abra o guia, copie as instruções e use na IA que você já tem." },
 };
 
 function CTA({ onClick, children = `Quero o acervo por ${OFFER_PRICE}`, secondary = false }) {
@@ -59,7 +60,8 @@ function ProductPreview() {
 
 export default function OfferPage({ signedIn, authReady = true }) {
   const params = new URLSearchParams(location.search);
-  const headline = HEADLINES[String(params.get("utm_content") || "").toUpperCase()] || <>Pare de começar <em>do zero</em> toda vez que usar IA.</>;
+  const angle = ANGLES[String(params.get("utm_content") || "").toUpperCase()] || {};
+  const headline = angle.title || <>Pare de começar <em>do zero</em> toda vez que usar IA.</>;
   const autoCheckout = params.get("comprar") === "1";
   const heroRef = useRef(null);
   const checkoutRef = useRef(null);
@@ -101,7 +103,7 @@ export default function OfferPage({ signedIn, authReady = true }) {
   return <div className="vx-offer">
     <header className="vx-offer-header"><Brand/><span>Acesso vitalício · pagamento único</span><CTA onClick={() => goCheckout()}>Acessar por {OFFER_PRICE}</CTA></header>
     <main id="conteudo">
-      <section ref={heroRef} className="vx-offer-hero vx-offer-shell"><p className="vx-offer-kicker"><Sparkles size={15} aria-hidden="true"/> 2.281 skills organizadas em português</p><h1>{headline}</h1><p className="vx-offer-lead">Encontre a skill certa para criar páginas, conteúdo e projetos com mais método. Abra o guia, copie as instruções e use na IA de sua escolha.</p><div className="vx-offer-hero-actions"><CTA onClick={() => goCheckout()}/><span>{OFFER_PRICE} uma vez · sem mensalidade</span></div><div className="vx-offer-benefits">{BENEFITS.map(({ icon: Icon, title, text }) => <article key={title}><Icon size={22} aria-hidden="true"/><h2>{title}</h2><p>{text}</p></article>)}</div><ProductPreview/></section>
+      <section ref={heroRef} className="vx-offer-hero vx-offer-shell"><p className="vx-offer-kicker"><Sparkles size={15} aria-hidden="true"/> 2.281 skills organizadas em português</p><h1>{headline}</h1><p className="vx-offer-lead">{angle.lead || DEFAULT_LEAD}</p><div className="vx-offer-hero-actions"><CTA onClick={() => goCheckout()}/><span>{OFFER_PRICE} uma vez · sem mensalidade</span></div><div className="vx-offer-benefits">{BENEFITS.map(({ icon: Icon, title, text }) => <article key={title}><Icon size={22} aria-hidden="true"/><h2>{title}</h2><p>{text}</p></article>)}</div><ProductPreview/></section>
       <div className="vx-offer-marquee" aria-hidden="true"><span>BUSQUE PELO OBJETIVO <i/> LEIA EM PORTUGUÊS <i/> COPIE O COMANDO <i/> USE NA SUA IA <i/> ACESSO VITALÍCIO</span></div>
       <section className="vx-offer-section vx-offer-shell vx-offer-split"><div><p className="vx-offer-kicker">DO OBJETIVO À EXECUÇÃO</p><h2>Você sabe o que quer criar. A Voxelia ajuda a encontrar <em>como fazer.</em></h2><p>Em vez de procurar instruções soltas, você explora um acervo organizado por tarefa, área e fonte.</p><CTA onClick={() => goCheckout()} secondary>Ver a oferta</CTA></div><div className="vx-offer-checklist">{USES.map(([title, description], index) => <article key={title}><span>0{index + 1}</span><div><h3>{title}</h3><p>{description}</p></div><Check size={18} aria-hidden="true"/></article>)}</div></section>
       <section className="vx-offer-section vx-offer-method"><div className="vx-offer-shell"><p className="vx-offer-kicker">COMO FUNCIONA</p><h2>Três passos. Um acervo para voltar sempre.</h2><div className="vx-offer-steps">{STEPS.map(([title, description], index) => <article key={title}><span>0{index + 1}</span><h3>{title}</h3><p>{description}</p></article>)}</div><p className="vx-offer-method-note">A Edição 1 oferece consulta e uso manual das skills. Não inclui conexão automática com Claude, ChatGPT ou outras IAs.</p></div></section>
