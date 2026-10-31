@@ -12,10 +12,13 @@ export default function ConsentBanner() {
   useEffect(() => { if (consent === "granted") pageView(); }, [consent, path]);
   if (consent || !pixelConfigured) return null;
   return <section className="consent" role="region" aria-label="Aviso de cookies">
-    <p>Usamos cookies essenciais para o site funcionar e, com a sua permissão, cookies de marketing do Meta para medir nossos anúncios. <Link to="/privacidade" className="link">Saiba mais</Link>.</p>
+    <div className="consent-copy">
+      <strong>Podemos medir de qual anúncio você veio?</strong>
+      <p>Com a sua permissão, usamos cookies do Meta para saber quais anúncios trazem quem se interessa pela Voxelia e gastar menos com os que não funcionam. Se recusar, o site funciona do mesmo jeito. <Link to="/privacidade" className="link">Saiba mais</Link>.</p>
+    </div>
     <div className="consent-actions">
-      <button type="button" className="btn btn-secondary btn-sm" onClick={() => setConsent("denied")}>Recusar</button>
-      <button type="button" className="btn btn-secondary btn-sm" onClick={() => setConsent("granted")}>Aceitar</button>
+      <button type="button" className="btn btn-secondary" onClick={() => setConsent("denied")}>Recusar</button>
+      <button type="button" className="btn btn-secondary" onClick={() => setConsent("granted")}>Aceitar</button>
     </div>
   </section>;
 }
