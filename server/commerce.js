@@ -398,12 +398,10 @@ export function createCommerce({ store, asaas, config, onboarding = null, conver
       if (!validCaktoOrder(data, config.cakto)) return finish("failed", "Produto, oferta, valor ou pedido divergente.");
       const order = await store.getOrder(data.callback);
       if (!order || order.payment_provider !== "cakto") return finish("unlinked", "Pedido local não encontrado.");
-      const profile = await store.getProfile(order.user_id);
-      // A Cakto pede o e-mail de novo. Numa conta criada pela compra sem cadastro (nunca usada), o pedido
-      // já identifica o comprador; e-mail diferente só é recusado em conta que já entrou na Voxelia.
-      const sameBuyer = profile?.email?.toLowerCase() === data.customer.email.toLowerCase() || !(await store.hasSignedIn(order.user_id));
-      if (!sameBuyer || order.amount_cents !== CAKTO_PRICE_CENTS || order.cakto_order_id && order.cakto_order_id !== data.id)
-        return finish("failed", "Comprador ou transação divergente.");
+      // A Cakto pede o e-mail de novo e a pessoa pode digitar outro. O callback é um UUID criado na sessão de
+      // quem abriu o checkout, então o pedido identifica o comprador; o e-mail da Cakto fica no evento.
+      if (order.amount_cents !== CAKTO_PRICE_CENTS || order.cakto_order_id && order.cakto_order_id !== data.id)
+        return finish("failed", "Transação divergente.");
       if (event === "purchase_approved") {
         if (!approvedCaktoPurchase(data, config.cakto) || Number.isNaN(Date.parse(data.paidAt))) return finish("failed", "Pagamento não confirmado.");
         if (order.status === "refunded") return finish("processed", "Compra já estornada.");

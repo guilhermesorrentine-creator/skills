@@ -101,8 +101,6 @@ test("Cakto: pagamento aprovado libera uma vez; divergências e pendências não
   const bad = data(order, { amount: 1 });
   assert.equal((await commerce.receiveCaktoWebhook({ event: "purchase_approved", data: bad })).results[0].status, "failed");
   assert.equal(store.db.licenses.length, 0);
-  const wrongBuyer = data(order, { customer: { email: "other@example.com" } });
-  assert.equal((await commerce.receiveCaktoWebhook({ event: "purchase_approved", data: wrongBuyer })).results[0].status, "failed");
   const wrongOffer = data(order, { offer: { id: "other", price: PRICE, currency: "BRL" } });
   assert.equal((await commerce.receiveCaktoWebhook({ event: "purchase_approved", data: wrongOffer })).results[0].status, "failed");
   const unexplainedExtra = data(order, { amount: PRICE + 0.99 });
@@ -166,4 +164,14 @@ test("Cakto: taxa repassada ao comprador (preço + charged_fees) libera o acesso
   assert.equal((await commerce.receiveCaktoWebhook({ event: "purchase_approved", data: withFee })).results[0].status, "processed");
   assert.equal(store.db.licenses.length, 1);
   assert.equal(store.db.orders[0].amount_cents, CAKTO_PRICE_CENTS);
+});
+
+test("Cakto: conta logada que digita outro e-mail na Cakto recebe o acesso no pedido dela", async () => {
+  const { store, commerce, data } = setup(async () => true);
+  await commerce.accountCheckout(user, "edicao-1", { consent: true });
+  const order = store.db.orders[0];
+  const paid = data(order, { customer: { email: "outro-email@example.com" } });
+  assert.equal((await commerce.receiveCaktoWebhook({ event: "purchase_approved", data: paid })).results[0].status, "processed");
+  assert.equal(store.db.licenses.length, 1);
+  assert.equal(store.db.licenses[0].user_id, user.id);
 });
