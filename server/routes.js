@@ -201,7 +201,7 @@ export function createApi({ store, commerce, onboarding = null, library, me, mcp
       const activeMetaConfig = metaOAuth ? await metaOAuth.adsConfig() : dashboardConfig;
       const result = await cached(`instagram-reels-${activeMetaConfig.instagramUserId}-${from}-${to}`,
         () => loadInstagramReels(activeMetaConfig, from, to), param(request, "refresh") === "1");
-      return ok({ from, to, rows: result.rows || [], warning: result.warning || null,
+      return ok({ from, to, rows: result.rows || [], profile: result.profile || null, warning: result.warning || null,
         connection: { checkedAt: result.checkedAt || null, error: result.error || null, ageSeconds: result.ageSeconds ?? null, cached: Boolean(result.cached) } });
     },
     "POST /api/admin/dashboard/expenses": async (request) => {

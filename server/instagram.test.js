@@ -42,7 +42,7 @@ test("Reels mostram visualizações e tempo total sem expor token", async () => 
   const result = await loadInstagramReels({ instagramToken: "secret-token", instagramUserId: "123" }, "2026-10-01", "2026-10-31", fetchMock);
   assert.equal(result.rows[0].views, 50);
   assert.equal(result.rows[0].watchMs, 7200000);
-  assert.ok(calls.length === 3);
+  assert.ok(calls.length === 4);
   assert.ok(!JSON.stringify(result).includes("secret-token"));
 });
 
@@ -57,4 +57,19 @@ test("métrica de horas indisponível fica nula sem esconder visualizações", a
   assert.equal(result.rows[0].views, 9);
   assert.equal(result.rows[0].watchMs, null);
   assert.ok(result.warning);
+});
+
+test("perfil traz seguidores; se falhar, os Reels continuam", async () => {
+  const fetchMock = async (url) => {
+    const u = new URL(url);
+    if (u.searchParams.get("fields") === "followers_count,media_count") return { ok: true, json: async () => ({ followers_count: 12, media_count: 27 }) };
+    if (u.searchParams.get("metric")) return { ok: true, json: async () => ({ data: [{ name: u.searchParams.get("metric"), total_value: { value: 3 } }] }) };
+    return { ok: true, json: async () => ({ data: [{ id: "42", media_product_type: "REELS", timestamp: "2026-10-20T13:00:00+0000" }] }) };
+  };
+  const result = await loadInstagramReels({ instagramToken: "t", instagramUserId: "123" }, "2026-10-01", "2026-10-31", fetchMock);
+  assert.deepEqual(result.profile, { followers: 12, posts: 27 });
+  const failing = async (url) => new URL(url).searchParams.get("fields") === "followers_count,media_count" ? { ok: false, json: async () => ({}) } : fetchMock(url);
+  const partial = await loadInstagramReels({ instagramToken: "t", instagramUserId: "123" }, "2026-10-01", "2026-10-31", failing);
+  assert.equal(partial.profile, null);
+  assert.equal(partial.rows.length, 1);
 });
