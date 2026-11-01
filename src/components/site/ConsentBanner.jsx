@@ -11,6 +11,14 @@ export default function ConsentBanner() {
   const path = usePathname();
   useEffect(() => { if (consent === "granted") pageView(); }, [consent, path]);
   if (consent || !pixelConfigured) return null;
+  // Na /oferta (tráfego pago) o aviso é uma faixa curta, para não cobrir o formulário de compra no celular.
+  if (path === "/oferta") return <section className="consent consent-compact" role="region" aria-label="Aviso de cookies">
+    <p>Podemos usar cookies do Meta para medir de qual anúncio você veio? <Link to="/privacidade" className="link">Saiba mais</Link></p>
+    <div className="consent-actions">
+      <button type="button" className="btn btn-secondary" onClick={() => setConsent("denied")}>Recusar</button>
+      <button type="button" className="btn btn-secondary" onClick={() => setConsent("granted")}>Aceitar</button>
+    </div>
+  </section>;
   return <section className="consent" role="region" aria-label="Aviso de cookies">
     <div className="consent-copy">
       <strong>Podemos medir de qual anúncio você veio?</strong>

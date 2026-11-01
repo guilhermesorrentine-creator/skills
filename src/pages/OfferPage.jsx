@@ -97,7 +97,8 @@ export default function OfferPage({ signedIn, authReady = true }) {
     const form = checkoutRef.current?.querySelector("form");
     const email = form?.querySelector('input[type="email"]');
     if (form && (!email || email.value)) { form.requestSubmit(); return; }
-    checkoutRef.current?.scrollIntoView({ block: "start", behavior: "smooth" });
+    // Desce até o formulário (não ao topo da seção): no celular, o campo de e-mail fica na tela.
+    (checkoutRef.current?.querySelector(".vx-offer-checkout") || checkoutRef.current)?.scrollIntoView({ block: "start", behavior: "smooth" });
     email?.focus({ preventScroll: true });
   };
   // Link de anúncio com ?comprar=1 abre direto no pagamento; não conta como clique em comprar.
