@@ -92,7 +92,7 @@
 .vx-offer-sale-price strong { color:var(--vx-cyan); font:800 clamp(48px,6vw,78px)/1 var(--font-display); letter-spacing:-.06em; }
 .vx-offer-sale-price span { color:var(--vx-muted); font-size:14px; }
 .vx-offer-fine { display:flex; align-items:center; gap:6px; font-size:12px; line-height:1.5!important; }
-.vx-offer-checkout { align-self:start; display:grid; gap:17px; min-width:0; padding:28px; border:1px solid #485869; border-radius:12px; background:#121922; }
+.vx-offer-checkout { scroll-margin-top:16px; align-self:start; display:grid; gap:17px; min-width:0; padding:28px; border:1px solid #485869; border-radius:12px; background:#121922; }
 .vx-offer-checkout h3 { margin:0; font-size:26px; }
 .vx-offer-checkout .buy-price { margin:0; color:var(--vx-text); }
 .vx-offer-checkout .stack { width:100%; }
@@ -127,3 +127,5 @@
 
 /* Aviso do preço de lançamento (real, até 15/11). */
 .vx-offer-launch { display:inline-block; padding:6px 12px; border-radius:999px; background:#3a2d0b; color:#ffd166; font-size:13px; font-weight:750; }
+.vx-offer-sticky { transition:bottom .2s; }
+body:has(.consent-compact) .vx-offer-sticky { bottom:76px; }
