@@ -350,6 +350,8 @@ export function createCommerce({ store, asaas, config, onboarding = null, conver
   async function reportPurchase(order) {
     if (!conversions || !order.ad_tracking?.consent || order.amount_cents <= 0) return;
     const cakto = order.payment_provider === "cakto";
+    // Com o Pixel e a API de Conversões ligados na própria Cakto, ela já envia o Purchase; aqui só duplicaria.
+    if (cakto && config.cakto?.sendsPurchase) return;
     const attempt = cakto ? await store.claimOrderPurchase(order.id, now().toISOString(), new Date(now().getTime() - 300000).toISOString()) : order;
     if (!attempt) return;
     try {

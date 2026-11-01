@@ -22,6 +22,8 @@ export function readConfig(env = process.env) {
       checkoutSlug: env.CAKTO_CHECKOUT_SLUG || "",
       productId: env.CAKTO_PRODUCT_ID || "",
       webhookSecret: env.CAKTO_WEBHOOK_SECRET || "",
+      // "1" quando a API de Conversões estiver ligada no produto da Cakto: ela envia o Purchase e o nosso servidor não repete.
+      sendsPurchase: env.CAKTO_SENDS_PURCHASE === "1",
     },
     // E-mails de boas-vindas: Resend ou Gmail SMTP com senha de app, só no servidor.
     email: { apiKey: env.RESEND_API_KEY || "", from: env.EMAIL_FROM || "",
