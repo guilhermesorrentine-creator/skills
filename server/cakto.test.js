@@ -14,9 +14,9 @@ const productId = "eab775e9-b5c9-4f22-8bcb-490e8338b66e";
 const offerId = "xjg2gb9";
 const user = { id: "buyer", email: "buyer@example.com", last_sign_in_at: "2026-10-01T00:00:00Z" };
 
-function setup(purchase = async () => true) {
+function setup(purchase = async () => true, env = {}) {
   const config = readConfig({ CLAIM_SECRET: "claim-test", CAKTO_PRODUCT_ID: productId, CAKTO_OFFER_ID: offerId,
-    CAKTO_CHECKOUT_SLUG: "xjg2gb9_1253369", CAKTO_WEBHOOK_SECRET: "webhook-test" });
+    CAKTO_CHECKOUT_SLUG: "xjg2gb9_1253369", CAKTO_WEBHOOK_SECRET: "webhook-test", ...env });
   const store = createMemoryStore({ profiles: [user], editions: [{ id: "edition", code: "edicao-1", name: "Voxelia vitalício",
     rank: 1, price_cents: CAKTO_PRICE_CENTS, on_sale: true, features: [] }] });
   const commerce = createCommerce({ store, asaas: {}, config, conversions: { purchase } });
@@ -154,6 +154,16 @@ test("Cakto: Purchase enviado ao Pixel certo com valor, moeda e ID da transaçã
   assert.equal(sent[0].body.data[0].event_id, `purchase-cakto-${paid.id}`);
   assert.deepEqual(sent[0].body.data[0].custom_data, { currency: "BRL", value: PRICE,
     content_ids: ["voxelia-vitalicio"], content_type: "product" });
+});
+
+test("Cakto: com a API de Conversões ligada na Cakto, o servidor não repete o Purchase", async () => {
+  const sent = [];
+  const { store, commerce, data } = setup(async (input) => { sent.push(input); return true; }, { CAKTO_SENDS_PURCHASE: "1" });
+  await commerce.accountCheckout(user, "edicao-1", { consent: true });
+  const result = await commerce.receiveCaktoWebhook({ event: "purchase_approved", data: data(store.db.orders[0]) });
+  assert.equal(result.results[0].status, "processed");
+  assert.equal(store.db.orders[0].status, "paid");
+  assert.equal(sent.length, 0);
 });
 
 test("Cakto: taxa repassada ao comprador (preço + charged_fees) libera o acesso", async () => {
