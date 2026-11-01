@@ -29,8 +29,8 @@ const definitions = {
   "CTR": "Percentual de impressões que geraram um clique no anúncio. Pode incluir cliques fora do link.",
   "CTR de link": "Cliques no link divididos pelas impressões. Ajuda a avaliar o gancho do criativo.",
   "CPC": "Gasto Meta dividido pelo número de cliques do anúncio.",
-  "Visitas Meta": "Visualizações da página de destino medidas pela Meta; podem ser menores que as visitas do site.",
-  "Visitas site": "Sessões que a Voxelia mediu no próprio site para a UTM vinculada.",
+  "Visitas": "Sessões que o funil do site registrou com a UTM da campanha (utm_content = código do anúncio, ex.: E2). Não usa a contagem da Meta.",
+  "Visitas site": "Sessões que o funil do site registrou com a UTM da campanha (utm_content = código do anúncio, ex.: E2). Não usa a contagem da Meta.",
   "Clique comprar": "Sessões que tocaram no botão para iniciar a compra.",
   "Cliques comprar": "Sessões que tocaram no botão para iniciar a compra.",
   "Página de compra": "Sessões que chegaram à página de compra. Não significa pedidos pagos.",
@@ -147,15 +147,16 @@ function Overview({ data, onOpen }) {
   const range = { from: data.from, to: data.to };
   const campaigns = aggregateAds(data.ads, "campaign", range);
   const lead = campaigns[0];
-  const link = data.links.find((item) => item.entity_kind === "campaign" && item.entity_id === lead?.id);
+  const link = linkFor(data.links, lead, "campaign");
   const signal = lead ? campaignSignalFor(data, lead, link, range) : paidSignal({ error: data.connections.meta.error });
+  const leadVisits = link ? new Set(data.funnel.filter((event) => event.name === "view" && inRange(event.on, range) && event.source?.toLowerCase() === "meta" && event.campaign === link.utm_campaign).map((event) => event.sid)).size : null;
   return <div className="dash-stack">
     <Channels data={data} onOpen={onOpen}/>
     <div className="dash-card dash-hero"><MetricTerm label="Vendas do período"/><strong>{money(m.salesCents)}</strong><small>Líquido Cakto: {money(m.cashCents)}{m.receivableCents ? ` · A receber (Asaas antigo): ${money(m.receivableCents)}` : ""}</small><SalesChart daily={m.daily}/></div>
     <div className="dash-pair"><Metric label="Lucro" value={money(m.profitCents)} tone={m.profitCents == null ? undefined : m.profitCents < 0 ? "bad" : "good"} note="Vendas menos anúncios, taxas e despesas"/><Metric label="Custo total" value={money(m.adCents == null ? null : m.adCents + m.feesCents + m.expenseCents)} note={`Meta ${money(m.adCents)} · taxas ${money(m.feesCents)} · outros ${money(m.expenseCents)}`}/></div>
     <Donut metrics={m}/>
     <div className="dash-card dash-goal"><div><span>Meta de lucro até {dateBR(m.goal.goal_ends_on)}</span><strong>{money(m.goal.profitCents)} <small>de {money(m.goal.goal_cents)}</small></strong></div><progress max={m.goal.goal_cents} value={Math.max(0, Math.min(m.goal.profitCents || 0, m.goal.goal_cents))}/><div className="dash-goal-facts"><span>Falta <b>{money(m.goal.remainingCents)}</b></span><span>Por dia <b>{money(m.goal.neededPerDayCents)}</b></span><span>Projeção <b>{money(m.goal.projectedCents)}</b></span><span>Prazo <b>{m.goal.daysLeft} dias</b></span></div><details className="dash-more"><summary>Ver garantia e planejamento</summary><p>Consolidado: {money(m.goal.consolidatedCents)} · Em garantia: {money(m.goal.guaranteeCents)}{m.goal.projectedDate && ` · Data projetada: ${dateBR(m.goal.projectedDate)}`}</p><p>{m.goal.averageByProduct.map((item) => `${item.product}: ${item.salesPerDayNeeded ?? "—"} vendas/dia`).join(" · ")}</p></details></div>
-    <SignalCard title={lead ? `Campanha: ${lead.name}` : "Campanhas Meta"} signal={signal}><div className="dash-signal-facts"><span>Gasto <b>{money(lead?.spendCents ?? m.adCents)}</b></span><span>Visitas Meta <b>{lead?.landingViews ?? "—"}</b></span><span>Vendas atribuídas <b>{money(m.metaSalesCents)}</b></span></div></SignalCard>
+    <SignalCard title={lead ? `Campanha: ${lead.name}` : "Campanhas Meta"} signal={signal}><div className="dash-signal-facts"><span>Gasto <b>{money(lead?.spendCents ?? m.adCents)}</b></span><span>Visitas <b>{leadVisits ?? "Sem UTM vinculada"}</b></span><span>Vendas atribuídas <b>{money(m.metaSalesCents)}</b></span></div></SignalCard>
   </div>;
 }
 
@@ -166,6 +167,16 @@ function Analytics({ data }) {
     <Metric label="Pedidos pagos" value={m.sales}/><Metric label="Custo por venda" value={m.costPerSaleCents === null ? "—" : money(m.costPerSaleCents)}/><Metric label="Conversão" value={m.conversion === null ? "—" : pct(m.conversion)}/><Metric label="Falta para meta" value={money(m.goal.remainingCents)}/>
   </div><div className="dash-card"><h2>Vendas por dia</h2><SalesChart daily={m.daily}/><Table headers={["Dia", "Vendas", "Valor"]} rows={m.daily.map((row) => [dateBR(row.on), row.sales, money(row.salesCents)])}/></div>
   <div className="dash-card"><h2>Origem · campanha · criativo · produto</h2><Table headers={["Origem", "Campanha", "Criativo", "Produto", "Vendas", "Valor"]} rows={m.breakdown.map((row) => [row.source, row.campaign || "—", row.content || "—", row.product, row.sales, money(row.salesCents)])}/><p className="dash-note">Visitas e pagamentos podem cair em dias diferentes.</p></div></div>;
+}
+
+// Vínculo UTM do item: o salvo no painel ou, sem ele, o da campanha. No anúncio, o utm_content padrão é o
+// código antes de " - " no nome (ex.: "E2 - superpoderes" → E2).
+function linkFor(links, item, level) {
+  const own = links.find((link) => link.entity_kind === level && link.entity_id === item?.id);
+  if (own?.utm_campaign && (level !== "ad" || own.utm_content)) return own;
+  const parent = links.find((link) => link.entity_kind === "campaign" && link.entity_id === item?.campaignId);
+  if (!parent?.utm_campaign) return own || null;
+  return { ...parent, entity_kind: level, entity_id: item.id, utm_content: level === "ad" ? own?.utm_content || String(item.name || "").split(" - ")[0].trim() : "", inherited: true };
 }
 
 function aggregateAds(rows, level, range) {
@@ -201,7 +212,7 @@ function MetaAds({ data, range, refresh, metaConnect }) {
   const adsets = useMemo(() => aggregateAds(data.ads.filter((row) => row.campaignId === campaignId), "adset", range), [data.ads, campaignId, range]);
   const ads = useMemo(() => aggregateAds(data.ads.filter((row) => row.adsetId === adsetId), "ad", range), [data.ads, adsetId, range]);
   const current = level === "campaign" ? campaigns : level === "adset" ? adsets : ads;
-  const match = (item) => data.links.find((link) => link.entity_kind === level && link.entity_id === item.id);
+  const match = (item) => linkFor(data.links, item, level);
   const selectItem = (item) => { setSelected(item); const link = match(item); setForm({ utmCampaign: link?.utm_campaign || "", utmContent: link?.utm_content || "" }); };
   const save = async (event) => { event.preventDefault(); if (!selected) return; try { await apiFetch("/api/admin/dashboard/links", { method: "POST", body: { entityKind: level, entityId: selected.id, ...form, notePaths: match(selected)?.note_paths || [] } }); setStatus("Vínculo salvo."); await refresh(false); } catch (error) { setStatus(error.message); } };
   return <div className="dash-stack"><div className="dash-card"><div className="dash-levels">
@@ -211,15 +222,16 @@ function MetaAds({ data, range, refresh, metaConnect }) {
   </div><p className="dash-note">Selecione uma linha para conferir o vínculo UTM. O botão de nível abre os conjuntos ou anúncios.</p>
   {data.connections.meta.error && <p role="status" className="dash-error">Meta Ads indisponível: {data.connections.meta.error}</p>}
   <MetaConnectionAction auth={data.connections.meta.auth} {...metaConnect}/>
-  <Table headers={[level === "campaign" ? "Campanha" : level === "adset" ? "Conjunto" : "Anúncio", "Leitura", "Gasto", "Impressões", "Cliques", "CTR", "CTR de link", "CPC", "Visitas Meta", "Visitas site", "Cliques comprar", "Vendas", "Valor", "Custo/venda"]} rows={current.map((item) => {
+  <Table headers={[level === "campaign" ? "Campanha" : level === "adset" ? "Conjunto" : "Anúncio", "Leitura", "Gasto", "Impressões", "Cliques", "CTR", "CTR de link", "CPC", "Visitas", "Cliques comprar", "Vendas", "Valor", "Custo/venda"]} rows={current.map((item) => {
     const link = match(item); const linked = link?.utm_campaign && (level !== "ad" || link?.utm_content);
-    const hits = linked ? data.funnel.filter((event) => inRange(event.on, range) && event.source?.toLowerCase() === "meta" && event.campaign === link.utm_campaign && (level === "campaign" || event.content === link.utm_content)) : [];
-    const sold = linked ? data.salesLedger.filter((sale) => inRange(sale.on, range) && sale.source?.toLowerCase() === "meta" && sale.campaign === link.utm_campaign && (level === "campaign" || sale.content === link.utm_content)) : [];
-    const refundedCount = linked ? data.orders.filter((order) => inRange(order.refundedOn, range) && order.refundedCents >= order.amountCents && order.source?.toLowerCase() === "meta" && order.campaign === link.utm_campaign && (level === "campaign" || order.content === link.utm_content)).length : 0;
+    const same = (row) => row.source?.toLowerCase() === "meta" && row.campaign === link.utm_campaign && (level !== "ad" || row.content === link.utm_content);
+    const hits = linked ? data.funnel.filter((event) => inRange(event.on, range) && same(event)) : [];
+    const sold = linked ? data.salesLedger.filter((sale) => inRange(sale.on, range) && same(sale)) : [];
+    const refundedCount = linked ? data.orders.filter((order) => inRange(order.refundedOn, range) && order.refundedCents >= order.amountCents && same(order)).length : 0;
     const count = sold.reduce((total, sale) => total + sale.count, 0) - refundedCount;
     const signal = campaignSignalFor(data, item, link, range, level);
     return [<div><button className="dash-row-link" type="button" onClick={() => selectItem(item)}>{item.name}</button>{level !== "ad" && <button type="button" className="dash-row-link" onClick={() => { if (level === "campaign") { setCampaignId(item.id); setLevel("adset"); } else { setAdsetId(item.id); setLevel("ad"); } setSelected(null); }}>Abrir nível</button>}</div>, <span className={`dash-pill dash-pill-${signal.tone}`} title={signal.detail}>{signal.title}</span>, money(item.spendCents), item.impressions, item.clicks,
-      item.impressions ? pct(item.clicks / item.impressions) : "—", item.impressions && item.linkClicks != null ? pct(item.linkClicks / item.impressions) : "—", item.clicks ? money(item.spendCents / item.clicks) : "—", item.landingViews, linked ? new Set(hits.filter((hit) => hit.name === "view").map((hit) => hit.sid)).size : "Sem UTM vinculada", linked ? new Set(hits.filter((hit) => hit.name === "buy_click").map((hit) => hit.sid)).size : "—", linked ? count : "—", linked ? money(sold.reduce((sum, sale) => sum + sale.amountCents, 0)) : "—", linked && count ? money(item.spendCents / count) : "—"];
+      item.impressions ? pct(item.clicks / item.impressions) : "—", item.impressions && item.linkClicks != null ? pct(item.linkClicks / item.impressions) : "—", item.clicks ? money(item.spendCents / item.clicks) : "—", linked ? new Set(hits.filter((hit) => hit.name === "view").map((hit) => hit.sid)).size : "Sem UTM vinculada", linked ? new Set(hits.filter((hit) => hit.name === "buy_click").map((hit) => hit.sid)).size : "—", linked ? count : "—", linked ? money(sold.reduce((sum, sale) => sum + sale.amountCents, 0)) : "—", linked && count ? money(item.spendCents / count) : "—"];
   })}/></div>
   {selected && <div className="dash-card"><h2>{selected.name}</h2><form className="dash-form" onSubmit={save}><label>UTM campanha<input value={form.utmCampaign} onChange={(e) => setForm({ ...form, utmCampaign: e.target.value })}/></label>{level === "ad" && <label>UTM criativo<input value={form.utmContent} onChange={(e) => setForm({ ...form, utmContent: e.target.value })}/></label>}<button className="btn btn-primary" type="submit">Salvar vínculo</button>{status && <p role="status">{status}</p>}</form></div>}</div>;
 }
@@ -270,7 +282,7 @@ function Organic({ range, refreshKey }) {
 function Indices() {
   const groups = [
     ["Resultado do negócio", ["Vendas", "Pedidos pagos", "Caixa", "A receber", "Lucro", "Custo total", "ROAS", "Custo por venda", "Conversão"]],
-    ["Meta Ads", ["Gasto Meta", "Saldo estimado Meta", "Impressões", "Cliques", "Cliques no link", "CTR", "CTR de link", "CPC", "Visitas Meta", "Visitas site", "Leitura"]],
+    ["Meta Ads", ["Gasto Meta", "Saldo estimado Meta", "Impressões", "Cliques", "Cliques no link", "CTR", "CTR de link", "CPC", "Visitas", "Leitura"]],
     ["Funil e orgânico", ["Clique comprar", "Página de compra", "Pagamento gerado", "Pedido pago", "Abandono 24 h", "Reembolso", "Visualizações", "Horas assistidas", "Curtidas", "Comentários"]],
   ];
   return <div className="dash-stack"><p className="dash-note">Passe o mouse no símbolo de ajuda em qualquer métrica. No celular, toque no nome para ver a explicação.</p>{groups.map(([group, terms]) => <section className="dash-card" key={group}><h2>{group}</h2><dl className="dash-glossary">{terms.map((term) => <div key={term}><dt>{term}</dt><dd>{definitions[term]}</dd></div>)}</dl></section>)}</div>;

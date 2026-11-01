@@ -19,3 +19,9 @@ test("Reel recente ou sem histórico não recebe julgamento de desempenho", () =
   assert.equal(reelSignal({ views: 400, ageDays: 10, referenceViews: null }).title, "Sem histórico suficiente");
   assert.equal(reelSignal({ views: 1500, ageDays: 10, referenceViews: 1000 }).title, "Acima do padrão");
 });
+
+test("custo por visita usa as visitas do funil do site, não a contagem da Meta", () => {
+  const base = { spendCents: 3400, impressions: 1500, linkClicks: 38, landingViews: 2, trafficTest: true, buyClicks: 2 };
+  assert.equal(paidSignal({ ...base, siteVisits: 33 }).title, "Tráfego com bom sinal");
+  assert.equal(paidSignal({ ...base, siteVisits: 20 }).title, "Visita cara");
+});

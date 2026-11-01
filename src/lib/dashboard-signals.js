@@ -1,6 +1,8 @@
 // Sinais explicáveis para leitura rápida. Nenhum sinal pausa campanhas ou substitui a decisão do dono.
 export function paidSignal({ error, spendCents = 0, impressions = 0, linkClicks = null, landingViews = 0,
   siteVisits = null, buyClicks = null, salesCents = null, profitCents = null, trafficTest = false }) {
+  // Visitas vêm do funil do site; a contagem da Meta (landing views) só entra sem UTM vinculada.
+  const visits = siteVisits ?? landingViews;
   if (error) return { tone: "muted", title: "Dados indisponíveis", detail: "Confira a conexão da Meta antes de avaliar." };
   if (!spendCents && !impressions) return { tone: "muted", title: "Sem entrega ainda", detail: "A campanha ainda não teve gasto ou impressões no período." };
   if (salesCents > 0 && profitCents != null)
@@ -13,9 +15,9 @@ export function paidSignal({ error, spendCents = 0, impressions = 0, linkClicks 
     return { tone: "warn", title: "Criativo pede ajuste", detail: "CTR de link abaixo de 0,7% após 1.000 impressões." };
   if (siteVisits != null && siteVisits >= 50 && buyClicks === 0)
     return { tone: "warn", title: "Página pede ajuste", detail: "Pelo menos 50 visitas do site, sem clique em comprar." };
-  if (spendCents >= 2000 && landingViews >= 20 && spendCents / landingViews > 120)
+  if (spendCents >= 2000 && visits >= 20 && spendCents / visits > 120)
     return { tone: "warn", title: "Visita cara", detail: "Custo por visita à página acima de R$ 1,20." };
-  if (linkClicks != null && impressions >= 1000 && linkClicks / impressions >= 0.007 && landingViews >= 20 && spendCents / landingViews <= 120)
+  if (linkClicks != null && impressions >= 1000 && linkClicks / impressions >= 0.007 && visits >= 20 && spendCents / visits <= 120)
     return { tone: "good", title: "Tráfego com bom sinal", detail: "CTR e custo por visita estão dentro do plano; acompanhe os checkouts." };
   return { tone: "neutral", title: "Em observação", detail: "Acompanhe visitas ao site, checkouts e vendas antes de decidir." };
 }
