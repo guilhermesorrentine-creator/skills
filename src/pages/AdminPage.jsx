@@ -45,12 +45,13 @@ export default function AdminPage() {
           {tab === "caminhos" && <PathsTab data={data} act={act}/>}
           {tab === "relacoes" && <RelationsTab data={data} act={act}/>}
           {tab === "edicoes" && <EditionsTab data={data} act={act}/>}
-          {tab === "pedidos" && <Table head={["Data", "Usuário", "Edição", "Tipo", "Valor", "Situação", ""]} rows={data.orders.map((o) => [when(o.created_at), emailOf(o.user_id), editionName(o.edition_id), o.kind, formatPrice(o.amount_cents), o.error ? `${o.status} · ${o.error}` : o.status,
-            o.status === "pending" ? <button key="r" type="button" className="link" onClick={() => act("/api/admin/orders/reconcile", { orderId: o.id }, "Conciliação executada.")}>Conciliar</button>
+          {tab === "pedidos" && <Table head={["Data", "Usuário", "Edição", "Pagamento", "Valor", "Situação", ""]} rows={data.orders.map((o) => [when(o.created_at), emailOf(o.user_id), editionName(o.edition_id), o.payment_provider === "cakto" ? `Cakto${o.cakto_payment_method ? ` · ${o.cakto_payment_method}` : ""}` : `Asaas · ${o.kind}`, formatPrice(o.amount_cents), o.error ? `${o.status} · ${o.error}` : o.status,
+            o.payment_provider === "cakto" ? (o.status === "paid" ? "Reembolso pela Cakto" : "—")
+              : o.status === "pending" ? <button key="r" type="button" className="link" onClick={() => act("/api/admin/orders/reconcile", { orderId: o.id }, "Conciliação executada.")}>Conciliar</button>
               : o.status === "paid" ? <button key="e" type="button" className="link" onClick={() => window.confirm(`Estornar ${formatPrice(o.amount_cents)} de ${emailOf(o.user_id)}? O acesso é encerrado.`) && act("/api/admin/orders/refund", { orderId: o.id }, "Estorno feito.")}>Estornar</button> : "—"])}/>}
           {tab === "licencas" && <LicensesTab data={data} act={act} emailOf={emailOf} editionName={editionName}/>}
-          {tab === "eventos" && <Table head={["Recebido", "Evento", "Status", "Nota", ""]} rows={data.events.map((e) => [when(e.received_at), e.event, e.status, e.note || "—",
-            e.status !== "processed" ? <button key="p" type="button" className="link" onClick={() => act("/api/admin/events/reprocess", { id: e.id }, "Evento reprocessado.")}>Reprocessar</button> : "—"])}/>}
+          {tab === "eventos" && <Table head={["Recebido", "Origem", "Evento", "Status", "Nota", ""]} rows={data.events.map((e) => [when(e.received_at), e.provider === "cakto" ? "Cakto" : "Asaas", e.event, e.status, e.note || "—",
+            e.status !== "processed" ? <button key="p" type="button" className="link" onClick={() => act(e.provider === "cakto" ? "/api/admin/cakto/reprocess" : "/api/admin/events/reprocess", { id: e.id }, "Evento reprocessado.")}>Reprocessar</button> : "—"])}/>}
           {tab === "usuarios" && <UsersTab data={data} act={act} emailOf={emailOf} reload={load}/>}
           {tab === "auditoria" && <Table head={["Quando", "Quem", "Ação", "Alvo", "Detalhes"]} rows={data.audit.map((a) => [when(a.created_at), emailOf(a.actor_id), a.action, a.target_user_id ? emailOf(a.target_user_id) : "—", <code key="d">{JSON.stringify(a.details)}</code>])}/>}
         </div>
@@ -199,7 +200,7 @@ function UsersTab({ data, act, emailOf, reload }) {
   return <>
     <InviteForm data={data} reload={reload}/>
     <h2>Usuários</h2>
-    <Table head={["E-mail", "Admin", "Cliente Asaas", "Cadastro"]} rows={data.profiles.map((p) => [p.email, p.is_admin ? "sim" : "—", p.asaas_customer_id || "—", when(p.created_at)])}/>
+    <Table head={["E-mail", "Admin", "Cadastro"]} rows={data.profiles.map((p) => [p.email, p.is_admin ? "sim" : "—", when(p.created_at)])}/>
     <h2>Acessos excepcionais</h2>
     <Table head={["Usuário", "Justificativa", "Até", "Situação", ""]} rows={data.grants.map((g) => [emailOf(g.user_id), g.reason, when(g.ends_at), g.revoked_at ? "revogado" : "ativo",
       !g.revoked_at ? <button key="v" type="button" className="link" onClick={() => act("/api/admin/grants/revoke", { id: g.id }, "Acesso revogado.")}>Revogar</button> : "—"])}/>

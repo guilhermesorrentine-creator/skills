@@ -110,16 +110,17 @@ export function summarizeStages(events, orders, from, to) {
 }
 
 export async function loadAsaasPayments(asaas) {
-  if (!asaas?.listPaymentsPage) return { rows: [], error: "Asaas não configurado para consulta.", checkedAt: null };
+  // Asaas é o gateway antigo: sem chave, o painel segue só com a Cakto.
+  if (!asaas?.listPaymentsPage) return { rows: [], error: null, checkedAt: null, configured: false };
   try {
     const rows = [];
     for (let offset = 0; offset < 1000; offset += 100) {
       const page = await asaas.listPaymentsPage(offset);
       rows.push(...(page.data || []));
-      if (!page.hasMore) return { rows, error: null, checkedAt: new Date().toISOString() };
+      if (!page.hasMore) return { rows, error: null, checkedAt: new Date().toISOString(), configured: true };
     }
-    return { rows, error: "Mais de 1.000 cobranças: período incompleto.", checkedAt: new Date().toISOString() };
-  } catch (error) { return { rows: [], error: error.message, checkedAt: null }; }
+    return { rows, error: "Mais de 1.000 cobranças: período incompleto.", checkedAt: new Date().toISOString(), configured: true };
+  } catch (error) { return { rows: [], error: error.message, checkedAt: null, configured: true }; }
 }
 
 export async function loadMetaAds(config, from, to, fetchImpl = fetch) {
