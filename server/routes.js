@@ -146,11 +146,15 @@ export function createApi({ store, commerce, onboarding = null, library, me, mcp
     // Administração
     "GET /api/admin/overview": async (request) => {
       await requireAdmin(request);
-      const [profiles, editions, orders, payments, licenses, licenseEvents, events, grants, audit, resources, relations, paths] = await Promise.all([
+      const [profiles, editions, orders, payments, licenses, licenseEvents, events, caktoEvents, grants, audit, resources, relations, paths] = await Promise.all([
         store.listProfiles(), store.listEditions({ onSaleOnly: false }), store.listOrders(), store.listPayments(), store.listLicenses(), store.listLicenseEvents(),
-        store.listEvents({ limit: 100 }), store.listGrants(), store.listAudit({ limit: 50 }), store.listResources(), store.listRelations(), store.listGoalPaths(),
+        store.listEvents({ limit: 100 }), store.listCaktoEvents({ limit: 100 }), store.listGrants(), store.listAudit({ limit: 50 }), store.listResources(), store.listRelations(), store.listGoalPaths(),
       ]);
-      return ok({ profiles, editions, orders, payments, licenses, licenseEvents, events: events.map(({ payload, ...event }) => ({ ...event, summary: summarize(payload) })), grants, audit, resources, relations, paths });
+      // Eventos da Cakto (atual) e do Asaas (antigo) numa lista só, mais recentes primeiro.
+      const allEvents = [...caktoEvents.map(({ payload, ...event }) => ({ ...event, provider: "cakto" })),
+        ...events.map(({ payload, ...event }) => ({ ...event, provider: "asaas", summary: summarize(payload) }))]
+        .sort((a, b) => String(b.received_at).localeCompare(String(a.received_at)));
+      return ok({ profiles, editions, orders, payments, licenses, licenseEvents, events: allEvents, grants, audit, resources, relations, paths });
     },
     "GET /api/admin/dashboard": async (request) => {
       await requireAdmin(request);
@@ -181,7 +185,8 @@ export function createApi({ store, commerce, onboarding = null, library, me, mcp
       const stageData = summarizeStages(funnel, orders, from, to);
       const metaBalance = estimateMetaBalance(expenses, metaData.rows || [], today, metaData.error);
       return ok({ from, to, updatedAt: new Date().toISOString(), metrics, metaBalance, stages: stageData, payments: ledger.paymentRows, receivable: ledger.receivable, refunds: ledger.refunds, salesLedger: ledger.sales, orders: ledger.orderRows, expenses, goal, links, ads: metaData.rows || [], funnel: funnel.map((event) => ({ at: event.at, on: businessDay(event.at), name: event.name, path: event.path, source: event.source, campaign: event.campaign, content: event.content, orderId: event.order_id, sid: event.sid })),
-        connections: { asaas: { checkedAt: asaasData.checkedAt, error: asaasData.error || (ledger.incomplete || orders.length >= 1000 || payments.length >= 1000 ? "Dados de cobranças parciais; confira o Asaas." : null), ageSeconds: asaasData.ageSeconds, cached: asaasData.cached }, meta: { checkedAt: metaData.checkedAt, error: metaData.error, ageSeconds: metaData.ageSeconds, cached: metaData.cached, auth: metaAuth }, funnel: { checkedAt: new Date().toISOString(), error: funnel.length === 20000 ? "Limite de eventos atingido; período parcial." : null } } });
+        connections: { cakto: { checkedAt: new Date().toISOString(), error: ledger.incomplete || orders.length >= 1000 ? "Pedidos sem data ou taxa; confira as vendas na Cakto." : null },
+          asaas: asaasData.configured !== false ? { checkedAt: asaasData.checkedAt, error: asaasData.error || (payments.length >= 1000 ? "Mais de 1.000 cobranças antigas; confira o Asaas." : null), ageSeconds: asaasData.ageSeconds, cached: asaasData.cached } : null, meta: { checkedAt: metaData.checkedAt, error: metaData.error, ageSeconds: metaData.ageSeconds, cached: metaData.cached, auth: metaAuth }, funnel: { checkedAt: new Date().toISOString(), error: funnel.length === 20000 ? "Limite de eventos atingido; período parcial." : null } } });
     },
     "POST /api/admin/dashboard/meta/connect/start": async (request) => {
       const admin = await requireAdmin(request);

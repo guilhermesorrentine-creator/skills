@@ -46,14 +46,23 @@ export function buildLedger({ orders, remotePayments, localPayments, profiles, e
       const refundedCents = Math.min(order.amount_cents, Number(order.refunded_cents || (order.status === "refunded" ? order.amount_cents : 0)));
       if (paid && !confirmedOn) incomplete = true;
       if (paid && order.cakto_fee_cents == null) incomplete = true;
+      const feeCents = order.cakto_fee_cents == null ? null : Number(order.cakto_fee_cents);
+      // A Cakto não informa a data de liberação: o líquido (preço − taxa) entra no caixa no dia da aprovação.
       if (paid && confirmedOn) {
         sales.push({ ...common, on: confirmedOn, amountCents: order.amount_cents, count: 1, guaranteed: true });
-        if (order.cakto_fee_cents != null) fees.push({ ...common, on: confirmedOn, amountCents: order.cakto_fee_cents });
+        if (feeCents != null) {
+          fees.push({ ...common, on: confirmedOn, amountCents: feeCents });
+          cash.push({ ...common, on: confirmedOn, amountCents: order.amount_cents - feeCents, feeCents, paymentId: order.cakto_order_id || order.id });
+        }
       }
       if (refundedCents && refundedOn) {
         refunds.push({ ...common, on: refundedOn, amountCents: refundedCents });
         sales.push({ ...common, on: refundedOn, amountCents: -refundedCents, count: 0, refund: true });
+        if (paid && confirmedOn && feeCents != null) cash.push({ ...common, on: refundedOn, amountCents: -refundedCents, refund: true });
       }
+      if (paid) paymentRows.push({ ...common, id: order.cakto_order_id || order.id, status: order.status === "refunded" ? "REFUNDED" : "RECEIVED",
+        billingType: order.cakto_payment_method || "Cakto", confirmedOn, creditOn: confirmedOn, expectedOn: null, grossCents: order.amount_cents,
+        feeCents, netCents: feeCents == null ? null : order.amount_cents - feeCents, refundedCents });
       orderRows.push({ ...common, id: order.id, email: emails.get(order.user_id) || "—", amountCents: order.amount_cents,
         status: order.status, confirmedOn, createdOn: businessDay(order.created_at), refundedOn, refundedCents,
         billingType: order.cakto_payment_method || "Cakto", installments: 1 });

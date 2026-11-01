@@ -37,12 +37,15 @@ test("venda Cakto usa pedido confirmado e taxa Cakto sem exigir cobrança Asaas"
   assert.equal(result.salesCents, 1990);
   assert.equal(result.feesCents, 250);
   assert.equal(result.metaSalesCents, 1990);
-  assert.equal(result.cashCents, 0, "a data de crédito na Cakto ainda não foi informada");
+  assert.equal(result.cashCents, 1740, "líquido Cakto (preço − taxa) no dia da aprovação");
+  assert.equal(ledger.paymentRows[0].feeCents, 250);
+  assert.equal(ledger.paymentRows[0].source, "meta");
   assert.equal(ledger.incomplete, false);
   assert.equal(ledger.orderRows[0].billingType, "PIX");
   const refunded = build([order({ payment_provider: "cakto", amount_cents: 1990, cakto_fee_cents: 250,
     status: "refunded", refunded_cents: 1990, refunded_at: "2026-10-20T20:00:00Z" })], []);
   assert.equal(summary(refunded).salesCents, 0);
+  assert.equal(summary(refunded).cashCents, -250, "reembolso devolve o preço; a taxa da Cakto fica");
   assert.equal(summary(refunded).sales, 0);
 });
 
