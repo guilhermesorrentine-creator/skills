@@ -166,6 +166,38 @@ test("Cakto: com a API de Conversões ligada na Cakto, o servidor não repete o 
   assert.equal(sent.length, 0);
 });
 
+test("Cakto: compra direta (sem pedido prévio) cria conta e pedido pagos; repetição e estorno funcionam", async () => {
+  const { store, commerce, data } = setup(async () => true);
+  const callback = randomUUID();
+  const paid = data({ id: callback }, { customer: { email: "Nova@Example.com" } });
+  const first = await commerce.receiveCaktoWebhook({ event: "purchase_approved", data: paid });
+  assert.equal(first.results[0].status, "processed");
+  const order = store.db.orders.find((item) => item.id === callback);
+  assert.equal(order.status, "paid");
+  assert.equal(order.cakto_order_id, paid.id);
+  assert.equal(order.amount_cents, CAKTO_PRICE_CENTS);
+  const buyer = store.db.profiles.find((item) => item.email === "nova@example.com");
+  assert.ok(buyer, "conta criada com o e-mail da Cakto");
+  assert.equal(order.user_id, buyer.id);
+  assert.equal(store.db.licenses.filter((item) => item.user_id === buyer.id && item.status === "active").length, 1);
+  assert.equal((await commerce.receiveCaktoWebhook({ event: "purchase_approved", data: paid })).results[0].duplicate, true);
+  assert.equal(store.db.orders.filter((item) => item.id === callback).length, 1);
+  const refund = { ...paid, status: "refunded", refundedAt: new Date().toISOString() };
+  assert.equal((await commerce.receiveCaktoWebhook({ event: "refund", data: refund })).results[0].status, "processed");
+  assert.equal(store.db.licenses.find((item) => item.user_id === buyer.id).status, "refunded");
+});
+
+test("Cakto: compra direta com e-mail de conta existente libera nessa conta; sem pagamento não cria nada", async () => {
+  const { store, commerce, data } = setup(async () => true);
+  const pending = data({ id: randomUUID() }, { status: "pending" });
+  assert.equal((await commerce.receiveCaktoWebhook({ event: "purchase_approved", data: pending })).results[0].status, "unlinked");
+  assert.equal(store.db.orders.length, 0);
+  const paid = data({ id: randomUUID() });
+  assert.equal((await commerce.receiveCaktoWebhook({ event: "purchase_approved", data: paid })).results[0].status, "processed");
+  assert.equal(store.db.orders[0].user_id, user.id);
+  assert.equal(store.db.profiles.length, 1);
+});
+
 test("Cakto: taxa repassada ao comprador (preço + charged_fees) libera o acesso", async () => {
   const { store, commerce, data } = setup(async () => true);
   await commerce.accountCheckout(user, "edicao-1", { consent: true });

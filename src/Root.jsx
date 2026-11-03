@@ -72,6 +72,12 @@ function Routes() {
   if (path === "/") return <LandingPage account={signedIn ? account : null} signedIn={signedIn} onEnter={enter}/>;
   if (authModes[path]) return <AuthPage key={path} mode={authModes[path]} account={account} onAuthenticated={afterLogin}/>;
   if (path === "/conecta") return <Redirect to={`/oferta${location.search}`}/>;
+  // Em produção a /oferta é a página estática leve (scripts/offer-page.mjs); a navegação interna recarrega até ela.
+  if (path === "/oferta" && import.meta.env.PROD && sessionStorage.getItem("vx-oferta-reload") !== location.search) {
+    sessionStorage.setItem("vx-oferta-reload", location.search); // se a estática faltar, não entra em laço
+    location.replace(`/oferta${location.search}`);
+    return null;
+  }
   if (path === "/oferta") return <OfferPage signedIn={signedIn} authReady={!authLoading}/>;
   if (path === "/comprar") return <Suspense fallback={<Loading/>}><BuyPage signedIn={signedIn} onEnter={enter}/></Suspense>;
   // Retorno do Asaas: compra sem cadastro (pedido + chave) não exige sessão; a compra logada sim.
