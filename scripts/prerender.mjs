@@ -3,6 +3,7 @@
 // substitui esse conteúdo ao carregar. Gera também /llms.txt. Uso: node scripts/prerender.mjs (após vite build)
 import { readFile, writeFile, mkdir } from "node:fs/promises";
 import { KITS } from "../src/lib/kits.js";
+import { offerPage } from "./offer-page.mjs";
 
 const BASE = (process.env.APP_URL || "https://skills-five-snowy.vercel.app").replace(/\/$/, "");
 const PRICE = "39.90"; // preço da Edição 1; atualizar junto com commercial_editions
@@ -85,9 +86,10 @@ await emit("/conecta", page({ path: "/conecta", title: "Voxelia Pro: conecte na 
   body: `<h1>Conecte na sua IA. É como dar superpoderes a ela.</h1><p>Menos texto genérico, menos resposta incompleta e menos token desperdiçado: a IA consulta ${skills} skills da Voxelia e usa a certa.</p><p>${link("/comprar?edicao=pro-anual", "Quero o Voxelia Pro")}</p>`,
   jsonld: [{ ...product("Voxelia Pro", "Conexão da Voxelia com a sua IA (MCP) por 12 meses e acervo vitalício"), offers: { ...offer, price: "598.80", url: `${BASE}/conecta` } }] }));
 
-// Página do tráfego pago: acervo vitalício para consulta e uso manual na IA.
-await emit("/oferta", page({ path: "/oferta", noindex: true, title: "Voxelia: acervo de skills em português", description: `${skills} skills com guias em português para consultar e usar na sua IA. Acesso vitalício ao acervo por R$ ${PRICE.replace(".", ",")}, pagamento único. Sem conexão automática.`,
-  body: `<h1>Pare de começar do zero toda vez que usar IA.</h1><p>Encontre a skill certa para criar páginas, conteúdo e projetos com mais método. Acesso vitalício ao acervo por R$ ${PRICE.replace(".", ",")}, pagamento único. Sem conexão automática com IA.</p>` }));
+// Página do tráfego pago: estática e leve (sem o bundle do React), com compra direta na Cakto.
+await emit("/oferta", offerPage({ base: BASE, skills, repos: demo.stats.repos, price: PRICE, checkoutSlug: process.env.CAKTO_CHECKOUT_SLUG,
+  pixelId: process.env.VITE_META_PIXEL_ID, seller: { name: process.env.VITE_SELLER_NAME, document: process.env.VITE_SELLER_DOCUMENT,
+    city: process.env.VITE_SELLER_CITY, email: process.env.VITE_SUPPORT_EMAIL } }));
 
 // Bio e início
 const kitLinks = ul(KITS.map((k) => link(`/kit/${k.slug}`, `Voxelia para ${k.name}`)));

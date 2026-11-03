@@ -398,7 +398,10 @@ export function createCommerce({ store, asaas, config, onboarding = null, conver
     try {
       if (!["purchase_approved", "purchase_refused", "refund", "chargeback"].includes(event)) return finish("processed", "Evento sem efeito na licença.");
       if (!validCaktoOrder(data, config.cakto)) return finish("failed", "Produto, oferta, valor ou pedido divergente.");
-      const order = await store.getOrder(data.callback);
+      let order = await store.getOrder(data.callback);
+      // Compra direta pela /oferta: o navegador gera o callback e vai direto à Cakto, sem pedido prévio.
+      // A conta e o pedido nascem aqui, na confirmação, com o e-mail informado no checkout.
+      if (!order && event === "purchase_approved" && approvedCaktoPurchase(data, config.cakto)) order = await directCaktoOrder(data);
       if (!order || order.payment_provider !== "cakto") return finish("unlinked", "Pedido local não encontrado.");
       // A Cakto pede o e-mail de novo e a pessoa pode digitar outro. O callback é um UUID criado na sessão de
       // quem abriu o checkout, então o pedido identifica o comprador; o e-mail da Cakto fica no evento.
@@ -434,6 +437,23 @@ export function createCommerce({ store, asaas, config, onboarding = null, conver
       console.error("[cakto] evento:", id, error.message);
       return finish("failed", String(error.message).slice(0, 300));
     }
+  }
+
+  async function directCaktoOrder(data) {
+    const email = String(data.customer.email || "").trim().toLowerCase();
+    if (!EMAIL.test(email) || email.length > 254) return null;
+    const edition = await store.getEditionByCode("edicao-1");
+    if (!edition || edition.price_cents !== CAKTO_PRICE_CENTS) return null;
+    let profile = await store.findProfileByEmail(email);
+    if (!profile) profile = { id: (await store.createInvitedUser(email, `${config.appUrl}/criar-senha`)).userId };
+    const created = await store.insertOrder({ id: data.callback, user_id: profile.id, edition_id: edition.id, kind: "purchase",
+      list_price_cents: CAKTO_PRICE_CENTS, credit_cents: 0, amount_cents: CAKTO_PRICE_CENTS, payment_provider: "cakto",
+      // Já nasce paga (fora do índice de "um pedido em aberto por pessoa"): só existe porque a Cakto confirmou.
+      status: "paid", paid_at: data.paidAt, cakto_order_id: data.id,
+      cakto_fee_cents: Number.isFinite(Number(data.fees)) && Number(data.fees) >= 0 ? Math.round(Number(data.fees) * 100) : null,
+      cakto_payment_method: String(data.paymentMethod || "").slice(0, 40) || null });
+    // Corrida com outra entrega do mesmo evento: o pedido já existe com este callback.
+    return created || store.getOrder(data.callback);
   }
 
   async function activateLicense(userId, order, kind = "activated") {
